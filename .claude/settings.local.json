@@ -8,7 +8,8 @@
       "Bash(findstr:*)",
       "Read(//c/Users/Sam/Pictures/Screenshots/**)",
       "Bash(del srcindex.ts)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []

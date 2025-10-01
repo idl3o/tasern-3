@@ -82,6 +82,12 @@ export const CardDisplay: React.FC<CardDisplayProps> = ({
             {card.rarity === 'common' && '⚔️'}
           </span>
         </div>
+        {/* Combat Type Badge */}
+        <div style={styles.combatTypeBadge}>
+          {card.combatType === 'melee' && '🗡️'}
+          {card.combatType === 'ranged' && '🏹'}
+          {card.combatType === 'hybrid' && '⚔️'}
+        </div>
         {battleCard && battleCard.statusEffects.length > 0 && (
           <div style={styles.statusBadges}>
             {battleCard.statusEffects.map((effect, idx) => (
@@ -235,6 +241,16 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: TASERN_BORDERS.radiusSmall,
     padding: '2px 6px',
     fontSize: TASERN_TYPOGRAPHY.bodySmall,
+  },
+  combatTypeBadge: {
+    position: 'absolute',
+    bottom: TASERN_SPACING.xs,
+    left: TASERN_SPACING.xs,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    borderRadius: TASERN_BORDERS.radiusSmall,
+    padding: '2px 6px',
+    fontSize: TASERN_TYPOGRAPHY.bodyMedium,
+    border: `${TASERN_BORDERS.widthThin} solid ${TASERN_COLORS.bronze}`,
   },
   statsRow: {
     display: 'flex',

@@ -25,6 +25,7 @@ import type {
   AttackCastleAction,
   MoveCardAction,
   Position,
+  BattleCard,
 } from '../types/core';
 import { CardGenerator } from './CardGenerator';
 
@@ -240,7 +241,7 @@ export class ConsciousnessAI {
           .filter((c) => c !== null && c.ownerId !== player.id);
 
         enemyCards.forEach((target) => {
-          if (target) {
+          if (target && this.canAttackTarget(card, target)) {
             const attackAction: AttackCardAction = {
               type: 'ATTACK_CARD',
               playerId: player.id,
@@ -494,6 +495,28 @@ export class ConsciousnessAI {
       }
     }
     return positions;
+  }
+
+  /**
+   * Check if attacker can attack target based on combat type and range
+   * Melee: Can only attack adjacent rows (row ±1)
+   * Ranged: Can attack any row
+   * Hybrid: Can attack any row
+   */
+  private canAttackTarget(attacker: BattleCard, target: BattleCard): boolean {
+    const rowDiff = Math.abs(attacker.position.row - target.position.row);
+
+    // Ranged and hybrid can attack any target
+    if (attacker.combatType === 'ranged' || attacker.combatType === 'hybrid') {
+      return true;
+    }
+
+    // Melee can only attack adjacent rows (within 1 row)
+    if (attacker.combatType === 'melee') {
+      return rowDiff <= 1;
+    }
+
+    return true; // Default: allow
   }
 
   onTurnStart(player: Player, state: BattleState): void {

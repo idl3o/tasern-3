@@ -9,6 +9,8 @@
 
 export type CardRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
 
+export type CombatType = 'melee' | 'ranged' | 'hybrid';
+
 export interface Card {
   id: string;
   name: string;
@@ -19,6 +21,7 @@ export interface Card {
   speed: number;
   manaCost: number;
   rarity: CardRarity;
+  combatType: CombatType;
   abilities: CardAbility[];
   imageUrl?: string;
 }

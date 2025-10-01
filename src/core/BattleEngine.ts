@@ -26,6 +26,7 @@ import type {
   UseAbilityAction,
   AIMemory,
 } from '../types/core';
+import { AbilityEngine } from './AbilityEngine';
 
 export class BattleEngine {
   /**
@@ -226,11 +227,30 @@ export class BattleEngine {
         return;
       }
 
+      // Check attack range
+      if (!this.canAttackTarget(attacker, target)) {
+        console.warn('❌ Target out of attack range');
+        return;
+      }
+
       // Calculate damage with modifiers
       const damage = this.calculateDamage(attacker, target, draft);
 
       // Apply damage
       target.hp -= damage;
+
+      // Check for thorns damage reflection
+      const thornsDamage = AbilityEngine.calculateThornsDamage(target, damage);
+      if (thornsDamage > 0) {
+        attacker.hp -= thornsDamage;
+        draft.battleLog.push({
+          turn: draft.currentTurn,
+          playerId: target.ownerId,
+          action: 'THORNS_DAMAGE',
+          result: `${target.name}'s thorns dealt ${thornsDamage} damage to ${attacker.name}`,
+          timestamp: Date.now(),
+        });
+      }
 
       // Mark attacker as having attacked
       attacker.hasAttacked = true;
@@ -255,6 +275,19 @@ export class BattleEngine {
           timestamp: Date.now(),
         });
         console.log(`💀 ${target.name} destroyed`);
+      }
+
+      // Check if attacker died from thorns
+      if (attacker.hp <= 0) {
+        draft.battlefield[attacker.position.row][attacker.position.col] = null;
+        draft.battleLog.push({
+          turn: draft.currentTurn,
+          playerId: attacker.ownerId,
+          action: 'CARD_DESTROYED',
+          result: `${attacker.name} was destroyed by thorns`,
+          timestamp: Date.now(),
+        });
+        console.log(`💀 ${attacker.name} destroyed by thorns`);
       }
 
       console.log(`⚔️ ${attacker.name} attacks ${target.name} for ${damage} damage`);
@@ -431,12 +464,19 @@ export class BattleEngine {
       const currentPlayer = draft.players[draft.activePlayerId];
       console.log(`⏭️ ${currentPlayer.name} ends turn`);
 
-      // Reset card action flags
+      // Reset card action flags and process regeneration
       draft.battlefield.forEach((row) => {
         row.forEach((card) => {
           if (card && card.ownerId === draft.activePlayerId) {
             card.hasMoved = false;
             card.hasAttacked = false;
+
+            // Process regeneration
+            const { healing, log } = AbilityEngine.processRegeneration(card, draft);
+            if (healing > 0) {
+              card.hp = Math.min(card.hp + healing, card.maxHp);
+              draft.battleLog.push(...log);
+            }
 
             // Reduce ability cooldowns
             card.abilities.forEach((ability) => {
@@ -583,6 +623,14 @@ export class BattleEngine {
   ): number {
     let damage = attacker.attack;
 
+    // Aura bonuses from adjacent allies
+    const attackerAura = AbilityEngine.getAuraBonus(attacker, state.battlefield);
+    damage += attackerAura.attack;
+
+    // Zone effects
+    const attackerZone = this.getZoneModifiers(attacker);
+    damage *= attackerZone.attackMod;
+
     // Formation bonus
     const formationBonus = this.getFormationBonus(attacker, state.battlefield);
     damage *= formationBonus.attackMod;
@@ -605,11 +653,51 @@ export class BattleEngine {
       damage *= 1.5;
     }
 
+    // Apply defender's zone defense modifier and aura
+    const defenderZone = this.getZoneModifiers(defender);
+    const defenderAura = AbilityEngine.getAuraBonus(defender, state.battlefield);
+    let effectiveDefense = (defender.defense + defenderAura.defense) * defenderZone.defenseMod;
+
     // Subtract defense
-    damage -= defender.defense;
+    damage -= effectiveDefense;
 
     // Minimum 1 damage
     return Math.max(1, Math.floor(damage));
+  }
+
+  /**
+   * Get zone modifiers based on card position
+   * Front Line (row 0): +20% attack, -10% defense for melee; -20% attack for ranged
+   * Mid Field (row 1): No modifiers
+   * Back Line (row 2): +15% attack for ranged, +10% defense; -20% attack for melee
+   */
+  private static getZoneModifiers(card: BattleCard): { attackMod: number; defenseMod: number } {
+    const row = card.position.row;
+
+    // Front Line (row 0)
+    if (row === 0) {
+      if (card.combatType === 'melee') {
+        return { attackMod: 1.2, defenseMod: 0.9 };
+      } else if (card.combatType === 'ranged') {
+        return { attackMod: 0.8, defenseMod: 0.9 };
+      } else { // hybrid
+        return { attackMod: 1.0, defenseMod: 0.9 };
+      }
+    }
+
+    // Back Line (row 2)
+    if (row === 2) {
+      if (card.combatType === 'melee') {
+        return { attackMod: 0.8, defenseMod: 1.1 };
+      } else if (card.combatType === 'ranged') {
+        return { attackMod: 1.15, defenseMod: 1.1 };
+      } else { // hybrid
+        return { attackMod: 1.0, defenseMod: 1.1 };
+      }
+    }
+
+    // Mid Field (row 1) - neutral
+    return { attackMod: 1.0, defenseMod: 1.0 };
   }
 
   /**
@@ -639,5 +727,27 @@ export class BattleEngine {
 
     // Default: Skirmish
     return { type: 'SKIRMISH', attackMod: 1.0, defenseMod: 1.0, speedMod: 1.05 };
+  }
+
+  /**
+   * Check if attacker can attack target based on combat type and range
+   * Melee: Can only attack adjacent rows (row ±1)
+   * Ranged: Can attack any row
+   * Hybrid: Can attack any row
+   */
+  private static canAttackTarget(attacker: BattleCard, target: BattleCard): boolean {
+    const rowDiff = Math.abs(attacker.position.row - target.position.row);
+
+    // Ranged and hybrid can attack any target
+    if (attacker.combatType === 'ranged' || attacker.combatType === 'hybrid') {
+      return true;
+    }
+
+    // Melee can only attack adjacent rows (within 1 row)
+    if (attacker.combatType === 'melee') {
+      return rowDiff <= 1;
+    }
+
+    return true; // Default: allow
   }
 }

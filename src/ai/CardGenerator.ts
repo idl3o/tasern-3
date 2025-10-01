@@ -13,7 +13,7 @@
  * Now enhanced with the full Tales of Tasern lore system!
  */
 
-import type { Card, BattleState, Player, AIMode, AIPersonality, CardRarity } from '../types/core';
+import type { Card, BattleState, Player, AIMode, AIPersonality, CardRarity, CardAbility } from '../types/core';
 import {
   generateLoreName,
   generateLoreDescription,
@@ -57,6 +57,9 @@ export class CardGenerator {
     // Generate stats based on personality and mode
     const stats = this.generateStats(manaCost, mode, personality);
 
+    // Determine combat type based on stats
+    const combatType = this.determineCombatType(stats, mode);
+
     // Generate lore-rich name and description based on mode
     const name = this.generateNameWithLore(mode, rarity);
     const description = this.generateDescriptionWithLore(mode);
@@ -74,11 +77,40 @@ export class CardGenerator {
       speed: stats.speed,
       manaCost,
       rarity,
+      combatType,
       abilities,
       imageUrl: undefined,
     };
 
     return card;
+  }
+
+  /**
+   * Determine combat type based on stats and mode
+   * High attack + low speed = melee
+   * High speed = ranged
+   * Balanced = hybrid
+   */
+  private determineCombatType(
+    stats: { attack: number; hp: number; defense: number; speed: number },
+    mode: AIMode
+  ): 'melee' | 'ranged' | 'hybrid' {
+    const speedToAttackRatio = stats.speed / Math.max(1, stats.attack);
+
+    if (mode === 'AGGRESSIVE' || mode === 'DESPERATE') {
+      // Aggressive tends toward melee
+      return speedToAttackRatio > 1.2 ? 'ranged' : 'melee';
+    }
+
+    if (mode === 'DEFENSIVE') {
+      // Defensive prefers ranged
+      return speedToAttackRatio > 0.8 ? 'ranged' : 'hybrid';
+    }
+
+    // Adaptive/Experimental: balanced distribution
+    if (speedToAttackRatio > 1.5) return 'ranged';
+    if (speedToAttackRatio < 0.7) return 'melee';
+    return 'hybrid';
   }
 
   /**
@@ -218,36 +250,98 @@ export class CardGenerator {
 
   /**
    * Generate abilities based on stats and mode
+   * Now includes functional abilities: Guardian Aura, Regeneration, Thorns, Rally
    */
   private generateAbilities(
     stats: { attack: number; hp: number; defense: number; speed: number },
     mode: AIMode,
     rarity: CardRarity
-  ): string[] {
-    const abilities: string[] = [];
+  ): CardAbility[] {
+    const abilities: CardAbility[] = [];
 
-    // Stat-based abilities
-    if (stats.attack >= 7) abilities.push('Heavy Hitter');
-    if (stats.hp >= 10) abilities.push('Tank');
-    if (stats.speed >= 8) abilities.push('Quick Strike');
-    if (stats.defense >= 5) abilities.push('Fortified');
+    // Functional passive abilities based on stats
+    if (stats.defense >= 5 && Math.random() < 0.3) {
+      abilities.push({
+        id: `ability-guardian-${Date.now()}`,
+        name: 'Guardian Aura',
+        description: '+5 defense to adjacent allies',
+        manaCost: 0,
+        cooldown: 0,
+        currentCooldown: 0,
+        effect: { type: 'buff', stat: 'defense', amount: 5, duration: 0 },
+      });
+    }
+
+    if (stats.hp >= 10 && Math.random() < 0.3) {
+      abilities.push({
+        id: `ability-regen-${Date.now()}`,
+        name: 'Regeneration',
+        description: 'Heal 2 HP at start of turn',
+        manaCost: 0,
+        cooldown: 0,
+        currentCooldown: 0,
+        effect: { type: 'heal', amount: 2, target: 'self' },
+      });
+    }
+
+    if (stats.defense >= 6 && Math.random() < 0.25) {
+      abilities.push({
+        id: `ability-thorns-${Date.now()}`,
+        name: 'Thorns',
+        description: 'Reflect 30% of damage taken',
+        manaCost: 0,
+        cooldown: 0,
+        currentCooldown: 0,
+        effect: { type: 'damage', amount: 0.3, target: 'single' },
+      });
+    }
+
+    if (stats.attack >= 7 && Math.random() < 0.3) {
+      abilities.push({
+        id: `ability-rally-${Date.now()}`,
+        name: 'Rally',
+        description: '+5 attack to adjacent allies',
+        manaCost: 0,
+        cooldown: 0,
+        currentCooldown: 0,
+        effect: { type: 'buff', stat: 'attack', amount: 5, duration: 0 },
+      });
+    }
 
     // Mode-specific abilities
-    if (mode === 'AGGRESSIVE') {
-      abilities.push('Berserker Rage');
-    } else if (mode === 'DEFENSIVE') {
-      abilities.push('Iron Will');
-    } else if (mode === 'DESPERATE') {
-      abilities.push('Last Stand');
-    } else if (mode === 'EXPERIMENTAL') {
-      abilities.push('Chaos Magic');
+    if (mode === 'AGGRESSIVE' && Math.random() < 0.4) {
+      abilities.push({
+        id: `ability-berserker-${Date.now()}`,
+        name: 'Berserker Rage',
+        description: '+2 attack, -1 defense',
+        manaCost: 0,
+        cooldown: 0,
+        currentCooldown: 0,
+        effect: { type: 'buff', stat: 'attack', amount: 2, duration: 0 },
+      });
+    } else if (mode === 'DEFENSIVE' && Math.random() < 0.4) {
+      abilities.push({
+        id: `ability-iron-${Date.now()}`,
+        name: 'Iron Will',
+        description: '+3 defense',
+        manaCost: 0,
+        cooldown: 0,
+        currentCooldown: 0,
+        effect: { type: 'buff', stat: 'defense', amount: 3, duration: 0 },
+      });
     }
 
     // Rarity-based abilities
-    if (rarity === 'legendary') {
-      abilities.push('Legendary Presence');
-    } else if (rarity === 'epic') {
-      abilities.push('Epic Power');
+    if (rarity === 'legendary' && Math.random() < 0.5) {
+      abilities.push({
+        id: `ability-legendary-${Date.now()}`,
+        name: 'Legendary Presence',
+        description: '+10% to all stats',
+        manaCost: 0,
+        cooldown: 0,
+        currentCooldown: 0,
+        effect: { type: 'buff', stat: 'attack', amount: 10, duration: 0 },
+      });
     }
 
     return abilities;
@@ -279,7 +373,8 @@ export class CardGenerator {
       maxHp: stats.hp,
       manaCost,
       rarity: 'uncommon',
-      abilities: [],
+      combatType: 'hybrid',
+      abilities: [] as CardAbility[],
     };
   }
 }
