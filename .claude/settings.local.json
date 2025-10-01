@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/Sam/Documents/coding projs/tasern 2/**)",
+      "Bash(npm run demo:battle:*)",
+      "Bash(npm start)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Read(//c/Users/Sam/Pictures/Screenshots/**)",
+      "Bash(del srcindex.ts)",
+      "Bash(taskkill:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
