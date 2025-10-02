@@ -29,11 +29,13 @@ export const App: React.FC = () => {
 
   const [deckSelectionState, setDeckSelectionState] = useState<{
     availableCards: Card[];
-    opponent: AIPersonality;
+    opponent: AIPersonality | null;
     humanPlayer: boolean;
+    isPlayer2: boolean;
+    player1Cards?: Card[];
   } | null>(null);
 
-  const startBattle = (opponentName: string, humanPlayer: boolean = true) => {
+  const startBattle = (opponentName: string, humanPlayer: boolean = true, humanVsHuman: boolean = false) => {
     let opponent;
     switch (opponentName) {
       case 'swiftblade':
@@ -55,7 +57,29 @@ export const App: React.FC = () => {
         opponent = THORNWICK_THE_TACTICIAN;
     }
 
-    if (humanPlayer) {
+    if (humanVsHuman) {
+      // Human vs Human - start with player 1 deck selection
+      const tempPlayer = PlayerFactory.createHuman('Player 1');
+      const strategy = tempPlayer.strategy as HumanStrategy;
+
+      // Generate initial deck of 15 cards
+      const availableCards = strategy.generateInitialDeck(tempPlayer, {
+        id: 'temp',
+        currentTurn: 0,
+        phase: 'deployment',
+        activePlayerId: tempPlayer.id,
+        players: { [tempPlayer.id]: tempPlayer },
+        battlefield: [[null, null, null], [null, null, null], [null, null, null]],
+        weather: null,
+        terrainEffects: [],
+        controlledZones: {},
+        winner: null,
+        battleLog: [],
+        aiMemories: {},
+      });
+
+      setDeckSelectionState({ availableCards, opponent: null, humanPlayer: true, isPlayer2: false });
+    } else if (humanPlayer) {
       // For human players, show deck selection first
       const tempPlayer = PlayerFactory.createHuman('You');
       const strategy = tempPlayer.strategy as HumanStrategy;
@@ -76,7 +100,7 @@ export const App: React.FC = () => {
         aiMemories: {},
       });
 
-      setDeckSelectionState({ availableCards, opponent, humanPlayer });
+      setDeckSelectionState({ availableCards, opponent, humanPlayer, isPlayer2: false });
     } else {
       // AI vs AI battle starts immediately
       const player1 = PlayerFactory.createAI('Lady Swiftblade', LADY_SWIFTBLADE);
@@ -88,22 +112,66 @@ export const App: React.FC = () => {
   const handleDeckSelectionComplete = (selectedCards: Card[]) => {
     if (!deckSelectionState) return;
 
-    // Create human player with selected cards
-    const player1 = PlayerFactory.createHuman('You');
+    if (deckSelectionState.opponent === null) {
+      // Human vs Human - this is player 1 selection, move to player 2
+      if (!deckSelectionState.isPlayer2) {
+        // Generate deck for player 2
+        const tempPlayer = PlayerFactory.createHuman('Player 2');
+        const strategy = tempPlayer.strategy as HumanStrategy;
+        const availableCards = strategy.generateInitialDeck(tempPlayer, {
+          id: 'temp',
+          currentTurn: 0,
+          phase: 'deployment',
+          activePlayerId: tempPlayer.id,
+          players: { [tempPlayer.id]: tempPlayer },
+          battlefield: [[null, null, null], [null, null, null], [null, null, null]],
+          weather: null,
+          terrainEffects: [],
+          controlledZones: {},
+          winner: null,
+          battleLog: [],
+          aiMemories: {},
+        });
 
-    // Put first 5 cards in hand, rest in deck
-    player1.hand = selectedCards.slice(0, 5);
-    player1.deck = selectedCards.slice(5);
+        setDeckSelectionState({
+          availableCards,
+          opponent: null,
+          humanPlayer: true,
+          isPlayer2: true,
+          player1Cards: selectedCards
+        });
+      } else {
+        // Both players have selected - start battle
+        const player1 = PlayerFactory.createHuman('Player 1');
+        player1.hand = deckSelectionState.player1Cards!.slice(0, 5);
+        player1.deck = deckSelectionState.player1Cards!.slice(5);
 
-    console.log(`📚 Player deck created: ${player1.hand.length} in hand, ${player1.deck.length} in deck`);
+        const player2 = PlayerFactory.createHuman('Player 2');
+        player2.hand = selectedCards.slice(0, 5);
+        player2.deck = selectedCards.slice(5);
 
-    const player2 = PlayerFactory.createAI(
-      deckSelectionState.opponent.name,
-      deckSelectionState.opponent
-    );
+        console.log(`📚 Player 1 deck: ${player1.hand.length} in hand, ${player1.deck.length} in deck`);
+        console.log(`📚 Player 2 deck: ${player2.hand.length} in hand, ${player2.deck.length} in deck`);
 
-    setDeckSelectionState(null);
-    initializeBattle(player1, player2);
+        setDeckSelectionState(null);
+        initializeBattle(player1, player2);
+      }
+    } else {
+      // Human vs AI
+      const player1 = PlayerFactory.createHuman('You');
+      player1.hand = selectedCards.slice(0, 5);
+      player1.deck = selectedCards.slice(5);
+
+      console.log(`📚 Player deck created: ${player1.hand.length} in hand, ${player1.deck.length} in deck`);
+
+      const player2 = PlayerFactory.createAI(
+        deckSelectionState.opponent.name,
+        deckSelectionState.opponent
+      );
+
+      setDeckSelectionState(null);
+      initializeBattle(player1, player2);
+    }
   };
 
   // Auto-process AI turns for AI vs AI battles
@@ -128,6 +196,7 @@ export const App: React.FC = () => {
       <DeckSelection
         availableCards={deckSelectionState.availableCards}
         onConfirmSelection={handleDeckSelectionComplete}
+        playerName={deckSelectionState.isPlayer2 ? 'Player 2' : (deckSelectionState.opponent === null ? 'Player 1' : 'You')}
       />
     );
   }
@@ -170,6 +239,17 @@ export const App: React.FC = () => {
               <div style={styles.opponentName}>Archmagus Nethys</div>
               <div style={styles.opponentTitle}>"Master of the Arcane"</div>
               <div style={styles.opponentTraits}>Creative • Patient • Mystical</div>
+            </button>
+          </div>
+
+          <div style={styles.divider}></div>
+
+          <div style={styles.personalityGrid}>
+            <h2 style={styles.sectionTitle}>Human vs Human</h2>
+
+            <button style={styles.opponentButton} onClick={() => startBattle('', true, true)}>
+              <div style={styles.opponentName}>Player 1 vs Player 2</div>
+              <div style={styles.opponentTraits}>Face your friend in tactical combat</div>
             </button>
           </div>
 

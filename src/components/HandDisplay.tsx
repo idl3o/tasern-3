@@ -20,17 +20,19 @@ interface HandDisplayProps {
   cards: Card[];
   onCardSelect?: (card: Card) => void;
   selectedCardId?: string | null;
+  playerName?: string;
 }
 
 export const HandDisplay: React.FC<HandDisplayProps> = ({
   cards,
   onCardSelect,
   selectedCardId,
+  playerName = 'You',
 }) => {
   return (
     <div style={styles.container}>
       <div style={styles.header}>
-        <span style={styles.title}>✋ Your Hand</span>
+        <span style={styles.title}>✋ {playerName}'s Hand</span>
         <span style={styles.count}>
           {cards.length} card{cards.length !== 1 ? 's' : ''}
         </span>

@@ -228,13 +228,14 @@ export const BattleView: React.FC = () => {
         </div>
       )}
 
-      {/* Human Player Hand */}
+      {/* Human Player Hand - Only show for active human player */}
       {activePlayer && activePlayer.type === 'human' && (
         <div style={styles.handPanel}>
           <HandDisplay
             cards={activePlayer.hand}
             onCardSelect={handleCardSelect}
             selectedCardId={selectedCard?.id}
+            playerName={activePlayer.name}
           />
         </div>
       )}

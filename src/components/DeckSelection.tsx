@@ -19,11 +19,13 @@ import {
 interface DeckSelectionProps {
   availableCards: Card[];
   onConfirmSelection: (selectedCards: Card[]) => void;
+  playerName?: string;
 }
 
 export const DeckSelection: React.FC<DeckSelectionProps> = ({
   availableCards,
   onConfirmSelection,
+  playerName = 'You',
 }) => {
   const [selectedCardIds, setSelectedCardIds] = useState<Set<string>>(new Set());
 
@@ -52,7 +54,7 @@ export const DeckSelection: React.FC<DeckSelectionProps> = ({
   return (
     <div style={styles.overlay}>
       <div style={styles.container}>
-        <h1 style={styles.title}>⚔️ Choose Your Battle Deck ⚔️</h1>
+        <h1 style={styles.title}>⚔️ {playerName}: Choose Your Battle Deck ⚔️</h1>
         <p style={styles.subtitle}>
           Select 5 cards from your collection to bring into battle
         </p>
