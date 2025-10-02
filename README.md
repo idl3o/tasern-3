@@ -5,6 +5,56 @@
 
 ---
 
+## Current Status
+
+**✅ MILESTONE 1 COMPLETE - Fully Playable Human vs AI!** (October 1, 2025)
+
+The game is now **fully playable** with complete Human vs AI functionality:
+
+### What Works Right Now
+
+- ✅ **Dual menu system**: "Play vs AI" and "Watch AI vs AI"
+- ✅ **5 distinct AI personalities** from Tasern lore (Stumbleheart, Swiftblade, Thornwick, Grok, Nethys)
+- ✅ **Human player hand generation** (5 cards, adaptive mode)
+- ✅ **Card deployment system** (click hand card → click battlefield)
+- ✅ **Combat system** (select your card → attack enemy card/castle)
+- ✅ **Turn management** with "End Turn" button
+- ✅ **AI auto-processing** with 1.5s delays for watchability
+- ✅ **Victory detection** and UI overlay
+- ✅ **Battle log** showing all actions
+- ✅ **Medieval D&D aesthetic** with Tasern theme colors
+- ✅ **Web3 wallet integration** (RainbowKit + Wagmi on Polygon)
+- ✅ **NFT Gallery** with provenance verification
+- ✅ **LP token bonus scanning** for stat boosts
+- ✅ **Interactive tutorial overlay** for new players
+
+**You can play the game right now.** It's fun. It works.
+
+---
+
+## Quick Start
+
+### Play the Game
+
+```bash
+npm install
+npm start
+```
+
+Visit `http://localhost:3000` and choose:
+- **Play vs AI** - Challenge one of five personalities
+- **Watch AI vs AI** - Watch the AI battle itself
+
+### Watch a Console Battle (AI vs AI)
+
+```bash
+npm run demo:battle
+```
+
+Pure console glory with strategic commentary and battle logs.
+
+---
+
 ## What Makes This Special
 
 This isn't just another card game. **Tasern Siegefront** explores what happens when AI is given personality, intentionality, and the freedom to make interesting mistakes.
@@ -18,6 +68,8 @@ Six-step decision loop where AI opponents:
 - **Generate** - Create cards dynamically in response to the battlefield
 - **Score & Choose** - Evaluate with 30% variance from optimal
 - **Record** - Build memory for learning
+
+AI opponents **think**, **adapt**, and **make mistakes**. They don't feel like bots.
 
 ### ✨ Dynamic Card Generation
 
@@ -40,6 +92,100 @@ From the Tales of Tasern universe:
 - **Archmagus Nethys** - Master of the Arcane (experimental magic)
 
 Each feels genuinely different to play against.
+
+### 💎 Web3 Integration
+
+- **Wallet Connection** - RainbowKit with MetaMask, WalletConnect, Coinbase
+- **NFT Gallery** - View your Polygon NFTs with provenance verification
+- **LP Token Bonuses** - Hold LP tokens, get stat boosts in battle
+- **Regenerative Finance** - NFT ownership enhances gameplay
+
+```
+Each 0.01 LP token = +5% to all card stats
+```
+
+---
+
+## Future Horizon
+
+### Phase 1: Mechanics Refinement (Current)
+- [ ] Enhanced board layout and positioning
+- [ ] Card movement system (reposition during battle)
+- [ ] Advanced combat rules and balancing
+- [ ] Weather system integration (visual + mechanical)
+- [ ] Terrain effects (battlefield modifiers)
+
+### Phase 2: Polish & Depth
+- [ ] Card artwork and animations
+- [ ] Advanced card abilities (beyond attack/defense)
+- [ ] Sound effects and ambient audio
+- [ ] Enhanced battle log with replay
+- [ ] AI difficulty settings
+
+### Phase 3: Content Expansion
+- [ ] Campaign mode with Tasern lore
+- [ ] Achievement system
+- [ ] Deck building for human players
+- [ ] More AI personalities (deeper lore)
+- [ ] Card collection and progression
+
+### Phase 4: Multiplayer & Competitive
+- [ ] Human vs Human online battles
+- [ ] Tournament mode
+- [ ] Leaderboards
+- [ ] Spectator mode
+- [ ] Ranked matchmaking
+
+### Phase 5: Advanced AI
+- [ ] AI learning from player behavior
+- [ ] Adaptive difficulty
+- [ ] AI commentary and trash talk
+- [ ] Emergent strategic patterns
+- [ ] AI vs AI tournaments
+
+### Phase 6: NFT Ecosystem
+- [ ] Mint custom cards as NFTs
+- [ ] NFT card trading
+- [ ] Staking mechanisms
+- [ ] Governance for game rules
+- [ ] Community-created content
+
+---
+
+## Core Mechanics
+
+### ⚔️ Battle Flow
+
+1. Players deploy cards to 3x3 battlefield
+2. Cards attack enemies or castle
+3. Formations grant bonuses (Vanguard, Phalanx, etc.)
+4. Weather effects modify all cards
+5. First to destroy enemy castle wins (30 HP)
+
+### 🎲 Victory Conditions
+
+- **Castle Destruction** - Reduce enemy castle to 0 HP
+- **Resource Exhaustion** - Human players run out of cards
+- **Turn Limit** - Highest castle HP wins after 50 turns
+
+### 🌦️ Weather Effects
+
+Global modifiers lasting 3-5 turns:
+- **Clear** ☀️ - No modifiers
+- **Rain** 🌧️ - -10% attack, -5% speed
+- **Storm** ⛈️ - -20% attack, -10% speed
+- **Fog** 🌫️ - -15% attack, +10% defense
+- **Snow** ❄️ - -10% defense, -15% speed
+
+### 🛡️ Formations
+
+Positional bonuses based on card arrangement:
+- **VANGUARD** - 2+ cards in front zone: +20% attack
+- **PHALANX** - 3 cards in horizontal line: +30% defense, -10% speed
+- **ARCHER_LINE** - 2+ cards in back zone: +15% attack, -10% defense
+- **FLANKING** - Cards on both sides: +10% attack, +15% speed
+- **SIEGE** - 2+ cards in enemy zones: +25% attack, -15% defense
+- **SKIRMISH** - Default: +5% speed
 
 ---
 
@@ -65,6 +211,7 @@ src/
 ├── strategies/     # Strategy pattern (Human, AI)
 ├── state/          # Zustand store with Immer
 ├── components/     # React UI (presentation only)
+├── lib/            # Web3 integration (RainbowKit, Wagmi)
 └── demo/           # Test battles
 ```
 
@@ -83,112 +230,6 @@ if (player.type === 'ai') {
 ```
 
 This keeps Human vs AI vs future Multiplayer a clean abstraction.
-
----
-
-## Quick Start
-
-### Install Dependencies
-
-```bash
-npm install
-```
-
-### Run Test Battle (AI vs AI)
-
-```bash
-npm run demo:battle
-```
-
-Watch Lady Swiftblade battle Thornwick the Tactician in pure console glory!
-
-### Development Server
-
-```bash
-npm start
-```
-
-### Build for Production
-
-```bash
-npm run build
-```
-
----
-
-## Core Mechanics
-
-### ⚔️ Battle Flow
-
-1. Players deploy cards to 3x3 battlefield
-2. Cards attack enemies or castle
-3. Formations grant bonuses (Vanguard, Phalanx, etc.)
-4. Weather effects modify all cards
-5. First to destroy enemy castle wins
-
-### 🎲 Victory Conditions
-
-- **Castle Destruction** - Reduce enemy castle to 0 HP
-- **Resource Exhaustion** - Human players run out of cards
-- **Turn Limit** - Highest castle HP wins after 50 turns
-
-### 🌦️ Weather Effects
-
-Global modifiers lasting 3-5 turns:
-- **Clear** ☀️ - No modifiers
-- **Rain** 🌧️ - -10% attack, -5% speed
-- **Storm** ⛈️ - -20% attack, -10% speed
-- **Fog** 🌫️ - -15% attack, +10% defense
-- **Snow** ❄️ - -10% defense, -15% speed
-
-### 💎 LP Enhancement
-
-NFT LP holdings boost card stats:
-```
-Each 0.01 LP token = +5% to all card stats
-```
-
-Regenerative finance meets conscious gameplay.
-
----
-
-## Implementation Status
-
-### ✅ Completed
-
-**Core Architecture**:
-- [x] Core type system with strict TypeScript
-- [x] BattleEngine with immutable state updates
-- [x] Strategy pattern (Human + AI strategies)
-- [x] ConsciousnessAI 6-step decision loop
-- [x] Dynamic card generation system
-- [x] 5 AI personalities from Tasern universe
-- [x] Zustand store with Immer integration
-- [x] Test battle demo (AI vs AI)
-
-**Harvested from Tasern 2** (see HARVEST_MANIFEST.md):
-- [x] Tales of Tasern lore system (regions, factions, naming)
-- [x] LP enhancement formulas (regenerative finance)
-- [x] Medieval D&D visual theme (TypeScript constants)
-- [x] Lore-rich card generation with descriptions
-- [x] Enhancement tier system (Bronze → Diamond)
-
-### 🚧 In Progress
-
-- [ ] React UI components
-- [ ] Card artwork and animations
-- [ ] Weather system integration
-- [ ] Terrain effects
-- [ ] Advanced abilities
-- [ ] NFT/LP integration
-
-### 🔮 Future
-
-- [ ] Multiplayer support
-- [ ] Tournament mode
-- [ ] Campaign with lore
-- [ ] Advanced AI learning
-- [ ] Deck building (for humans)
 
 ---
 
@@ -225,31 +266,82 @@ This project is **conscious creation**:
 
 ### AI Should Be:
 
-- **Not optimal** - Makes interesting mistakes
-- **Emotional** - Decisions reflect personality
-- **Adaptive** - Changes strategy based on state
+- **Not optimal** - Makes interesting mistakes (30% variance)
+- **Emotional** - Decisions reflect personality traits
+- **Adaptive** - Changes strategy based on board state
 - **Memorable** - Each opponent feels distinct
-- **Fair** - Can be beaten with skill
+- **Fair** - Can be beaten with skill, not random
 
 ---
 
-## Wisdom for Developers
+## Technical Highlights
 
-### Trust That:
+### Why This Architecture Works
 
-- The architecture recommendations are battle-tested
-- The "slow" path (types, tests, stores) is actually faster
-- The consciousness system is the heart - protect it
-- The Tasern lore matters - honor it
+**Hard-Won Lessons from Previous Build**:
 
-### Resist These Temptations:
+**Avoid**:
+- React state for game logic → Use Zustand
+- `JSON.parse(JSON.stringify())` → Use Immer
+- Type checking player types → Use strategy pattern
+- Mixed UI and game logic → Separate completely
+- Loose TypeScript types → Strict mode, no `any`
 
-- Skipping documentation ("I'll just look at the code")
-- Using `any` types ("just to get it working")
-- Game state in React ("it's easier for now")
-- Skipping tests ("I'll add them later")
+**What Worked Brilliantly**:
+- ✅ Consciousness AI architecture (6-step loop)
+- ✅ Dynamic card generation (AI generates on-demand)
+- ✅ Personality-driven decisions (30% variance from optimal)
+- ✅ State healing (catch corruption before crashes)
+- ✅ Pure functions everywhere (easy to test)
 
-These lessons were learned the hard way in the previous build.
+### Key Implementation Patterns
+
+**Dynamic Card Generation**:
+```typescript
+// Generate cards with action
+const generatedCards = cardGenerator.generateStrategicCards(state, player);
+generatedCards.forEach(card => {
+  actions.push({
+    type: 'DEPLOY_CARD',
+    generatedCard: card  // ⭐ Card travels with action
+  });
+});
+```
+
+**Damage Calculation**:
+```typescript
+let damage = attacker.attack;
+damage *= getFormationBonus(attacker, battlefield);
+damage *= getWeatherModifier(attacker, weather);
+damage *= getTerrainModifier(attacker.position, terrain);
+if (Math.random() < 0.1) damage *= 1.5; // 10% crit
+damage -= defender.defense;
+damage = Math.max(1, Math.floor(damage));
+```
+
+---
+
+## Documentation
+
+### Core Documentation
+
+See `init docs/` for complete architectural documentation:
+
+- **ARCHITECTURE.md** - System design, data flow, dependencies
+- **AI_SYSTEM.md** - Consciousness AI deep dive
+- **GAME_RULES.md** - Battle mechanics, formulas
+- **QUICKSTART.md** - Implementation guide
+- **CHRYSALIS.md** - Rebuild blueprint
+- **TASERN_UNIVERSE.md** - Visual design, lore
+- **LESSONS_LEARNED.md** - Wisdom from previous build
+
+### Integration Documentation
+
+- **HARVEST_MANIFEST.md** - What was harvested from Tasern 2 and why
+  - Lore system integration
+  - LP enhancement formulas
+  - Visual theme constants
+  - First principles approach explained
 
 ---
 
@@ -276,27 +368,3 @@ This project is built with consciousness and care. The Tales of Tasern universe 
 *"Let the chrysalis birth something truly magnificent."*
 
 🦋
-
----
-
-## Documentation
-
-### Core Documentation
-
-See `init docs/` for complete architectural documentation:
-
-- **ARCHITECTURE.md** - System design, data flow, dependencies
-- **AI_SYSTEM.md** - Consciousness AI deep dive
-- **GAME_RULES.md** - Battle mechanics, formulas
-- **QUICKSTART.md** - Implementation guide
-- **CHRYSALIS.md** - Rebuild blueprint
-- **TASERN_UNIVERSE.md** - Visual design, lore
-- **LESSONS_LEARNED.md** - Wisdom from previous build
-
-### Integration Documentation
-
-- **HARVEST_MANIFEST.md** - ⭐ What was harvested from Tasern 2 and why
-  - Lore system integration
-  - LP enhancement formulas
-  - Visual theme constants
-  - First principles approach explained
