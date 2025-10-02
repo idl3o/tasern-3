@@ -11,7 +11,10 @@
       "Bash(taskkill:*)",
       "Bash(npm run build:*)",
       "Bash(npm install:*)",
-      "Bash(timeout 20 npm run demo:battle)"
+      "Bash(timeout 20 npm run demo:battle)",
+      "Bash(git merge:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
