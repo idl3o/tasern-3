@@ -64,8 +64,8 @@ export interface StatusEffect {
 // ============================================================================
 
 export interface Position {
-  row: number; // 0-2 (front to back)
-  col: number; // 0-2 (left to right)
+  row: number; // 0-2 (top to bottom)
+  col: number; // 0-2 (left to right - this is the depth/zone axis!)
 }
 
 export type Battlefield = (BattleCard | null)[][];

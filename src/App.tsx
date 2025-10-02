@@ -88,9 +88,14 @@ export const App: React.FC = () => {
   const handleDeckSelectionComplete = (selectedCards: Card[]) => {
     if (!deckSelectionState) return;
 
-    // Create human player with selected cards as hand
+    // Create human player with selected cards
     const player1 = PlayerFactory.createHuman('You');
-    player1.hand = selectedCards;
+
+    // Put first 5 cards in hand, rest in deck
+    player1.hand = selectedCards.slice(0, 5);
+    player1.deck = selectedCards.slice(5);
+
+    console.log(`📚 Player deck created: ${player1.hand.length} in hand, ${player1.deck.length} in deck`);
 
     const player2 = PlayerFactory.createAI(
       deckSelectionState.opponent.name,

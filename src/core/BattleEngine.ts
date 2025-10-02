@@ -138,6 +138,12 @@ export class BattleEngine {
         return;
       }
 
+      // Check deployment zone restrictions
+      if (!this.canDeployToPosition(position, player.id, draft)) {
+        console.warn('❌ Cannot deploy to this zone');
+        return;
+      }
+
       // Get card - either generated (AI) or from hand (human)
       let card = action.generatedCard || player.hand.find((c) => c.id === action.cardId);
 
@@ -320,6 +326,12 @@ export class BattleEngine {
         return;
       }
 
+      // Check range for castle attacks (melee only)
+      if (!this.canAttackCastle(attacker, targetPlayer.id, draft)) {
+        console.warn('❌ Card is out of range to attack castle');
+        return;
+      }
+
       // Calculate damage (no defender, so simpler)
       let damage = attacker.attack;
       damage = Math.floor(
@@ -380,6 +392,12 @@ export class BattleEngine {
 
       if (!this.isValidPosition(toPosition) || draft.battlefield[toPosition.row][toPosition.col]) {
         console.warn('❌ Invalid or occupied position');
+        return;
+      }
+
+      // Check movement range restrictions
+      if (!this.canMoveToPosition(card, toPosition)) {
+        console.warn('❌ Target position out of movement range');
         return;
       }
 
@@ -525,6 +543,23 @@ export class BattleEngine {
       // Restore mana for new turn
       nextPlayer.mana = Math.min(nextPlayer.mana + 3, nextPlayer.maxMana);
 
+      // Draw cards for human players (if deck has cards)
+      if (nextPlayer.type === 'human' && nextPlayer.deck.length > 0) {
+        const cardsToDraw = Math.min(1, nextPlayer.deck.length); // Draw 1 card per turn
+        const drawnCards = nextPlayer.deck.splice(0, cardsToDraw);
+        nextPlayer.hand.push(...drawnCards);
+
+        draft.battleLog.push({
+          turn: draft.currentTurn,
+          playerId: nextPlayer.id,
+          action: 'DRAW_CARD',
+          result: `Drew ${cardsToDraw} card(s)`,
+          timestamp: Date.now(),
+        });
+
+        console.log(`📇 ${nextPlayer.name} drew ${cardsToDraw} card(s) - Hand: ${nextPlayer.hand.length}, Deck: ${nextPlayer.deck.length}`);
+      }
+
       // Call strategy onTurnStart
       nextPlayer.strategy.onTurnStart(nextPlayer, draft);
 
@@ -667,15 +702,15 @@ export class BattleEngine {
 
   /**
    * Get zone modifiers based on card position
-   * Front Line (row 0): +20% attack, -10% defense for melee; -20% attack for ranged
-   * Mid Field (row 1): No modifiers
-   * Back Line (row 2): +15% attack for ranged, +10% defense; -20% attack for melee
+   * Left Flank (col 0): +20% attack, -10% defense for melee; -20% attack for ranged
+   * Center (col 1): No modifiers
+   * Right Flank (col 2): +15% attack for ranged, +10% defense; -20% attack for melee
    */
   private static getZoneModifiers(card: BattleCard): { attackMod: number; defenseMod: number } {
-    const row = card.position.row;
+    const col = card.position.col;
 
-    // Front Line (row 0)
-    if (row === 0) {
+    // Left Flank (col 0)
+    if (col === 0) {
       if (card.combatType === 'melee') {
         return { attackMod: 1.2, defenseMod: 0.9 };
       } else if (card.combatType === 'ranged') {
@@ -685,8 +720,8 @@ export class BattleEngine {
       }
     }
 
-    // Back Line (row 2)
-    if (row === 2) {
+    // Right Flank (col 2)
+    if (col === 2) {
       if (card.combatType === 'melee') {
         return { attackMod: 0.8, defenseMod: 1.1 };
       } else if (card.combatType === 'ranged') {
@@ -696,7 +731,7 @@ export class BattleEngine {
       }
     }
 
-    // Mid Field (row 1) - neutral
+    // Center (col 1) - neutral
     return { attackMod: 1.0, defenseMod: 1.0 };
   }
 
@@ -731,23 +766,136 @@ export class BattleEngine {
 
   /**
    * Check if attacker can attack target based on combat type and range
-   * Melee: Can only attack adjacent rows (row ±1)
-   * Ranged: Can attack any row
-   * Hybrid: Can attack any row
+   * Melee: Can only attack adjacent columns (col ±1)
+   * Ranged: Can attack any column
+   * Hybrid: Can attack any column
    */
   private static canAttackTarget(attacker: BattleCard, target: BattleCard): boolean {
-    const rowDiff = Math.abs(attacker.position.row - target.position.row);
+    const colDiff = Math.abs(attacker.position.col - target.position.col);
 
     // Ranged and hybrid can attack any target
     if (attacker.combatType === 'ranged' || attacker.combatType === 'hybrid') {
       return true;
     }
 
-    // Melee can only attack adjacent rows (within 1 row)
+    // Melee can only attack adjacent columns (within 1 column)
     if (attacker.combatType === 'melee') {
-      return rowDiff <= 1;
+      return colDiff <= 1;
     }
 
     return true; // Default: allow
+  }
+
+  /**
+   * Check if attacker can attack enemy castle
+   * Melee: Must be in middle column (col 1) - contested center zone
+   * Ranged/Hybrid: Can attack from any column
+   */
+  private static canAttackCastle(
+    attacker: BattleCard,
+    targetPlayerId: string,
+    state: BattleState
+  ): boolean {
+    // Ranged and hybrid can attack castle from anywhere
+    if (attacker.combatType === 'ranged' || attacker.combatType === 'hybrid') {
+      return true;
+    }
+
+    // Melee cards must be in the middle column (col 1)
+    // This is the contested center where melee units can reach both castles
+    return attacker.position.col === 1;
+  }
+
+  /**
+   * Check if a player can deploy to a specific position
+   * Deployment zones based on player order (column-based)
+   * Players face each other left-to-right across the battlefield
+   */
+  private static canDeployToPosition(
+    position: Position,
+    playerId: string,
+    state: BattleState
+  ): boolean {
+    const playerIds = Object.keys(state.players);
+    const playerIndex = playerIds.indexOf(playerId);
+
+    // Player 1 (left side) can deploy to columns 0-1 (left and center)
+    // Player 2 (right side) can deploy to columns 1-2 (center and right)
+    if (playerIndex === 0) {
+      return position.col <= 1; // Columns 0-1
+    } else {
+      return position.col >= 1; // Columns 1-2
+    }
+  }
+
+  /**
+   * Check if a card can move to a target position based on movement range
+   * Movement range determined by combat type:
+   * - Melee: Can move to adjacent cells (1 cell in any direction)
+   * - Ranged: Can move 1-2 cells
+   * - Hybrid: Can move up to 2 cells
+   */
+  private static canMoveToPosition(card: BattleCard, toPosition: Position): boolean {
+    const fromPos = card.position;
+    const rowDiff = Math.abs(toPosition.row - fromPos.row);
+    const colDiff = Math.abs(toPosition.col - fromPos.col);
+    const totalDistance = rowDiff + colDiff; // Manhattan distance
+
+    // Melee cards can only move to adjacent cells (distance of 1)
+    if (card.combatType === 'melee') {
+      return totalDistance === 1;
+    }
+
+    // Ranged cards can move up to 2 cells
+    if (card.combatType === 'ranged') {
+      return totalDistance <= 2;
+    }
+
+    // Hybrid cards can move up to 2 cells
+    if (card.combatType === 'hybrid') {
+      return totalDistance <= 2;
+    }
+
+    return false;
+  }
+
+  /**
+   * Get valid deployment positions for a player
+   */
+  static getValidDeploymentPositions(playerId: string, state: BattleState): Position[] {
+    const positions: Position[] = [];
+
+    for (let row = 0; row < 3; row++) {
+      for (let col = 0; col < 3; col++) {
+        const pos: Position = { row, col };
+
+        // Check if position is empty and within deployment zone
+        if (!state.battlefield[row][col] && this.canDeployToPosition(pos, playerId, state)) {
+          positions.push(pos);
+        }
+      }
+    }
+
+    return positions;
+  }
+
+  /**
+   * Get valid movement positions for a card
+   */
+  static getValidMovementPositions(card: BattleCard, state: BattleState): Position[] {
+    const positions: Position[] = [];
+
+    for (let row = 0; row < 3; row++) {
+      for (let col = 0; col < 3; col++) {
+        const pos: Position = { row, col };
+
+        // Check if position is empty and within movement range
+        if (!state.battlefield[row][col] && this.canMoveToPosition(card, pos)) {
+          positions.push(pos);
+        }
+      }
+    }
+
+    return positions;
   }
 }

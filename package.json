@@ -13,18 +13,18 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "immer": "^10.0.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "zustand": "^4.4.7",
-    "immer": "^10.0.3"
+    "zustand": "^4.4.7"
   },
   "devDependencies": {
     "@types/node": "^20.10.5",
     "@types/react": "^18.2.45",
     "@types/react-dom": "^18.2.18",
-    "typescript": "^4.9.5",
+    "react-scripts": "5.0.1",
     "ts-node": "^10.9.2",
-    "react-scripts": "5.0.1"
+    "typescript": "^4.9.5"
   },
   "eslintConfig": {
     "extends": [

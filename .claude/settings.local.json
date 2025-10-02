@@ -9,7 +9,9 @@
       "Read(//c/Users/Sam/Pictures/Screenshots/**)",
       "Bash(del srcindex.ts)",
       "Bash(taskkill:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(npm install:*)",
+      "Bash(timeout 20 npm run demo:battle)"
     ],
     "deny": [],
     "ask": []

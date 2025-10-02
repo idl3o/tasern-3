@@ -28,6 +28,7 @@ import type {
   BattleCard,
 } from '../types/core';
 import { CardGenerator } from './CardGenerator';
+import { BattleEngine } from '../core/BattleEngine';
 
 export class ConsciousnessAI {
   private cardGenerator: CardGenerator;
@@ -207,19 +208,29 @@ export class ConsciousnessAI {
       .filter((c) => c !== null && c.ownerId === player.id);
 
     // Generate deployment actions (with dynamically generated cards!)
+    // Optimization: Generate fewer cards if board is already crowded
+    const emptyPositions = state.battlefield.flat().filter(c => c === null).length;
+    const cardOptions = emptyPositions <= 3 ? 1 : 2; // 1-2 cards instead of 3
+
     const generatedCards = this.cardGenerator.generateStrategicCards(
       state,
       player,
       mode,
-      3 // Generate 3 card options
+      cardOptions
     );
 
-    const emptyPositions = this.getEmptyPositions(state.battlefield);
+    // Get valid deployment positions (respects zone restrictions)
+    const validPositions = BattleEngine.getValidDeploymentPositions(player.id, state);
+
+    // Optimization: Limit to best 3 positions if too many options
+    const topPositions = validPositions.length > 3
+      ? this.selectBestPositions(validPositions, player, state, mode).slice(0, 3)
+      : validPositions;
 
     generatedCards.forEach((card) => {
       // Only deploy if we have mana
       if (player.mana >= card.manaCost) {
-        emptyPositions.forEach((pos) => {
+        topPositions.forEach((pos) => {
           const deployAction: DeployCardAction = {
             type: 'DEPLOY_CARD',
             playerId: player.id,
@@ -265,18 +276,47 @@ export class ConsciousnessAI {
     });
 
     // Generate move actions
+    // Always consider movement now that melee needs center for castle attacks
     myCards.forEach((card) => {
       if (card && !card.hasMoved) {
-        emptyPositions.forEach((pos) => {
-          const moveAction: MoveCardAction = {
-            type: 'MOVE_CARD',
-            playerId: player.id,
-            cardId: card.id,
-            fromPosition: card.position,
-            toPosition: pos,
-          };
-          actions.push(moveAction);
-        });
+        // Get valid movement positions for this specific card (respects movement range)
+        const validMoves = BattleEngine.getValidMovementPositions(card, state);
+
+        // Optimization: In aggressive mode, prioritize moves toward center (col 1)
+        if (mode === 'AGGRESSIVE') {
+          // Only add moves toward center column for melee cards
+          const centerMoves = validMoves.filter(pos => {
+            if (card.combatType === 'melee') {
+              return pos.col === 1; // Move melee to center for castle attacks
+            }
+            return true; // Keep all moves for ranged/hybrid
+          }).slice(0, 2);
+
+          centerMoves.forEach((pos) => {
+            const moveAction: MoveCardAction = {
+              type: 'MOVE_CARD',
+              playerId: player.id,
+              cardId: card.id,
+              fromPosition: card.position,
+              toPosition: pos,
+            };
+            actions.push(moveAction);
+          });
+        } else {
+          // Other modes: limit to 2-3 best moves
+          const topMoves = validMoves.slice(0, 3);
+
+          topMoves.forEach((pos) => {
+            const moveAction: MoveCardAction = {
+              type: 'MOVE_CARD',
+              playerId: player.id,
+              cardId: card.id,
+              fromPosition: card.position,
+              toPosition: pos,
+            };
+            actions.push(moveAction);
+          });
+        }
       }
     });
 
@@ -484,6 +524,55 @@ export class ConsciousnessAI {
   // ==========================================================================
   // HELPER FUNCTIONS
   // ==========================================================================
+
+  /**
+   * Select best deployment positions based on strategy
+   * Reduces action space by prioritizing strategic positions
+   */
+  private selectBestPositions(
+    positions: Position[],
+    player: Player,
+    state: BattleState,
+    mode: AIMode
+  ): Position[] {
+    // Score each position based on mode
+    const scoredPositions = positions.map(pos => {
+      let score = 0;
+
+      // Aggressive mode prefers front positions (low column numbers for player 1)
+      if (mode === 'AGGRESSIVE') {
+        const playerIds = Object.keys(state.players);
+        const playerIndex = playerIds.indexOf(player.id);
+        if (playerIndex === 0) {
+          score += (2 - pos.col) * 10; // Prefer left columns
+        } else {
+          score += pos.col * 10; // Prefer right columns
+        }
+      }
+
+      // Defensive mode prefers back positions
+      if (mode === 'DEFENSIVE') {
+        const playerIds = Object.keys(state.players);
+        const playerIndex = playerIds.indexOf(player.id);
+        if (playerIndex === 0) {
+          score += pos.col * 10; // Prefer center/right
+        } else {
+          score += (2 - pos.col) * 10; // Prefer center/left
+        }
+      }
+
+      // Center column is valuable in adaptive mode
+      if (mode === 'ADAPTIVE' && pos.col === 1) {
+        score += 15;
+      }
+
+      return { pos, score };
+    });
+
+    // Sort by score and return positions
+    scoredPositions.sort((a, b) => b.score - a.score);
+    return scoredPositions.map(sp => sp.pos);
+  }
 
   private getEmptyPositions(battlefield: any[][]): Position[] {
     const positions: Position[] = [];
