@@ -9,6 +9,7 @@ import { supabase } from '../../lib/supabase';
 import { BattleEngine } from '../../src/core/BattleEngine';
 import { PlayerFactory } from '../../src/core/PlayerFactory';
 import type { BattleState } from '../../src/types/core';
+import { scanWalletForLPBonus, KNOWN_LP_CONTRACTS } from '../../src/utils/lpTokenQuery';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -34,18 +35,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const [user1, user2] = users;
 
+    // Query LP balances from blockchain (server-side to prevent manipulation)
+    const [player1LPData, player2LPData] = await Promise.all([
+      scanWalletForLPBonus(user1.wallet_address, KNOWN_LP_CONTRACTS),
+      scanWalletForLPBonus(user2.wallet_address, KNOWN_LP_CONTRACTS),
+    ]);
+
+    console.log(`Player 1 LP bonus: ${player1LPData.totalBonus}%`, player1LPData.holdings);
+    console.log(`Player 2 LP bonus: ${player2LPData.totalBonus}%`, player2LPData.holdings);
+
     // Create players with decks
     const player1 = PlayerFactory.createHuman(user1.username);
     player1.id = user1.id;
     player1.hand = player1Deck.slice(0, 5);
     player1.deck = player1Deck.slice(5);
-    player1.lpBonus = user1.lp_balance * 0.05; // 0.01 LP = +5%
+    player1.lpBonus = player1LPData.totalBonus; // Bonus as percentage (e.g., 5 = 5%)
 
     const player2 = PlayerFactory.createHuman(user2.username);
     player2.id = user2.id;
     player2.hand = player2Deck.slice(0, 5);
     player2.deck = player2Deck.slice(5);
-    player2.lpBonus = user2.lp_balance * 0.05;
+    player2.lpBonus = player2LPData.totalBonus;
 
     // Initialize battle
     const battleEngine = new BattleEngine();
