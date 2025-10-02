@@ -373,17 +373,48 @@ export class ConsciousnessAI {
     let score = 50; // Base score
 
     const card = action.generatedCard!;
+    const playerIds = Object.keys(state.players);
+    const playerIndex = playerIds.indexOf(player.id);
+    const pos = action.position;
 
     // Value based on card stats
     score += card.attack * 2;
     score += card.hp * 1.5;
 
-    // Position scoring
-    if (mode === 'AGGRESSIVE' && action.position.row === 0) {
-      score += 20; // Front row in aggressive mode
-    }
-    if (mode === 'DEFENSIVE' && action.position.row === 2) {
-      score += 20; // Back row in defensive mode
+    // Column-based position scoring (NEW RULES)
+    // Player 1 (index 0): Controls left (col 0), shares center (col 1)
+    // Player 2 (index 1): Controls right (col 2), shares center (col 1)
+
+    if (playerIndex === 0) {
+      // Player 1 evaluation
+      if (mode === 'AGGRESSIVE') {
+        // Prefer left flank (col 0) for melee, center (col 1) otherwise
+        if (card.combatType === 'melee' && pos.col === 0) {
+          score += 25; // Left flank gives +20% attack to melee
+        } else if (pos.col === 1) {
+          score += 15; // Center for castle attacks
+        }
+      } else if (mode === 'DEFENSIVE') {
+        // Prefer center (col 1) for defense
+        if (pos.col === 1) {
+          score += 20;
+        }
+      }
+    } else {
+      // Player 2 evaluation
+      if (mode === 'AGGRESSIVE') {
+        // Prefer right flank (col 2) for ranged, center (col 1) for melee
+        if (card.combatType === 'ranged' && pos.col === 2) {
+          score += 25; // Right flank gives +15% attack to ranged
+        } else if (card.combatType === 'melee' && pos.col === 1) {
+          score += 20; // Center for melee castle attacks
+        }
+      } else if (mode === 'DEFENSIVE') {
+        // Prefer right flank for defense
+        if (pos.col === 2) {
+          score += 20; // +10% defense on right flank
+        }
+      }
     }
 
     // Mana efficiency
@@ -465,14 +496,42 @@ export class ConsciousnessAI {
   ): number {
     let score = 20; // Lower base - moves are situational
 
-    // Moving to front in aggressive mode
-    if (mode === 'AGGRESSIVE' && action.toPosition.row === 0) {
-      score += 15;
-    }
+    const card = state.battlefield
+      .flat()
+      .find((c) => c?.id === action.cardId);
 
-    // Moving to back in defensive mode
-    if (mode === 'DEFENSIVE' && action.toPosition.row === 2) {
-      score += 15;
+    if (!card) return 0;
+
+    const playerIds = Object.keys(state.players);
+    const playerIndex = playerIds.indexOf(player.id);
+    const toPos = action.toPosition;
+
+    // Column-based movement scoring (NEW RULES)
+    if (mode === 'AGGRESSIVE') {
+      // Melee cards should move toward center (col 1) for castle attacks
+      if (card.combatType === 'melee' && toPos.col === 1) {
+        score += 25; // High priority - center enables castle attacks
+      }
+
+      // Player 1: Moving left (toward col 0) for melee attack bonus
+      if (playerIndex === 0 && card.combatType === 'melee' && toPos.col === 0) {
+        score += 20; // Left flank melee bonus
+      }
+
+      // Player 2: Ranged moving right (toward col 2) for attack bonus
+      if (playerIndex === 1 && card.combatType === 'ranged' && toPos.col === 2) {
+        score += 20; // Right flank ranged bonus
+      }
+    } else if (mode === 'DEFENSIVE') {
+      // Player 1: Stay in defensive positions (col 0 or 1)
+      if (playerIndex === 0 && toPos.col <= 1) {
+        score += 15;
+      }
+
+      // Player 2: Stay in defensive positions (col 1 or 2)
+      if (playerIndex === 1 && toPos.col >= 1) {
+        score += 15;
+      }
     }
 
     return score;
@@ -535,35 +594,54 @@ export class ConsciousnessAI {
     state: BattleState,
     mode: AIMode
   ): Position[] {
-    // Score each position based on mode
+    const playerIds = Object.keys(state.players);
+    const playerIndex = playerIds.indexOf(player.id);
+
+    // Score each position based on mode and column-based zones
     const scoredPositions = positions.map(pos => {
       let score = 0;
 
-      // Aggressive mode prefers front positions (low column numbers for player 1)
+      // Column-based scoring (NEW RULES)
       if (mode === 'AGGRESSIVE') {
-        const playerIds = Object.keys(state.players);
-        const playerIndex = playerIds.indexOf(player.id);
         if (playerIndex === 0) {
-          score += (2 - pos.col) * 10; // Prefer left columns
+          // Player 1: Prefer left flank (col 0) and center (col 1)
+          if (pos.col === 0) {
+            score += 20; // Left flank for melee bonus
+          } else if (pos.col === 1) {
+            score += 25; // Center for castle control
+          }
         } else {
-          score += pos.col * 10; // Prefer right columns
+          // Player 2: Prefer center (col 1) and right flank (col 2)
+          if (pos.col === 2) {
+            score += 20; // Right flank for ranged bonus
+          } else if (pos.col === 1) {
+            score += 25; // Center for castle control
+          }
         }
       }
 
-      // Defensive mode prefers back positions
+      // Defensive mode prefers home flanks
       if (mode === 'DEFENSIVE') {
-        const playerIds = Object.keys(state.players);
-        const playerIndex = playerIds.indexOf(player.id);
         if (playerIndex === 0) {
-          score += pos.col * 10; // Prefer center/right
+          // Player 1: Prefer left flank (col 0) - home territory
+          if (pos.col === 0) {
+            score += 25;
+          } else if (pos.col === 1) {
+            score += 15; // Center as buffer
+          }
         } else {
-          score += (2 - pos.col) * 10; // Prefer center/left
+          // Player 2: Prefer right flank (col 2) - home territory
+          if (pos.col === 2) {
+            score += 25;
+          } else if (pos.col === 1) {
+            score += 15; // Center as buffer
+          }
         }
       }
 
-      // Center column is valuable in adaptive mode
+      // Center column is always valuable in adaptive mode
       if (mode === 'ADAPTIVE' && pos.col === 1) {
-        score += 15;
+        score += 20; // Contested zone
       }
 
       return { pos, score };

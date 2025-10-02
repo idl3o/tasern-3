@@ -36,7 +36,7 @@ export const DeckSelection: React.FC<DeckSelectionProps> = ({
       // Deselect
       newSelection.delete(card.id);
     } else if (newSelection.size < 5) {
-      // Select (max 5)
+      // Select (max 5 for starting hand)
       newSelection.add(card.id);
     }
 
@@ -44,8 +44,10 @@ export const DeckSelection: React.FC<DeckSelectionProps> = ({
   };
 
   const handleConfirm = () => {
-    const selected = availableCards.filter(card => selectedCardIds.has(card.id));
-    onConfirmSelection(selected);
+    const selectedForHand = availableCards.filter(card => selectedCardIds.has(card.id));
+    const unselectedForDeck = availableCards.filter(card => !selectedCardIds.has(card.id));
+    // Return hand cards first, then deck cards
+    onConfirmSelection([...selectedForHand, ...unselectedForDeck]);
   };
 
   const selectedCount = selectedCardIds.size;
@@ -56,12 +58,12 @@ export const DeckSelection: React.FC<DeckSelectionProps> = ({
       <div style={styles.container}>
         <h1 style={styles.title}>⚔️ {playerName}: Choose Your Battle Deck ⚔️</h1>
         <p style={styles.subtitle}>
-          Select 5 cards from your collection to bring into battle
+          Select 5 cards for your starting hand (remaining 10 go to deck)
         </p>
 
         <div style={styles.selectionCounter}>
           <span style={styles.counterText}>
-            Selected: <span style={styles.counterNumber}>{selectedCount}</span> / 5
+            Starting Hand: <span style={styles.counterNumber}>{selectedCount}</span> / 5
           </span>
           {canConfirm && (
             <span style={styles.readyIndicator}>✓ Ready to battle!</span>

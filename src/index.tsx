@@ -7,6 +7,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { App } from './App';
+import { Web3Provider } from './providers/Web3Provider';
 
 console.log('🦋 Tasern Siegefront initializing...');
 
@@ -24,7 +25,9 @@ console.log('✅ React root created, rendering App...');
 
 root.render(
   <React.StrictMode>
-    <App />
+    <Web3Provider>
+      <App />
+    </Web3Provider>
   </React.StrictMode>
 );
 

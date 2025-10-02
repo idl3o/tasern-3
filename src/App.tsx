@@ -7,6 +7,8 @@
 import React, { useEffect, useState } from 'react';
 import { BattleView } from './components/BattleView';
 import { DeckSelection } from './components/DeckSelection';
+import { WalletConnect } from './components/WalletConnect';
+import { NFTGallery } from './components/NFTGallery';
 import { useBattleStore } from './state/battleStore';
 import { PlayerFactory } from './core/PlayerFactory';
 import { HumanStrategy } from './strategies/HumanStrategy';
@@ -34,6 +36,8 @@ export const App: React.FC = () => {
     isPlayer2: boolean;
     player1Cards?: Card[];
   } | null>(null);
+
+  const [showNFTGallery, setShowNFTGallery] = useState(false);
 
   const startBattle = (opponentName: string, humanPlayer: boolean = true, humanVsHuman: boolean = false) => {
     let opponent;
@@ -190,6 +194,28 @@ export const App: React.FC = () => {
     return undefined;
   }, [battleState, processAITurn]);
 
+  // Show NFT Gallery modal
+  if (showNFTGallery) {
+    return (
+      <>
+        {/* Show menu in background */}
+        <div style={styles.menuContainer}>
+          <div style={styles.menuCard}>
+            <div style={styles.header}>
+              <div>
+                <h1 style={styles.title}>⚔️ Tasern Siegefront ⚔️</h1>
+                <p style={styles.subtitle}>Tales of Tasern Battle Arena</p>
+              </div>
+              <WalletConnect />
+            </div>
+          </div>
+        </div>
+        {/* NFT Gallery Overlay */}
+        <NFTGallery onClose={() => setShowNFTGallery(false)} />
+      </>
+    );
+  }
+
   // Show deck selection if human player needs to choose cards
   if (deckSelectionState) {
     return (
@@ -205,8 +231,13 @@ export const App: React.FC = () => {
     return (
       <div style={styles.menuContainer}>
         <div style={styles.menuCard}>
-          <h1 style={styles.title}>⚔️ Tasern Siegefront ⚔️</h1>
-          <p style={styles.subtitle}>Tales of Tasern Battle Arena</p>
+          <div style={styles.header}>
+            <div>
+              <h1 style={styles.title}>⚔️ Tasern Siegefront ⚔️</h1>
+              <p style={styles.subtitle}>Tales of Tasern Battle Arena</p>
+            </div>
+            <WalletConnect />
+          </div>
 
           <div style={styles.personalityGrid}>
             <h2 style={styles.sectionTitle}>Play vs AI</h2>
@@ -239,6 +270,17 @@ export const App: React.FC = () => {
               <div style={styles.opponentName}>Archmagus Nethys</div>
               <div style={styles.opponentTitle}>"Master of the Arcane"</div>
               <div style={styles.opponentTraits}>Creative • Patient • Mystical</div>
+            </button>
+          </div>
+
+          <div style={styles.divider}></div>
+
+          <div style={styles.personalityGrid}>
+            <h2 style={styles.sectionTitle}>NFT Cards</h2>
+
+            <button style={styles.opponentButton} onClick={() => setShowNFTGallery(true)}>
+              <div style={styles.opponentName}>🎴 View NFT Gallery</div>
+              <div style={styles.opponentTraits}>Turn your Tasern NFTs into playable cards</div>
             </button>
           </div>
 
@@ -298,6 +340,13 @@ const styles: Record<string, React.CSSProperties> = {
     boxShadow: TASERN_SHADOWS.glowGold,
     backdropFilter: 'blur(10px)',
   },
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: '1rem',
+    gap: '2rem',
+  },
   title: {
     fontFamily: TASERN_TYPOGRAPHY.heading,
     fontSize: TASERN_TYPOGRAPHY.titleLarge,
@@ -313,7 +362,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: TASERN_TYPOGRAPHY.headingMedium,
     color: TASERN_COLORS.parchment,
     textAlign: 'center',
-    marginBottom: '2rem',
+    marginBottom: '0',
     opacity: 0.8,
   },
   personalityGrid: {

@@ -11,7 +11,14 @@
       "Bash(taskkill:*)",
       "Bash(npm run build:*)",
       "Bash(npm install:*)",
-      "Bash(timeout 20 npm run demo:battle)"
+      "Bash(timeout 20 npm run demo:battle)",
+      "Bash(npm uninstall:*)",
+      "Bash(del \"src\\lib\\wagmi.ts\")",
+      "Bash(del \"src\\lib\\connectors.ts\")",
+      "Bash(timeout:*)",
+      "Bash(git add:*)",
+      "Bash(del nul)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nAdd Web3 wallet integration and NFT gallery features\n\n- Integrate RainbowKit + Wagmi for wallet connection (Polygon)\n- Add NFT Gallery with provenance verification\n- Add LP token bonus scanning for stat boosts\n- Switch to public Polygon RPC endpoints\n- Fix deck selection to properly populate hand + deck (15 cards total)\n- Fix NFTGallery isConnected variable bug\n- Add webpack config overrides for Web3 dependencies\n- Configure WalletConnect project ID\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
     ],
     "deny": [],
     "ask": []
