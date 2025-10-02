@@ -4,27 +4,46 @@
   "description": "Consciousness-driven tactical NFT card battle game set in the Tales of Tasern universe",
   "private": true,
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
+    "start": "react-app-rewired start",
+    "build": "react-app-rewired build",
+    "test": "react-app-rewired test",
     "eject": "react-scripts eject",
     "demo:battle": "ts-node --project tsconfig.node.json src/demo/testBattle.ts",
     "lint": "eslint src --ext .ts,.tsx",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@coinbase/wallet-sdk": "^4.3.7",
+    "@ethersproject/providers": "^5.8.0",
+    "@rainbow-me/rainbowkit": "^2.2.8",
+    "@tanstack/react-query": "^5.90.2",
+    "ethers": "^5.8.0",
     "immer": "^10.0.3",
+    "openapi-fetch": "^0.13.8",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "viem": "^2.37.11",
+    "wagmi": "^2.17.5",
     "zustand": "^4.4.7"
   },
   "devDependencies": {
     "@types/node": "^20.10.5",
     "@types/react": "^18.2.45",
     "@types/react-dom": "^18.2.18",
+    "assert": "^2.1.0",
+    "browserify-zlib": "^0.2.0",
+    "buffer": "^6.0.3",
+    "crypto-browserify": "^3.12.1",
+    "https-browserify": "^1.0.0",
+    "os-browserify": "^0.3.0",
+    "process": "^0.11.10",
+    "react-app-rewired": "^2.2.1",
     "react-scripts": "5.0.1",
+    "stream-browserify": "^3.0.0",
+    "stream-http": "^3.2.0",
     "ts-node": "^10.9.2",
-    "typescript": "^4.9.5"
+    "typescript": "^5.9.3",
+    "url": "^0.11.4"
   },
   "eslintConfig": {
     "extends": [

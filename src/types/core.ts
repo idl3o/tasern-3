@@ -24,6 +24,10 @@ export interface Card {
   combatType: CombatType;
   abilities: CardAbility[];
   imageUrl?: string;
+  description?: string;
+  isNFT?: boolean;
+  nftContract?: string;
+  nftTokenId?: string;
 }
 
 export interface BattleCard extends Card {

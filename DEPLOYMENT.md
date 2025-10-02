@@ -17,24 +17,42 @@
 3. Copy your project URL and anon key from Settings → API
 4. Enable Realtime for the `games` table (already in schema)
 
-### 2. Environment Variables
+### 2. Alchemy Setup
+
+1. Go to [alchemy.com](https://www.alchemy.com) and create account
+2. Create new app on Polygon Mainnet
+3. Copy API key from dashboard
+
+### 3. WalletConnect Setup (Optional)
+
+1. Go to [cloud.walletconnect.com](https://cloud.walletconnect.com)
+2. Create new project
+3. Copy Project ID for WalletConnect support
+
+### 4. Environment Variables
 
 Create `.env.local`:
 
 ```env
+# Supabase
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-ALCHEMY_API_KEY=your-alchemy-key
+
+# Alchemy (Polygon RPC + LP queries)
+REACT_APP_ALCHEMY_API_KEY=your-alchemy-key
+
+# WalletConnect (optional, for mobile wallets)
+REACT_APP_WALLETCONNECT_PROJECT_ID=your-walletconnect-id
 ```
 
-### 3. Install Dependencies
+### 5. Install Dependencies
 
 ```bash
 npm install @supabase/supabase-js @vercel/node
-npm install ethers  # for blockchain queries
+npm install wagmi viem @rainbow-me/rainbowkit @tanstack/react-query --legacy-peer-deps
 ```
 
-### 4. Vercel Deployment
+### 6. Vercel Deployment
 
 ```bash
 # Install Vercel CLI
@@ -63,6 +81,62 @@ All routes are in `/api`:
 ### Game
 - `POST /api/game/create` - Initialize game
 - `POST /api/game/action` - Execute action (server-authoritative)
+
+---
+
+## Web3 Integration
+
+### 1. Wrap App with Web3Provider
+
+```tsx
+// src/index.tsx
+import { Web3Provider } from './providers/Web3Provider';
+
+root.render(
+  <Web3Provider>
+    <App />
+  </Web3Provider>
+);
+```
+
+### 2. Add Wallet Connection
+
+```tsx
+import { WalletConnect } from './components/WalletConnect';
+
+// In your menu/header
+<WalletConnect />
+```
+
+### 3. Query Wallet Address
+
+```tsx
+import { useAccount } from 'wagmi';
+
+function MyComponent() {
+  const { address, isConnected } = useAccount();
+
+  if (!isConnected) {
+    return <div>Please connect wallet</div>;
+  }
+
+  // Use address for authentication
+}
+```
+
+### 4. LP Bonus Integration
+
+LP bonuses are queried **server-side** in `api/game/create.ts` to prevent client manipulation:
+
+```tsx
+// Server queries LP holdings from blockchain
+const lpData = await scanWalletForLPBonus(walletAddress, KNOWN_LP_CONTRACTS);
+
+// Apply bonus to player (percentage)
+player.lpBonus = lpData.totalBonus; // e.g., 5 = 5% boost to all stats
+```
+
+**Formula**: Each 0.01 LP token = +5% to all card stats
 
 ---
 
@@ -134,6 +208,7 @@ if (result?.matched) {
 ✅ **Row Level Security (RLS)** - Users can only access their games
 ✅ **Wallet signature verification** - Prevents impersonation
 ✅ **Turn validation** - Can't act on opponent's turn
+✅ **Server-side LP queries** - Prevents stat bonus manipulation
 
 ---
 
@@ -156,12 +231,32 @@ if (result?.matched) {
 
 ---
 
+## Tech Stack Summary
+
+**Web3**
+- wagmi v2.17 - React hooks for Ethereum
+- viem v2.37 - TypeScript Ethereum library
+- RainbowKit v2.2 - Wallet connection UI
+- Polygon mainnet via Alchemy RPC
+
+**Backend**
+- Vercel Serverless Functions (Node.js)
+- Supabase Postgres + Realtime
+- Server-side LP token queries (viem)
+
+**Frontend**
+- React 18 + TypeScript 5
+- Zustand for state management
+- Immer for immutability
+
+---
+
 ## Next Steps
 
-1. **Deploy to Vercel**: `vercel --prod`
-2. **Test multiplayer**: Two browsers, join queue
-3. **Add wallet integration**: MetaMask connect
-4. **Query LP balances**: Implement Alchemy calls
+1. **Configure LP Contracts**: Add known LP token addresses to `KNOWN_LP_CONTRACTS` in `src/utils/lpTokenQuery.ts`
+2. **Deploy to Vercel**: `vercel --prod`
+3. **Test wallet connection**: Connect MetaMask and verify Polygon network
+4. **Test LP bonuses**: Hold LP tokens and verify stat boosts in game
 5. **Add leaderboard**: New Supabase table + API route
 
 ---
