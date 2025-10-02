@@ -9,6 +9,7 @@ import { BattleView } from './components/BattleView';
 import { DeckSelection } from './components/DeckSelection';
 import { WalletConnect } from './components/WalletConnect';
 import { NFTGallery } from './components/NFTGallery';
+import { Tutorial } from './components/Tutorial';
 import { useBattleStore } from './state/battleStore';
 import { PlayerFactory } from './core/PlayerFactory';
 import { HumanStrategy } from './strategies/HumanStrategy';
@@ -38,6 +39,7 @@ export const App: React.FC = () => {
   } | null>(null);
 
   const [showNFTGallery, setShowNFTGallery] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
 
   const startBattle = (opponentName: string, humanPlayer: boolean = true, humanVsHuman: boolean = false) => {
     let opponent;
@@ -194,6 +196,11 @@ export const App: React.FC = () => {
     return undefined;
   }, [battleState, processAITurn]);
 
+  // Show Tutorial modal
+  if (showTutorial) {
+    return <Tutorial onClose={() => setShowTutorial(false)} />;
+  }
+
   // Show NFT Gallery modal
   if (showNFTGallery) {
     return (
@@ -237,6 +244,12 @@ export const App: React.FC = () => {
               <p style={styles.subtitle}>Tales of Tasern Battle Arena</p>
             </div>
             <WalletConnect />
+          </div>
+
+          <div style={styles.tutorialSection}>
+            <button style={styles.tutorialButton} onClick={() => setShowTutorial(true)}>
+              📖 How to Play
+            </button>
           </div>
 
           <div style={styles.personalityGrid}>
@@ -420,5 +433,25 @@ const styles: Record<string, React.CSSProperties> = {
     background: `linear-gradient(90deg, transparent 0%, ${TASERN_COLORS.bronze} 50%, transparent 100%)`,
     margin: '2rem 0',
     opacity: 0.5,
+  },
+  tutorialSection: {
+    display: 'flex',
+    justifyContent: 'center',
+    marginTop: '1.5rem',
+    marginBottom: '0.5rem',
+  },
+  tutorialButton: {
+    fontFamily: TASERN_TYPOGRAPHY.heading,
+    fontSize: TASERN_TYPOGRAPHY.headingMedium,
+    padding: '0.75rem 2rem',
+    background: `linear-gradient(135deg, ${TASERN_COLORS.purple} 0%, rgba(91, 33, 182, 0.8) 100%)`,
+    border: `2px solid ${TASERN_COLORS.gold}`,
+    borderRadius: '8px',
+    color: TASERN_COLORS.parchment,
+    cursor: 'pointer',
+    transition: 'all 0.3s',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+    boxShadow: TASERN_SHADOWS.soft,
   },
 };
