@@ -671,16 +671,16 @@ export class ConsciousnessAI {
    * Hybrid: Can attack any row
    */
   private canAttackTarget(attacker: BattleCard, target: BattleCard): boolean {
-    const rowDiff = Math.abs(attacker.position.row - target.position.row);
+    const colDiff = Math.abs(attacker.position.col - target.position.col);
 
     // Ranged and hybrid can attack any target
     if (attacker.combatType === 'ranged' || attacker.combatType === 'hybrid') {
       return true;
     }
 
-    // Melee can only attack adjacent rows (within 1 row)
+    // Melee can only attack adjacent columns (within 1 column)
     if (attacker.combatType === 'melee') {
-      return rowDiff <= 1;
+      return colDiff <= 1;
     }
 
     return true; // Default: allow
