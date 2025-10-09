@@ -26,6 +26,14 @@ interface ImpactAssetValue {
   decimals?: number;
 }
 
+interface AssociatedContract {
+  nftContract: string;
+  tokenId: string;
+  associatedContract: string;
+  blockNumber: string;
+  transactionHash: string;
+}
+
 // Use Alchemy for Token API
 const alchemyApiKey = process.env.REACT_APP_ALCHEMY_API_KEY || 'demo';
 const alchemyUrl = `https://polygon-mainnet.g.alchemy.com/v2/${alchemyApiKey}`;
@@ -182,7 +190,7 @@ export class TransactionScanner {
           ],
           functionName: 'balanceOf',
           args: [walletAddress]
-        });
+        } as any);
 
         if (balance && balance > BigInt(0)) {
           values.push({
@@ -209,7 +217,7 @@ export class TransactionScanner {
           ],
           functionName: 'getValue',
           args: [walletAddress]
-        });
+        } as any);
 
         if (value && value > BigInt(0)) {
           values.push({
@@ -236,7 +244,7 @@ export class TransactionScanner {
           ],
           functionName: 'holdings',
           args: [walletAddress]
-        });
+        } as any);
 
         if (holdings && holdings > BigInt(0)) {
           values.push({

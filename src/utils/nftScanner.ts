@@ -81,7 +81,7 @@ async function isERC721Enumerable(contractAddress: string): Promise<boolean> {
       abi: ERC721_ABI,
       functionName: 'balanceOf',
       args: ['0x0000000000000000000000000000000000000000' as `0x${string}`],
-    });
+    } as any);
     return true;
   } catch {
     return false;
@@ -128,7 +128,7 @@ export async function scanNFTContract(
       abi: ERC721_ABI,
       functionName: 'balanceOf',
       args: [walletAddress as `0x${string}`],
-    })) as bigint;
+    } as any)) as bigint;
 
     console.log(`Found ${balance} NFTs in contract ${contractAddress}`);
 
@@ -143,7 +143,7 @@ export async function scanNFTContract(
         address: contractAddress as `0x${string}`,
         abi: ERC721_ABI,
         functionName: 'name',
-      })) as string;
+      } as any)) as string;
     } catch {
       console.warn('Could not fetch contract name');
     }
@@ -157,7 +157,7 @@ export async function scanNFTContract(
           abi: ERC721_ABI,
           functionName: 'tokenOfOwnerByIndex',
           args: [walletAddress as `0x${string}`, BigInt(i)],
-        })) as bigint;
+        } as any)) as bigint;
 
         // Get token URI
         const tokenURI = (await publicClient.readContract({
@@ -165,7 +165,7 @@ export async function scanNFTContract(
           abi: ERC721_ABI,
           functionName: 'tokenURI',
           args: [tokenId],
-        })) as string;
+        } as any)) as string;
 
         // Fetch metadata
         const metadata = await fetchNFTMetadata(tokenURI);
