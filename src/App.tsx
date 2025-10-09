@@ -5,12 +5,14 @@
  */
 
 import React, { useEffect, useState } from 'react';
+import { useAccount } from 'wagmi';
 import { BattleView } from './components/BattleView';
 import { DeckSelection } from './components/DeckSelection';
 import { WalletConnect } from './components/WalletConnect';
 import { NFTGallery } from './components/NFTGallery';
 import { Tutorial } from './components/Tutorial';
 import { useBattleStore } from './state/battleStore';
+import { useNFTCardsStore } from './state/nftCardsStore';
 import { PlayerFactory } from './core/PlayerFactory';
 import { HumanStrategy } from './strategies/HumanStrategy';
 import type { Card, Player, AIPersonality } from './types/core';
@@ -28,7 +30,17 @@ console.log('📱 App component loading...');
 export const App: React.FC = () => {
   console.log('🎮 App component rendering...');
   const { battleState, initializeBattle, processAITurn } = useBattleStore();
+  const { getNFTCards } = useNFTCardsStore();
+  const { address: walletAddress } = useAccount();
+
+  // Get NFT cards for currently connected wallet
+  const nftCards = getNFTCards(walletAddress);
+
   console.log('🎯 battleState:', battleState ? 'exists' : 'null');
+  console.log('🎴 Available NFT cards for current wallet:', nftCards.length);
+  if (walletAddress) {
+    console.log('💳 Wallet connected:', `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`);
+  }
 
   const [deckSelectionState, setDeckSelectionState] = useState<{
     availableCards: Card[];
@@ -40,6 +52,16 @@ export const App: React.FC = () => {
 
   const [showNFTGallery, setShowNFTGallery] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
+
+  // Auto-scan NFTs when wallet connects (if not already scanned)
+  useEffect(() => {
+    if (walletAddress && nftCards.length === 0 && !isScanning) {
+      console.log('🔍 Wallet connected but no NFTs in store - triggering auto-scan');
+      setIsScanning(true);
+      setShowNFTGallery(true);
+    }
+  }, [walletAddress, nftCards.length, isScanning]);
 
   const startBattle = (opponentName: string, humanPlayer: boolean = true, humanVsHuman: boolean = false) => {
     let opponent;
@@ -68,7 +90,7 @@ export const App: React.FC = () => {
       const tempPlayer = PlayerFactory.createHuman('Player 1');
       const strategy = tempPlayer.strategy as HumanStrategy;
 
-      // Generate initial deck of 15 cards
+      // Generate initial deck of 15 cards (includes NFT cards if available)
       const availableCards = strategy.generateInitialDeck(tempPlayer, {
         id: 'temp',
         currentTurn: 0,
@@ -82,7 +104,7 @@ export const App: React.FC = () => {
         winner: null,
         battleLog: [],
         aiMemories: {},
-      });
+      }, nftCards);
 
       setDeckSelectionState({ availableCards, opponent: null, humanPlayer: true, isPlayer2: false });
     } else if (humanPlayer) {
@@ -90,7 +112,7 @@ export const App: React.FC = () => {
       const tempPlayer = PlayerFactory.createHuman('You');
       const strategy = tempPlayer.strategy as HumanStrategy;
 
-      // Generate initial deck of 15 cards
+      // Generate initial deck of 15 cards (includes NFT cards if available)
       const availableCards = strategy.generateInitialDeck(tempPlayer, {
         id: 'temp',
         currentTurn: 0,
@@ -104,7 +126,7 @@ export const App: React.FC = () => {
         winner: null,
         battleLog: [],
         aiMemories: {},
-      });
+      }, nftCards);
 
       setDeckSelectionState({ availableCards, opponent, humanPlayer, isPlayer2: false });
     } else {
@@ -121,7 +143,7 @@ export const App: React.FC = () => {
     if (deckSelectionState.opponent === null) {
       // Human vs Human - this is player 1 selection, move to player 2
       if (!deckSelectionState.isPlayer2) {
-        // Generate deck for player 2
+        // Generate deck for player 2 (includes NFT cards if available)
         const tempPlayer = PlayerFactory.createHuman('Player 2');
         const strategy = tempPlayer.strategy as HumanStrategy;
         const availableCards = strategy.generateInitialDeck(tempPlayer, {
@@ -137,7 +159,7 @@ export const App: React.FC = () => {
           winner: null,
           battleLog: [],
           aiMemories: {},
-        });
+        }, nftCards);
 
         setDeckSelectionState({
           availableCards,
@@ -218,7 +240,11 @@ export const App: React.FC = () => {
           </div>
         </div>
         {/* NFT Gallery Overlay */}
-        <NFTGallery onClose={() => setShowNFTGallery(false)} />
+        <NFTGallery onClose={() => {
+          console.log('✅ NFT Gallery closed - resetting scan state');
+          setShowNFTGallery(false);
+          setIsScanning(false);
+        }} />
       </>
     );
   }
@@ -230,6 +256,10 @@ export const App: React.FC = () => {
         availableCards={deckSelectionState.availableCards}
         onConfirmSelection={handleDeckSelectionComplete}
         playerName={deckSelectionState.isPlayer2 ? 'Player 2' : (deckSelectionState.opponent === null ? 'Player 1' : 'You')}
+        onClose={() => {
+          console.log('❌ Deck selection cancelled - returning to menu');
+          setDeckSelectionState(null);
+        }}
       />
     );
   }

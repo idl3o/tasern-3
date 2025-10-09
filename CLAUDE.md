@@ -15,9 +15,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Strategy pattern for player types (Human vs AI)
 
 ### Current Status
-**✅ MILESTONE 1 COMPLETE - Fully Playable Human vs AI!** (October 1, 2025)
+**✅ MILESTONE 2 COMPLETE - NFT Integration & UX Polish!** (October 9, 2025)
 
-The game is now fully playable with complete Human vs AI functionality:
+The game now features complete Web3 NFT integration with seamless UX:
+- ✅ **Web3 Wallet Integration** - RainbowKit + Wagmi on Polygon mainnet
+- ✅ **NFT Card System** - Wallet-gated NFT scanning with Alchemy API
+- ✅ **LP Enhancement Discovery** - Universal Impact Scanner with EIP-1167 proxy detection
+- ✅ **Automatic NFT Scanning** - Auto-triggers on wallet connect for seamless flow
+- ✅ **Enhanced Deck Selection** - NFT cards + 15 generated cards (separate categories)
+- ✅ **Wallet-Specific Storage** - Zustand store with per-wallet NFT card isolation (PVP ready)
+- ✅ **Visual Enhancements** - Star ratings for LP boosts, provenance badges, NFT badges
+- ✅ **UX Polish** - Close buttons, scroll-to-top, proper overlay positioning
+
+**Previous Milestone - Core Gameplay:**
 - ✅ Dual menu system: "Play vs AI" and "Watch AI vs AI"
 - ✅ 5 distinct AI personalities from Tasern lore (Stumbleheart, Swiftblade, Thornwick, Grok, Nethys)
 - ✅ Human player hand generation (5 cards, adaptive mode)
@@ -29,7 +39,7 @@ The game is now fully playable with complete Human vs AI functionality:
 - ✅ Battle log showing all actions
 - ✅ Medieval D&D aesthetic with Tasern theme colors
 
-**Next Phase:** Mechanics refinement (board layout, card movement, rule tweaks)
+**Next Phase:** Battle mechanics refinement, card abilities, advanced formations
 
 ### Universe Context
 This game lives in James McGee's Tales of Tasern D&D homebrew universe. The visual style, lore, card naming, and AI personalities all honor this setting. Every design decision should ask: "Does this feel like it belongs in a D&D session?"

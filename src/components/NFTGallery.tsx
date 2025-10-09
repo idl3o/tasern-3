@@ -9,10 +9,9 @@ import React, { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { WalletConnect } from './WalletConnect';
 import { CardDisplay } from './CardDisplay';
-import { scanWalletForTasernNFTs, type TasernNFT } from '../utils/nftScanner';
-import { getPlayableNFTCards } from '../utils/nftToCard';
-import { scanWalletForLPBonus, KNOWN_LP_CONTRACTS } from '../utils/lpTokenQuery';
-import { batchAnalyzeProvenance, type ProvenanceInfo } from '../utils/nftProvenance';
+import { enhancedNFTsToCards } from '../utils/nftToCard';
+import { UniversalImpactScanner, type EnhancedNFTData, type ScanProgress } from '../utils/universalImpactScanner';
+import { useNFTCardsStore } from '../state/nftCardsStore';
 import type { Card } from '../types/core';
 import { TASERN_COLORS, TASERN_TYPOGRAPHY, TASERN_SHADOWS } from '../styles/tasernTheme';
 
@@ -23,62 +22,75 @@ interface NFTGalleryProps {
 
 export const NFTGallery: React.FC<NFTGalleryProps> = ({ onClose, onSelectCard }) => {
   const { address: account, isConnected } = useAccount();
-  const [nfts, setNfts] = useState<TasernNFT[]>([]);
+  const { setNFTCards, setIsScanning: setGlobalScanning } = useNFTCardsStore();
+  const [enhancedNFTs, setEnhancedNFTs] = useState<EnhancedNFTData[]>([]);
   const [cards, setCards] = useState<Card[]>([]);
   const [isScanning, setIsScanning] = useState(false);
-  const [lpBonus, setLpBonus] = useState(0);
+  const [scanProgress, setScanProgress] = useState<ScanProgress | null>(null);
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
-  const [provenance, setProvenance] = useState<Map<string, ProvenanceInfo>>(new Map());
+  const [scanLogs, setScanLogs] = useState<string[]>([]);
 
   // Scan for NFTs when wallet connects
   useEffect(() => {
     if (isConnected && account) {
       scanWallet(account);
     } else {
-      setNfts([]);
+      setEnhancedNFTs([]);
       setCards([]);
-      setLpBonus(0);
+      setScanProgress(null);
+      setScanLogs([]);
+      if (account) {
+        setNFTCards(account, []); // Clear this wallet's cards on disconnect
+      }
     }
-  }, [isConnected, account]);
+  }, [isConnected, account, setNFTCards]);
 
   const scanWallet = async (walletAddress: string) => {
     setIsScanning(true);
+    setScanProgress(null);
+    setScanLogs([]);
 
     try {
-      console.log(`🔍 Starting wallet scan for ${walletAddress}...`);
+      console.log(`🔍 Starting advanced impact asset scan for ${walletAddress}...`);
 
-      // Scan for LP bonus and NFTs in parallel
-      const [lpData, foundNFTs] = await Promise.all([
-        scanWalletForLPBonus(walletAddress, KNOWN_LP_CONTRACTS),
-        scanWalletForTasernNFTs(walletAddress),
-      ]);
+      // Initialize Universal Impact Scanner
+      const scanner = new UniversalImpactScanner();
 
-      console.log(`✅ Scan complete! LP: ${lpData.totalBonus}%, NFTs: ${foundNFTs.length}`);
+      // Progress callback
+      const onProgress = (progress: ScanProgress) => {
+        setScanProgress(progress);
+      };
 
-      setLpBonus(lpData.totalBonus);
-      setNfts(foundNFTs);
+      // Log callback
+      const onLog = (message: string, type: 'info' | 'success' | 'warning' | 'error') => {
+        const emoji = type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️';
+        setScanLogs(prev => [...prev, `${emoji} ${message}`]);
+      };
 
-      console.log(`💎 LP Bonus: ${lpData.totalBonus}%`);
-      console.log(`🔍 Found ${foundNFTs.length} NFTs, analyzing provenance...`);
-
-      // Analyze provenance for authenticity
-      const provenanceResults = await batchAnalyzeProvenance(foundNFTs, walletAddress);
-      setProvenance(provenanceResults);
-
-      // Convert ALL NFTs to cards (no filtering)
-      const allCards = foundNFTs.map(nft => {
-        const card = getPlayableNFTCards([nft], lpData.totalBonus)[0];
-        return card;
-      }).filter(card => card !== undefined);
-
-      setCards(allCards);
-
-      console.log(`🎴 Showing ${allCards.length} NFTs as cards`);
-      console.log(
-        `✨ ${Array.from(provenanceResults.values()).filter((p) => p.isAuthentic).length} verified as authentic Tasern NFTs`
+      // Scan for NFTs with impact asset discovery
+      const enhancedData = await scanner.scanWalletForImpactAssets(
+        walletAddress,
+        onProgress,
+        onLog
       );
+
+      console.log(`✅ Advanced scan complete! Found ${enhancedData.length} NFTs`);
+
+      setEnhancedNFTs(enhancedData);
+
+      // Convert enhanced NFTs to playable cards
+      const playableCards = enhancedNFTsToCards(enhancedData);
+      setCards(playableCards);
+
+      // Save to global store for deck selection (wallet-specific)
+      setNFTCards(walletAddress, playableCards);
+      console.log(`💾 Saved ${playableCards.length} NFT cards for wallet ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`);
+
+      const lpEnhancedCount = enhancedData.filter(nft => nft.impactAssets.totalValue > 0).length;
+      console.log(`💎 ${lpEnhancedCount} NFTs have LP enhancements`);
     } catch (error) {
       console.error('Error scanning wallet:', error);
+      setScanLogs(prev => [...prev, `❌ Scan failed: ${error}`]);
     } finally {
       setIsScanning(false);
     }
@@ -107,7 +119,7 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ onClose, onSelectCard })
         </div>
 
         <p style={styles.subtitle}>
-          Select an NFT to use as a playable card in battle
+          View your powerful Tasern NFTs as playable cards, empowered by LP holdings!
         </p>
 
         {/* Wallet Connection */}
@@ -122,15 +134,34 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ onClose, onSelectCard })
         {isConnected && isScanning && (
           <div style={styles.scanningSection}>
             <div style={styles.spinner}>⚔️</div>
-            <p style={styles.scanningText}>Scanning for Tasern NFTs...</p>
+            <p style={styles.scanningText}>
+              {scanProgress ? scanProgress.message : 'Scanning for Tasern NFTs...'}
+            </p>
+            {scanProgress && (
+              <div style={styles.progressBar}>
+                <div
+                  style={{
+                    ...styles.progressFill,
+                    width: `${scanProgress.percentage}%`
+                  }}
+                />
+              </div>
+            )}
+            {scanLogs.length > 0 && (
+              <div style={styles.scanLogContainer}>
+                {scanLogs.slice(-5).map((log, i) => (
+                  <div key={i} style={styles.scanLogEntry}>{log}</div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
-        {/* LP Bonus Display */}
-        {isConnected && !isScanning && lpBonus > 0 && (
+        {/* LP Enhancement Summary */}
+        {isConnected && !isScanning && enhancedNFTs.length > 0 && (
           <div style={styles.bonusSection}>
             <span style={styles.bonusText}>
-              💎 LP Bonus: +{lpBonus.toFixed(1)}% to all stats
+              💎 {enhancedNFTs.filter(n => n.impactAssets.totalValue > 0).length} NFT{enhancedNFTs.filter(n => n.impactAssets.totalValue > 0).length !== 1 ? 's' : ''} with LP enhancements
             </span>
           </div>
         )}
@@ -148,13 +179,9 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ onClose, onSelectCard })
         {/* Card Grid */}
         {isConnected && !isScanning && cards.length > 0 && (
           <div style={styles.cardGrid}>
-            {cards.map((card) => {
-              // Get provenance info for this card
-              const nft = nfts.find(
-                (n) => `nft-${n.contract}-${n.tokenId}` === card.id
-              );
-              const provenanceKey = nft ? `${nft.contract}:${nft.tokenId}` : '';
-              const provenanceInfo = provenance.get(provenanceKey);
+            {cards.map((card, index) => {
+              // Get enhanced NFT data for this card
+              const enhancedNFT = enhancedNFTs[index];
 
               return (
                 <div
@@ -168,20 +195,10 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ onClose, onSelectCard })
                   <CardDisplay card={card} />
                   <div style={styles.nftBadge}>NFT</div>
 
-                  {/* Provenance Badges */}
-                  {provenanceInfo?.isAuthentic && (
-                    <div style={styles.authenticBadge} title={`Authenticity Score: ${provenanceInfo.authenticityScore}`}>
-                      ✨ Verified Tasern
-                    </div>
-                  )}
-                  {provenanceInfo?.wasMintedByJames && (
-                    <div style={styles.jamesBadge} title="Minted by James McGee">
-                      👑 From James
-                    </div>
-                  )}
-                  {provenanceInfo?.wasDirectFromJames && !provenanceInfo.wasMintedByJames && (
-                    <div style={styles.directBadge} title="Direct transfer from James McGee">
-                      🎁 Gift from James
+                  {/* LP Enhancement Badge */}
+                  {enhancedNFT.enhancementLevel > 0 && (
+                    <div style={styles.lpBadge} title={`LP Holdings: ${enhancedNFT.impactAssets.lpBalance.toFixed(4)} LP\nStat Multiplier: ${enhancedNFT.statMultipliers.attack.toFixed(2)}x\nAdd more LP to increase stats!`}>
+                      {'⭐'.repeat(enhancedNFT.enhancementLevel)} {enhancedNFT.impactAssets.lpBalance.toFixed(4)} LP
                     </div>
                   )}
                 </div>
@@ -203,8 +220,7 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ onClose, onSelectCard })
         {isConnected && !isScanning && cards.length > 0 && (
           <div style={styles.footer}>
             <p style={styles.footerText}>
-              {cards.length} NFT Card{cards.length !== 1 ? 's' : ''} • {nfts.length} NFT
-              {nfts.length !== 1 ? 's' : ''} Total
+              {cards.length} NFT Card{cards.length !== 1 ? 's' : ''} • {enhancedNFTs.filter(n => n.impactAssets.totalValue > 0).length} LP Enhanced
             </p>
           </div>
         )}
@@ -358,53 +374,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: TASERN_TYPOGRAPHY.heading,
     textTransform: 'uppercase',
   },
-  authenticBadge: {
-    position: 'absolute',
-    top: '40px',
-    left: '8px',
-    right: '8px',
-    background: 'rgba(212, 175, 55, 0.95)',
-    color: '#1a1a1a',
-    padding: '4px 8px',
-    borderRadius: '4px',
-    fontSize: '10px',
-    fontWeight: 'bold',
-    fontFamily: TASERN_TYPOGRAPHY.heading,
-    textTransform: 'uppercase',
-    textAlign: 'center',
-    boxShadow: TASERN_SHADOWS.glowGold,
-  },
-  jamesBadge: {
-    position: 'absolute',
-    top: '64px',
-    left: '8px',
-    right: '8px',
-    background: 'rgba(139, 0, 0, 0.95)',
-    color: TASERN_COLORS.gold,
-    padding: '4px 8px',
-    borderRadius: '4px',
-    fontSize: '10px',
-    fontWeight: 'bold',
-    fontFamily: TASERN_TYPOGRAPHY.heading,
-    textTransform: 'uppercase',
-    textAlign: 'center',
-    border: `1px solid ${TASERN_COLORS.gold}`,
-  },
-  directBadge: {
-    position: 'absolute',
-    top: '64px',
-    left: '8px',
-    right: '8px',
-    background: 'rgba(5, 95, 70, 0.95)',
-    color: TASERN_COLORS.parchment,
-    padding: '4px 8px',
-    borderRadius: '4px',
-    fontSize: '10px',
-    fontWeight: 'bold',
-    fontFamily: TASERN_TYPOGRAPHY.heading,
-    textTransform: 'uppercase',
-    textAlign: 'center',
-  },
   actionsSection: {
     textAlign: 'center',
     marginTop: '2rem',
@@ -436,5 +405,51 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: TASERN_TYPOGRAPHY.bodyMedium,
     color: TASERN_COLORS.bronze,
     opacity: 0.8,
+  },
+  progressBar: {
+    width: '100%',
+    height: '20px',
+    backgroundColor: 'rgba(92, 64, 51, 0.3)',
+    borderRadius: '10px',
+    marginTop: '1rem',
+    overflow: 'hidden',
+    border: `1px solid ${TASERN_COLORS.bronze}`,
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: TASERN_COLORS.gold,
+    transition: 'width 0.3s ease',
+    boxShadow: `0 0 10px ${TASERN_COLORS.gold}`,
+  },
+  scanLogContainer: {
+    marginTop: '1.5rem',
+    padding: '1rem',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    borderRadius: '8px',
+    border: `1px solid ${TASERN_COLORS.bronze}`,
+    maxHeight: '150px',
+    overflowY: 'auto',
+  },
+  scanLogEntry: {
+    fontFamily: TASERN_TYPOGRAPHY.body,
+    fontSize: '0.85rem',
+    color: TASERN_COLORS.parchment,
+    marginBottom: '0.5rem',
+    opacity: 0.9,
+  },
+  lpBadge: {
+    position: 'absolute',
+    top: '8px',
+    left: '8px',
+    background: 'linear-gradient(135deg, #D4AF37 0%, #FFD700 100%)',
+    color: '#1a1a1a',
+    padding: '4px 8px',
+    borderRadius: '4px',
+    fontSize: '9px',
+    fontWeight: 'bold',
+    fontFamily: TASERN_TYPOGRAPHY.heading,
+    textTransform: 'uppercase',
+    border: '1px solid #FFD700',
+    boxShadow: TASERN_SHADOWS.glowGold,
   },
 };

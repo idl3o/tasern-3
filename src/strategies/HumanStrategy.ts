@@ -16,17 +16,27 @@ export class HumanStrategy implements PlayerStrategy {
   }
 
   /**
-   * Generate initial deck of 15 cards for selection
+   * Generate initial deck for selection
+   * NFT cards are added ON TOP of 15 generated cards
+   * Total: All NFT cards + 15 generated = full selection pool
    */
-  generateInitialDeck(player: Player, state: BattleState): Card[] {
-    console.log('👤 Generating initial deck for human player (15 cards)');
-    // Generate 15 balanced cards for human player to choose from
-    const deck = this.cardGenerator.generateStrategicCards(
+  generateInitialDeck(player: Player, state: BattleState, nftCards: Card[] = []): Card[] {
+    console.log(`👤 Generating deck for human player (${nftCards.length} NFT cards + 15 generated cards)`);
+
+    // Start with all available NFT cards
+    const deck: Card[] = [...nftCards];
+
+    // Always generate 15 additional cards (regardless of NFT count)
+    console.log(`🎲 Generating 15 additional cards`);
+    const generatedCards = this.cardGenerator.generateStrategicCards(
       state,
       player,
       'ADAPTIVE',
       15
     );
+    deck.push(...generatedCards);
+
+    console.log(`✅ Deck ready: ${nftCards.length} NFT + 15 generated = ${deck.length} total cards to choose from`);
     return deck;
   }
 

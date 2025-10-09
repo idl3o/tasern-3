@@ -109,6 +109,5 @@ export async function scanWalletForLPBonus(
  * Add more as discovered
  */
 export const KNOWN_LP_CONTRACTS = [
-  // Add known LP token addresses here
-  // Example: '0x...'
+  '0x520a3b3faca7ddc8dc8cd3380c8475b67f3c7b8d', // DDD/axlREGEN LP on Polygon
 ];

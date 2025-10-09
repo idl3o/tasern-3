@@ -2,10 +2,12 @@
  * NFT to Card Converter
  *
  * Transform Tasern NFT metadata into playable BattleCards
+ * Integrates LP holdings for stat enhancement (0.01 LP = +5% to all stats)
  */
 
 import type { Card } from '../types/core';
 import type { TasernNFT } from './nftScanner';
+import type { EnhancedNFTData } from './universalImpactScanner';
 
 /**
  * Extract numeric trait from NFT attributes
@@ -132,12 +134,13 @@ function generateAbility(nft: TasernNFT): import('../types/core').CardAbility | 
 }
 
 /**
- * Convert Tasern NFT to playable BattleCard
+ * Convert Tasern NFT to playable BattleCard with LP enhancement
  *
  * Stat mapping strategies:
  * 1. Use NFT attributes if present (attack, defense, hp, speed, etc.)
  * 2. Fall back to balanced defaults based on rarity
- * 3. Add NFT-specific flavor
+ * 3. Apply LP bonus multiplier (0.01 LP = +5% to all stats)
+ * 4. Add NFT-specific flavor
  */
 export function nftToCard(nft: TasernNFT, lpBonus: number = 0): Card {
   // Extract stats from NFT metadata
@@ -222,4 +225,43 @@ export function getPlayableNFTCards(nfts: TasernNFT[], lpBonus: number = 0): Car
     // Ensure minimum viable stats
     return card.attack > 0 && card.hp > 0;
   });
+}
+
+/**
+ * Convert Enhanced NFT (with impact asset data) to playable card
+ * Uses actual LP holdings discovered via UniversalImpactScanner
+ */
+export function enhancedNFTToCard(enhancedNFT: EnhancedNFTData): Card {
+  // Convert enhanced NFT to standard NFT format
+  const standardNFT: TasernNFT = {
+    contract: enhancedNFT.contractAddress,
+    tokenId: enhancedNFT.tokenId,
+    name: enhancedNFT.name,
+    description: enhancedNFT.description,
+    image: enhancedNFT.image,
+    attributes: []
+  };
+
+  // Calculate LP bonus percentage from stat multipliers
+  // multiplier = 1 + (bonus%), so bonus% = (multiplier - 1) * 100
+  const lpBonusPercentage = (enhancedNFT.statMultipliers.attack - 1) * 100;
+
+  // Convert to card with LP enhancement
+  const card = nftToCard(standardNFT, lpBonusPercentage);
+
+  // If this is a duplicate NFT (ERC1155 with multiple copies), append copy index to make ID unique
+  if (enhancedNFT.copyIndex !== undefined && enhancedNFT.totalCopies !== undefined && enhancedNFT.totalCopies > 1) {
+    card.id = `${card.id}-copy${enhancedNFT.copyIndex}`;
+    // Update name to show copy number
+    card.name = `${card.name} #${enhancedNFT.copyIndex + 1}`;
+  }
+
+  return card;
+}
+
+/**
+ * Convert multiple enhanced NFTs to cards
+ */
+export function enhancedNFTsToCards(enhancedNFTs: EnhancedNFTData[]): Card[] {
+  return enhancedNFTs.map(enhancedNFTToCard);
 }

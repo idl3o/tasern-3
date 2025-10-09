@@ -5,7 +5,7 @@
  * Pure presentation - dispatches selection on completion.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Card } from '../types/core';
 import { CardDisplay } from './CardDisplay';
 import {
@@ -20,14 +20,21 @@ interface DeckSelectionProps {
   availableCards: Card[];
   onConfirmSelection: (selectedCards: Card[]) => void;
   playerName?: string;
+  onClose?: () => void;
 }
 
 export const DeckSelection: React.FC<DeckSelectionProps> = ({
   availableCards,
   onConfirmSelection,
   playerName = 'You',
+  onClose,
 }) => {
   const [selectedCardIds, setSelectedCardIds] = useState<Set<string>>(new Set());
+
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const handleCardClick = (card: Card) => {
     const newSelection = new Set(selectedCardIds);
@@ -53,25 +60,18 @@ export const DeckSelection: React.FC<DeckSelectionProps> = ({
   const selectedCount = selectedCardIds.size;
   const canConfirm = selectedCount === 5;
 
-  return (
-    <div style={styles.overlay}>
-      <div style={styles.container}>
-        <h1 style={styles.title}>⚔️ {playerName}: Choose Your Battle Deck ⚔️</h1>
-        <p style={styles.subtitle}>
-          Select 5 cards for your starting hand (remaining 10 go to deck)
-        </p>
+  // Separate NFT cards from generated cards
+  const nftCards = availableCards.filter(card => card.isNFT);
+  const generatedCards = availableCards.filter(card => !card.isNFT);
 
-        <div style={styles.selectionCounter}>
-          <span style={styles.counterText}>
-            Starting Hand: <span style={styles.counterNumber}>{selectedCount}</span> / 5
-          </span>
-          {canConfirm && (
-            <span style={styles.readyIndicator}>✓ Ready to battle!</span>
-          )}
-        </div>
+  const renderCardGrid = (cards: Card[], title: string) => {
+    if (cards.length === 0) return null;
 
+    return (
+      <div style={styles.categorySection}>
+        <h2 style={styles.categoryTitle}>{title}</h2>
         <div style={styles.cardsGrid}>
-          {availableCards.map((card) => {
+          {cards.map((card) => {
             const isSelected = selectedCardIds.has(card.id);
             return (
               <div
@@ -83,6 +83,11 @@ export const DeckSelection: React.FC<DeckSelectionProps> = ({
                 onClick={() => handleCardClick(card)}
               >
                 <CardDisplay card={card} isActive={isSelected} />
+                {card.isNFT && (
+                  <div style={styles.nftBadge}>
+                    NFT
+                  </div>
+                )}
                 {isSelected && (
                   <div style={styles.selectionBadge}>
                     ✓ Selected
@@ -92,6 +97,42 @@ export const DeckSelection: React.FC<DeckSelectionProps> = ({
             );
           })}
         </div>
+      </div>
+    );
+  };
+
+  return (
+    <div style={styles.overlay}>
+      <div style={styles.container}>
+        {/* Header with Close Button */}
+        <div style={styles.header}>
+          <h1 style={styles.title}>⚔️ {playerName}: Choose Your Battle Deck ⚔️</h1>
+          {onClose && (
+            <button style={styles.closeButton} onClick={onClose}>
+              ✕
+            </button>
+          )}
+        </div>
+
+        <p style={styles.subtitle}>
+          Select 5 cards for your starting hand from {availableCards.length} available cards
+        </p>
+
+        <div style={styles.selectionCounter}>
+          <span style={styles.counterText}>
+            Starting Hand: <span style={styles.counterNumber}>{selectedCount}</span> / 5
+          </span>
+          {canConfirm && (
+            <span style={styles.readyIndicator}>✓ Ready to battle!</span>
+          )}
+        </div>
+
+        {/* NFT Cards Section */}
+        {renderCardGrid(nftCards, `🎴 NFT Cards (${nftCards.length})`)}
+
+        {/* Battle Ready Cards Section */}
+        {renderCardGrid(generatedCards, `⚔️ Battle Ready Cards (${generatedCards.length})`)}
+
 
         <div style={styles.buttonContainer}>
           <button
@@ -121,11 +162,12 @@ const styles: Record<string, React.CSSProperties> = {
     bottom: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.95)',
     display: 'flex',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'center',
     zIndex: 1000,
     padding: TASERN_SPACING.xl,
     overflowY: 'auto',
+    paddingTop: TASERN_SPACING.xl,
   },
   container: {
     background: 'linear-gradient(135deg, rgba(139, 105, 20, 0.3) 0%, rgba(26, 20, 16, 0.95) 100%)',
@@ -136,6 +178,12 @@ const styles: Record<string, React.CSSProperties> = {
     width: '100%',
     boxShadow: TASERN_SHADOWS.glowGold,
   },
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: TASERN_SPACING.md,
+  },
   title: {
     fontFamily: TASERN_TYPOGRAPHY.heading,
     fontSize: TASERN_TYPOGRAPHY.titleLarge,
@@ -144,7 +192,20 @@ const styles: Record<string, React.CSSProperties> = {
     textTransform: 'uppercase',
     letterSpacing: '0.1em',
     textShadow: TASERN_SHADOWS.glowGold,
-    marginBottom: TASERN_SPACING.md,
+    margin: 0,
+    flex: 1,
+  },
+  closeButton: {
+    background: 'transparent',
+    border: `2px solid ${TASERN_COLORS.bronze}`,
+    borderRadius: '50%',
+    width: '40px',
+    height: '40px',
+    color: TASERN_COLORS.gold,
+    fontSize: '24px',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    flexShrink: 0,
   },
   subtitle: {
     fontFamily: TASERN_TYPOGRAPHY.body,
@@ -182,14 +243,30 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: TASERN_TYPOGRAPHY.weightBold,
     animation: 'pulse 2s ease-in-out infinite',
   },
+  categorySection: {
+    marginBottom: TASERN_SPACING.xl,
+  },
+  categoryTitle: {
+    fontFamily: TASERN_TYPOGRAPHY.heading,
+    fontSize: TASERN_TYPOGRAPHY.headingLarge,
+    color: TASERN_COLORS.gold,
+    textAlign: 'center',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+    marginBottom: TASERN_SPACING.lg,
+    textShadow: TASERN_SHADOWS.soft,
+  },
   cardsGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
     gap: TASERN_SPACING.lg,
-    marginBottom: TASERN_SPACING.xl,
-    maxHeight: '60vh',
+    marginBottom: TASERN_SPACING.md,
+    maxHeight: '40vh',
     overflowY: 'auto',
     padding: TASERN_SPACING.md,
+    border: `1px solid ${TASERN_COLORS.bronze}`,
+    borderRadius: TASERN_BORDERS.radiusMedium,
+    background: 'rgba(0, 0, 0, 0.3)',
   },
   cardWrapper: {
     position: 'relative',
@@ -200,6 +277,20 @@ const styles: Record<string, React.CSSProperties> = {
   cardWrapperSelected: {
     transform: 'scale(1.05)',
     opacity: 1,
+  },
+  nftBadge: {
+    position: 'absolute',
+    top: TASERN_SPACING.sm,
+    left: TASERN_SPACING.sm,
+    background: TASERN_COLORS.purple,
+    color: TASERN_COLORS.parchment,
+    padding: `${TASERN_SPACING.xs} ${TASERN_SPACING.sm}`,
+    borderRadius: TASERN_BORDERS.radiusSmall,
+    fontFamily: TASERN_TYPOGRAPHY.heading,
+    fontSize: TASERN_TYPOGRAPHY.bodySmall,
+    fontWeight: TASERN_TYPOGRAPHY.weightBold,
+    textTransform: 'uppercase',
+    boxShadow: TASERN_SHADOWS.strong,
   },
   selectionBadge: {
     position: 'absolute',
