@@ -10,12 +10,13 @@
  * Philosophy: Make PVP feel like inviting a friend to play D&D at your table.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAccount } from 'wagmi';
 import { useMultiplayerStore, selectPhase, selectInviteCode, selectOpponent, selectError } from '../state/multiplayerStore';
 import { useNFTCardsStore } from '../state/nftCardsStore';
 import { DeckSelection } from './DeckSelection';
-import type { Card } from '../types/core';
+import { CardGenerator } from '../ai/CardGenerator';
+import type { Card, Player, BattleState } from '../types/core';
 import {
   TASERN_COLORS,
   TASERN_TYPOGRAPHY,
@@ -36,6 +37,9 @@ export const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onBattleRead
   const [playerName, setPlayerName] = useState('');
   const [inviteCodeInput, setInviteCodeInput] = useState('');
   const [showDeckSelection, setShowDeckSelection] = useState(false);
+
+  // Card generator instance for creating AI-generated cards
+  const cardGenerator = useMemo(() => new CardGenerator(), []);
 
   const phase = useMultiplayerStore(selectPhase);
   const inviteCode = useMultiplayerStore(selectInviteCode);
@@ -108,6 +112,60 @@ export const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onBattleRead
     }
   };
 
+  /**
+   * Generate full deck: NFT cards + 15 AI-generated cards
+   * Matches the pattern from HumanStrategy.generateInitialDeck
+   */
+  const generateFullDeck = (walletAddress: string): Card[] => {
+    const nftCards = getNFTCards(walletAddress);
+
+    console.log(`🎴 Generating multiplayer deck: ${nftCards.length} NFT cards + 15 generated cards`);
+
+    // Create a minimal battle state for card generation
+    const dummyState: BattleState = {
+      id: 'temp-battle',
+      currentTurn: 1,
+      phase: 'deployment',
+      activePlayerId: 'player1',
+      players: {},
+      battlefield: Array(3).fill(null).map(() => Array(3).fill(null)),
+      weather: null,
+      terrainEffects: [],
+      controlledZones: {},
+      winner: null,
+      battleLog: [],
+      aiMemories: {},
+    };
+
+    // Create a minimal player for card generation
+    const dummyPlayer: Player = {
+      id: 'temp-player',
+      name: playerName || 'Player',
+      type: 'human',
+      mana: 10,
+      maxMana: 10,
+      hand: [],
+      deck: [],
+      castleHp: 30,
+      maxCastleHp: 30,
+      lpBonus: 1.0,
+      strategy: {} as any, // Not used for generation
+    };
+
+    // Generate 15 additional cards
+    const generatedCards = cardGenerator.generateStrategicCards(
+      dummyState,
+      dummyPlayer,
+      'ADAPTIVE',
+      15
+    );
+
+    const fullDeck = [...nftCards, ...generatedCards];
+    console.log(`✅ Deck ready: ${nftCards.length} NFT + ${generatedCards.length} generated = ${fullDeck.length} total cards`);
+
+    return fullDeck;
+  };
+
   // Wallet not connected
   if (!isConnected) {
     return (
@@ -167,10 +225,10 @@ export const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onBattleRead
 
   // Deck selection (after connection established)
   if (showDeckSelection || phase === 'deckSelection') {
-    const nftCards = getNFTCards(address);
+    const fullDeck = generateFullDeck(address!);
     return (
       <DeckSelection
-        availableCards={nftCards}
+        availableCards={fullDeck}
         onConfirmSelection={handleDeckSelected}
         playerName={playerName}
         onClose={() => setShowDeckSelection(false)}
@@ -200,6 +258,7 @@ export const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onBattleRead
   // Connected, need to select deck
   if (phase === 'connected' && !localDeck) {
     const nftCards = getNFTCards(address);
+    const totalCards = nftCards.length + 15; // NFT cards + 15 generated
     return (
       <div style={styles.overlay}>
         <div style={styles.container}>
@@ -207,7 +266,7 @@ export const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onBattleRead
           <p style={styles.message}>Select your deck to begin battle</p>
           <div style={styles.buttonRow}>
             <button style={styles.button} onClick={() => setShowDeckSelection(true)}>
-              ⚔️ Select Deck ({nftCards.length} cards available)
+              ⚔️ Select Deck ({totalCards} cards available)
             </button>
             <button style={styles.buttonSecondary} onClick={handleDisconnect}>
               Cancel
@@ -270,10 +329,10 @@ export const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onBattleRead
 
         {/* Name Input */}
         <div style={styles.inputGroup}>
-          <label style={styles.label}>Your Name</label>
+          <label style={styles.label}>Your Name (Required)</label>
           <input
             type="text"
-            placeholder="Enter your battle name"
+            placeholder="Enter your battle name (necessary)"
             value={playerName}
             onChange={(e) => setPlayerName(e.target.value)}
             style={styles.input}
