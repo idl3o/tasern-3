@@ -129,7 +129,16 @@ export class MultiplayerService {
     let inviteData: InviteData;
 
     try {
-      const decoded = atob(inviteCode);
+      // Normalize base64 string: remove whitespace and ensure proper padding
+      let normalizedCode = inviteCode.trim().replace(/\s/g, '');
+
+      // Add back padding if missing (base64 strings should be divisible by 4)
+      const padding = normalizedCode.length % 4;
+      if (padding > 0) {
+        normalizedCode += '='.repeat(4 - padding);
+      }
+
+      const decoded = atob(normalizedCode);
       inviteData = JSON.parse(decoded);
     } catch (error) {
       throw new Error('Invalid invite code. Please check and try again.');

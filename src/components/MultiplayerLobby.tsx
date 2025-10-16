@@ -83,6 +83,8 @@ export const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onBattleRead
       alert('Please enter your name and invite code');
       return;
     }
+    console.log('🎮 Attempting to join lobby with code:', inviteCodeInput.trim());
+    console.log('🎮 Code length:', inviteCodeInput.trim().length);
     await joinLobby(inviteCodeInput.trim(), playerName.trim(), address);
   };
 
@@ -307,6 +309,10 @@ export const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onBattleRead
             value={inviteCodeInput}
             onChange={(e) => setInviteCodeInput(e.target.value)}
             style={styles.input}
+            spellCheck={false}
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
           />
           <button
             style={styles.button}
