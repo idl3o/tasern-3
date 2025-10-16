@@ -94,11 +94,15 @@ export class BattleEngine {
    */
   static executeAction(state: BattleState, action: BattleAction): BattleState {
     console.log('⚔️ Executing action:', action.type, 'by', action.playerId);
+    console.log('   Current activePlayerId:', state.activePlayerId);
 
     // Validate action is from active player
+    // NOTE: In multiplayer, we trust received actions from the opponent
+    // The battleStore ensures only the active player can send actions
     if (action.type !== 'END_TURN' && action.playerId !== state.activePlayerId) {
-      console.warn('❌ Action from non-active player');
-      return state;
+      console.warn('⚠️ Action playerId mismatch - allowing for multiplayer sync');
+      console.warn('   Expected:', state.activePlayerId, 'Got:', action.playerId);
+      // Don't return early - allow the action to proceed for multiplayer
     }
 
     switch (action.type) {

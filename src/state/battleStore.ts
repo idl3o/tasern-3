@@ -131,7 +131,9 @@ export const useBattleStore = create<BattleStore>()(
 
         // Setup listener for remote player actions
         service.on('action', (data: { action: BattleAction }) => {
-          console.log('📨 Received opponent action:', data.action.type);
+          console.log('📨 Received opponent action:', data.action.type, 'from playerId:', data.action.playerId);
+          console.log('   Current activePlayerId:', get().battleState?.activePlayerId);
+          console.log('   Local playerId:', get().localPlayerId);
           get().executeAction(data.action);
         });
 
