@@ -8,7 +8,9 @@
 import type { Player, AIPersonality } from '../types/core';
 import { HumanStrategy } from '../strategies/HumanStrategy';
 import { AIStrategy } from '../strategies/AIStrategy';
+import { RemotePlayerStrategy } from '../strategies/RemotePlayerStrategy';
 import { getRandomPersonality, getRecommendedPersonality } from '../ai/personalities';
+import type { MultiplayerService } from '../services/MultiplayerService';
 
 let playerIdCounter = 0;
 
@@ -93,6 +95,36 @@ export class PlayerFactory {
   ): Player {
     const personality = getRecommendedPersonality(skillLevel);
     return this.createAI(personality.name, personality, options);
+  }
+
+  /**
+   * Create a remote human player (for PVP multiplayer)
+   * This player's actions come from another browser via WebRTC
+   */
+  static createRemoteHuman(
+    name: string,
+    multiplayerService: MultiplayerService,
+    options?: {
+      castleHp?: number;
+      maxMana?: number;
+      lpBonus?: number;
+    }
+  ): Player {
+    const id = `remote-${playerIdCounter++}`;
+
+    return {
+      id,
+      name,
+      type: 'human',
+      castleHp: options?.castleHp ?? 50,
+      maxCastleHp: options?.castleHp ?? 50,
+      mana: options?.maxMana ?? 10,
+      maxMana: options?.maxMana ?? 10,
+      hand: [],
+      deck: [],
+      strategy: new RemotePlayerStrategy(multiplayerService),
+      lpBonus: options?.lpBonus ?? 0,
+    };
   }
 
   /**

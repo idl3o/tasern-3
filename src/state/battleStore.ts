@@ -12,6 +12,7 @@ import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import type { BattleState, BattleAction, Player, VictoryResult } from '../types/core';
 import { BattleEngine } from '../core/BattleEngine';
+import type { MultiplayerService } from '../services/MultiplayerService';
 
 interface BattleStore {
   // State
@@ -19,8 +20,18 @@ interface BattleStore {
   isProcessing: boolean;
   error: string | null;
 
+  // Multiplayer state
+  isMultiplayer: boolean;
+  multiplayerService: MultiplayerService | null;
+  localPlayerId: string | null;
+
   // Actions
   initializeBattle: (player1: Player, player2: Player) => void;
+  initializeMultiplayerBattle: (
+    localPlayer: Player,
+    remotePlayer: Player,
+    service: MultiplayerService
+  ) => void;
   executeAction: (action: BattleAction) => void;
   endTurn: () => void;
   processAITurn: () => Promise<void>;
@@ -39,8 +50,11 @@ export const useBattleStore = create<BattleStore>()(
     battleState: null,
     isProcessing: false,
     error: null,
+    isMultiplayer: false,
+    multiplayerService: null,
+    localPlayerId: null,
 
-    // Initialize a new battle
+    // Initialize a new battle (local or vs AI)
     initializeBattle: (player1: Player, player2: Player) => {
       console.log('🎮 Initializing battle in store');
 
@@ -74,6 +88,52 @@ export const useBattleStore = create<BattleStore>()(
       }
     },
 
+    // Initialize a multiplayer PVP battle
+    initializeMultiplayerBattle: (
+      localPlayer: Player,
+      remotePlayer: Player,
+      service: MultiplayerService
+    ) => {
+      console.log('🌐 Initializing multiplayer battle');
+
+      try {
+        const newState = BattleEngine.initializeBattle(localPlayer, remotePlayer);
+
+        // Initialize hands for players
+        const updatedPlayers = { ...newState.players };
+        Object.values(updatedPlayers).forEach((player) => {
+          if (player.type === 'human') {
+            console.log('👤 Initializing hand for player:', player.name);
+            player.strategy.onTurnStart?.(player, newState);
+          }
+        });
+
+        set((state) => {
+          state.battleState = {
+            ...newState,
+            players: updatedPlayers,
+          };
+          state.isMultiplayer = true;
+          state.multiplayerService = service;
+          state.localPlayerId = localPlayer.id;
+          state.error = null;
+        });
+
+        // Setup listener for remote player actions
+        service.on('action', (data: { action: BattleAction }) => {
+          console.log('📨 Received opponent action:', data.action.type);
+          get().executeAction(data.action);
+        });
+
+        console.log('✅ Multiplayer battle initialized');
+      } catch (error) {
+        console.error('❌ Failed to initialize multiplayer battle:', error);
+        set((state) => {
+          state.error = error instanceof Error ? error.message : 'Failed to initialize multiplayer battle';
+        });
+      }
+    },
+
     // Execute a battle action
     executeAction: (action: BattleAction) => {
       const currentState = get().battleState;
@@ -86,6 +146,17 @@ export const useBattleStore = create<BattleStore>()(
       if (get().isProcessing) {
         console.warn('⚠️ Already processing an action');
         return;
+      }
+
+      const { isMultiplayer, multiplayerService, localPlayerId } = get();
+
+      // If this is a local action in multiplayer, broadcast to opponent
+      if (isMultiplayer && action.playerId === localPlayerId && multiplayerService) {
+        console.log('📤 Broadcasting action to opponent:', action.type);
+        multiplayerService.send({
+          type: 'ACTION',
+          action
+        });
       }
 
       set((state) => {
@@ -247,6 +318,9 @@ export const useBattleStore = create<BattleStore>()(
         state.battleState = null;
         state.isProcessing = false;
         state.error = null;
+        state.isMultiplayer = false;
+        state.multiplayerService = null;
+        state.localPlayerId = null;
       });
     },
 

@@ -11,8 +11,10 @@ import { DeckSelection } from './components/DeckSelection';
 import { WalletConnect } from './components/WalletConnect';
 import { NFTGallery } from './components/NFTGallery';
 import { Tutorial } from './components/Tutorial';
+import { MultiplayerLobby } from './components/MultiplayerLobby';
 import { useBattleStore } from './state/battleStore';
 import { useNFTCardsStore } from './state/nftCardsStore';
+import { useMultiplayerStore } from './state/multiplayerStore';
 import { PlayerFactory } from './core/PlayerFactory';
 import { HumanStrategy } from './strategies/HumanStrategy';
 import type { Card, Player, AIPersonality } from './types/core';
@@ -29,8 +31,9 @@ console.log('📱 App component loading...');
 
 export const App: React.FC = () => {
   console.log('🎮 App component rendering...');
-  const { battleState, initializeBattle, processAITurn } = useBattleStore();
+  const { battleState, initializeBattle, initializeMultiplayerBattle, processAITurn } = useBattleStore();
   const { getNFTCards } = useNFTCardsStore();
+  const { service: multiplayerService } = useMultiplayerStore();
   const { address: walletAddress } = useAccount();
 
   // Get NFT cards for currently connected wallet
@@ -52,6 +55,7 @@ export const App: React.FC = () => {
 
   const [showNFTGallery, setShowNFTGallery] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [showMultiplayerLobby, setShowMultiplayerLobby] = useState(false);
   const [scannedWallets, setScannedWallets] = useState<Set<string>>(new Set());
 
   // Auto-scan NFTs when wallet connects (only once per wallet address)
@@ -210,6 +214,43 @@ export const App: React.FC = () => {
     }
   };
 
+  // Handle multiplayer battle ready (both players selected decks)
+  const handleMultiplayerBattleReady = (
+    localDeck: Card[],
+    opponentDeck: Card[],
+    opponentName: string,
+    opponentWallet: string
+  ) => {
+    if (!walletAddress || !multiplayerService) {
+      console.error('❌ Cannot start multiplayer battle - missing wallet or service');
+      return;
+    }
+
+    console.log('🌐 Starting multiplayer battle!');
+    console.log('   Local deck:', localDeck.length, 'cards');
+    console.log('   Opponent deck:', opponentDeck.length, 'cards');
+    console.log('   Opponent:', opponentName, opponentWallet);
+
+    // Create local player (you)
+    const localPlayer = PlayerFactory.createHuman('You');
+    localPlayer.hand = localDeck.slice(0, 5);
+    localPlayer.deck = localDeck.slice(5);
+
+    // Create remote player (opponent)
+    const remotePlayer = PlayerFactory.createRemoteHuman(
+      opponentName,
+      multiplayerService
+    );
+    remotePlayer.hand = opponentDeck.slice(0, 5);
+    remotePlayer.deck = opponentDeck.slice(5);
+
+    console.log(`📚 Local player deck: ${localPlayer.hand.length} in hand, ${localPlayer.deck.length} in deck`);
+    console.log(`📚 Remote player deck: ${remotePlayer.hand.length} in hand, ${remotePlayer.deck.length} in deck`);
+
+    setShowMultiplayerLobby(false);
+    initializeMultiplayerBattle(localPlayer, remotePlayer, multiplayerService);
+  };
+
   // Auto-process AI turns for AI vs AI battles
   useEffect(() => {
     if (battleState && (battleState.phase === 'deployment' || battleState.phase === 'battle')) {
@@ -229,6 +270,11 @@ export const App: React.FC = () => {
   // Show Tutorial modal
   if (showTutorial) {
     return <Tutorial onClose={() => setShowTutorial(false)} />;
+  }
+
+  // Show Multiplayer Lobby
+  if (showMultiplayerLobby) {
+    return <MultiplayerLobby onBattleReady={handleMultiplayerBattleReady} onClose={() => setShowMultiplayerLobby(false)} />;
   }
 
   // Show NFT Gallery modal
@@ -337,11 +383,16 @@ export const App: React.FC = () => {
           <div style={styles.divider}></div>
 
           <div style={styles.personalityGrid}>
-            <h2 style={styles.sectionTitle}>Human vs Human</h2>
+            <h2 style={styles.sectionTitle}>🌐 Multiplayer PVP</h2>
+
+            <button style={styles.opponentButton} onClick={() => setShowMultiplayerLobby(true)}>
+              <div style={styles.opponentName}>Battle Online (Invite System)</div>
+              <div style={styles.opponentTraits}>Challenge players with Web3 NFT cards via invite code</div>
+            </button>
 
             <button style={styles.opponentButton} onClick={() => startBattle('', true, true)}>
-              <div style={styles.opponentName}>Player 1 vs Player 2</div>
-              <div style={styles.opponentTraits}>Face your friend in tactical combat</div>
+              <div style={styles.opponentName}>Local 2-Player (Same Device)</div>
+              <div style={styles.opponentTraits}>Pass-and-play tactical combat</div>
             </button>
           </div>
 
