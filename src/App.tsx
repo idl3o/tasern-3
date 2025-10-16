@@ -219,7 +219,8 @@ export const App: React.FC = () => {
     localDeck: Card[],
     opponentDeck: Card[],
     opponentName: string,
-    opponentWallet: string
+    opponentWallet: string,
+    isLocalPlayerFirst: boolean
   ) => {
     if (!walletAddress || !multiplayerService) {
       console.error('❌ Cannot start multiplayer battle - missing wallet or service');
@@ -230,6 +231,7 @@ export const App: React.FC = () => {
     console.log('   Local deck:', localDeck.length, 'cards');
     console.log('   Opponent deck:', opponentDeck.length, 'cards');
     console.log('   Opponent:', opponentName, opponentWallet);
+    console.log(`   🎲 Turn order: ${isLocalPlayerFirst ? 'YOU GO FIRST!' : 'OPPONENT GOES FIRST'}`);
 
     // Create local player (you)
     const localPlayer = PlayerFactory.createHuman('You');
@@ -248,7 +250,13 @@ export const App: React.FC = () => {
     console.log(`📚 Remote player deck: ${remotePlayer.hand.length} in hand, ${remotePlayer.deck.length} in deck`);
 
     setShowMultiplayerLobby(false);
-    initializeMultiplayerBattle(localPlayer, remotePlayer, multiplayerService);
+
+    // Pass players in order based on who goes first
+    if (isLocalPlayerFirst) {
+      initializeMultiplayerBattle(localPlayer, remotePlayer, multiplayerService);
+    } else {
+      initializeMultiplayerBattle(remotePlayer, localPlayer, multiplayerService);
+    }
   };
 
   // Auto-process AI turns for AI vs AI battles

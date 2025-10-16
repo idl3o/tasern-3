@@ -175,10 +175,20 @@ export const BattleView: React.FC = () => {
       {/* Header */}
       <header style={styles.header}>
         <h1 style={styles.title}>⚔️ Tasern Siegefront ⚔️</h1>
-        <div style={styles.phaseIndicator}>
-          {phase === 'deployment' && '📍 Deployment Phase'}
-          {phase === 'battle' && '⚔️ Battle Phase'}
-          {phase === 'victory' && '🏆 Victory!'}
+        <div style={styles.headerRight}>
+          <div style={styles.phaseIndicator}>
+            {phase === 'deployment' && '📍 Deployment Phase'}
+            {phase === 'battle' && '⚔️ Battle Phase'}
+            {phase === 'victory' && '🏆 Victory!'}
+          </div>
+          {activePlayer && (
+            <div style={{
+              ...styles.turnIndicator,
+              ...(activePlayer.type === 'human' ? styles.turnIndicatorYou : styles.turnIndicatorOpponent)
+            }}>
+              {activePlayer.type === 'human' ? '👤 YOUR TURN' : `🤖 ${activePlayer.name}'s Turn`}
+            </div>
+          )}
         </div>
       </header>
 
@@ -334,6 +344,12 @@ const styles: Record<string, React.CSSProperties> = {
     textShadow: TASERN_SHADOWS.glowGold,
     margin: 0,
   },
+  headerRight: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: TASERN_SPACING.sm,
+    alignItems: 'flex-end',
+  },
   phaseIndicator: {
     fontFamily: TASERN_TYPOGRAPHY.heading,
     fontSize: TASERN_TYPOGRAPHY.headingMedium,
@@ -342,6 +358,31 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'rgba(0, 0, 0, 0.5)',
     borderRadius: TASERN_BORDERS.radiusMedium,
     border: `${TASERN_BORDERS.widthThin} solid ${TASERN_COLORS.bronze}`,
+  },
+  turnIndicator: {
+    fontFamily: TASERN_TYPOGRAPHY.heading,
+    fontSize: TASERN_TYPOGRAPHY.headingLarge,
+    fontWeight: TASERN_TYPOGRAPHY.weightBold,
+    padding: `${TASERN_SPACING.md} ${TASERN_SPACING.xl}`,
+    borderRadius: TASERN_BORDERS.radiusMedium,
+    border: `${TASERN_BORDERS.widthThick} solid`,
+    textTransform: 'uppercase',
+    letterSpacing: '0.1em',
+    transition: 'all 0.3s ease',
+  },
+  turnIndicatorYou: {
+    background: 'linear-gradient(135deg, rgba(6, 95, 70, 0.7) 0%, rgba(6, 95, 70, 0.9) 100%)',
+    borderColor: TASERN_COLORS.green,
+    color: TASERN_COLORS.parchment,
+    boxShadow: `0 0 20px ${TASERN_COLORS.green}`,
+    animation: 'pulse 2s ease-in-out infinite',
+  },
+  turnIndicatorOpponent: {
+    background: 'linear-gradient(135deg, rgba(139, 0, 0, 0.5) 0%, rgba(139, 0, 0, 0.7) 100%)',
+    borderColor: TASERN_COLORS.red,
+    color: TASERN_COLORS.parchment,
+    boxShadow: `0 0 15px ${TASERN_COLORS.red}`,
+    opacity: 0.8,
   },
   mainContent: {
     display: 'flex',
