@@ -50,12 +50,9 @@ export class RemotePlayerStrategy implements PlayerStrategy {
   async selectAction(player: Player, state: BattleState): Promise<BattleAction> {
     console.log('🌐 Waiting for remote player action...');
 
-    // Notify remote player it's their turn
-    this.multiplayerService.send({
-      type: 'TURN_START',
-      playerId: player.id,
-      state: state
-    });
+    // NOTE: We don't send state here - the remote player already has the state
+    // synchronized via the action broadcasting mechanism. Sending the entire
+    // state causes circular JSON errors.
 
     return new Promise((resolve, reject) => {
       this.pendingActionResolve = resolve;
@@ -105,17 +102,14 @@ export class RemotePlayerStrategy implements PlayerStrategy {
 
   /**
    * Called when turn starts
-   * Notify remote player via WebRTC
+   * Remote player already knows it's their turn from state sync via actions
    */
   onTurnStart(player: Player, state: BattleState): void {
     console.log(`🌐 ${player.name}'s turn begins (remote)`);
 
-    // Send turn notification (already done in selectAction, but keep for consistency)
-    this.multiplayerService.send({
-      type: 'TURN_START',
-      playerId: player.id,
-      state: state
-    });
+    // NOTE: We don't send state here - it's already synced via actions.
+    // Attempting to send the entire state causes circular JSON errors
+    // because the state contains player strategies with multiplayer service references.
   }
 
   /**
