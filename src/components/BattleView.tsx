@@ -21,6 +21,7 @@ import { BattlefieldGrid } from './BattlefieldGrid';
 import { PlayerStatus } from './PlayerStatus';
 import { BattleControls } from './BattleControls';
 import { HandDisplay } from './HandDisplay';
+import { DebugPanel } from './DebugPanel';
 import type { Card, Position } from '../types/core';
 import {
   TASERN_COLORS,
@@ -308,6 +309,9 @@ export const BattleView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Debug Panel */}
+      <DebugPanel />
     </div>
   );
 };
