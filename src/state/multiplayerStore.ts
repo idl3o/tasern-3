@@ -242,6 +242,15 @@ export const useMultiplayerStore = create<MultiplayerStore>()(
         set((state) => {
           state.phase = 'ready';
         });
+
+        // Automatically trigger battle start if we're the host
+        const { isHost } = get();
+        if (isHost) {
+          // Use setTimeout to ensure state update completes first
+          setTimeout(() => {
+            get().startBattle();
+          }, 0);
+        }
       }
     },
 
@@ -368,6 +377,15 @@ function setupEventListeners(
         state.phase = 'ready';
       }
     });
+
+    // Automatically trigger battle start if we're the host and both players ready
+    const currentState = get();
+    if (currentState.isHost && currentState.localDeck) {
+      // Use setTimeout to ensure state update completes first
+      setTimeout(() => {
+        get().startBattle();
+      }, 0);
+    }
   });
 
   // Battle starting
