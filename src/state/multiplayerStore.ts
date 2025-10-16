@@ -58,6 +58,9 @@ interface MultiplayerStore {
   // Opponent info
   opponent: OpponentInfo | null;
 
+  // Battle state
+  firstPlayerId: 'host' | 'guest' | null; // Who goes first (randomized)
+
   // Error handling
   error: string | null;
 
@@ -88,6 +91,7 @@ export const useMultiplayerStore = create<MultiplayerStore>()(
     localPlayerWallet: null,
     localDeck: null,
     opponent: null,
+    firstPlayerId: null,
     error: null,
 
     // Initialize multiplayer service
@@ -250,12 +254,24 @@ export const useMultiplayerStore = create<MultiplayerStore>()(
         return;
       }
 
-      // Only host sends battle start signal
+      // Only host sends battle start signal (and determines turn order)
       if (isHost) {
+        // Randomize who goes first (50/50 coin flip)
+        const firstPlayerId: 'host' | 'guest' = Math.random() < 0.5 ? 'host' : 'guest';
+
+        console.log(`🎲 Turn order randomized: ${firstPlayerId} goes first!`);
+
+        // Store locally
+        set((state) => {
+          state.firstPlayerId = firstPlayerId;
+        });
+
+        // Notify guest
         service.send({
           type: 'BATTLE_START',
           hostDeck: localDeck,
-          guestDeck: opponent.deck
+          guestDeck: opponent.deck,
+          firstPlayerId
         });
       }
 
@@ -279,6 +295,7 @@ export const useMultiplayerStore = create<MultiplayerStore>()(
         state.localPlayerName = null;
         state.localDeck = null;
         state.opponent = null;
+        state.firstPlayerId = null;
         state.error = null;
       });
 
@@ -294,6 +311,7 @@ export const useMultiplayerStore = create<MultiplayerStore>()(
         state.localPlayerName = null;
         state.localDeck = null;
         state.opponent = null;
+        state.firstPlayerId = null;
         state.error = null;
       });
 
@@ -353,10 +371,12 @@ function setupEventListeners(
   });
 
   // Battle starting
-  service.on('battleStart', ({ hostDeck, guestDeck }: { hostDeck: Card[]; guestDeck: Card[] }) => {
+  service.on('battleStart', ({ hostDeck, guestDeck, firstPlayerId }: { hostDeck: Card[]; guestDeck: Card[]; firstPlayerId: 'host' | 'guest' }) => {
     console.log('🎮 Battle starting! Host:', hostDeck.length, 'Guest:', guestDeck.length);
+    console.log(`🎲 ${firstPlayerId} goes first!`);
 
     set((state: MultiplayerStore) => {
+      state.firstPlayerId = firstPlayerId;
       state.phase = 'ready';
     });
   });
@@ -402,5 +422,6 @@ export const selectInviteCode = (state: MultiplayerStore) => state.inviteCode;
 export const selectIsHost = (state: MultiplayerStore) => state.isHost;
 export const selectOpponent = (state: MultiplayerStore) => state.opponent;
 export const selectLocalDeck = (state: MultiplayerStore) => state.localDeck;
+export const selectFirstPlayerId = (state: MultiplayerStore) => state.firstPlayerId;
 export const selectError = (state: MultiplayerStore) => state.error;
 export const selectService = (state: MultiplayerStore) => state.service;

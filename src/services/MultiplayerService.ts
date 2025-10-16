@@ -21,7 +21,7 @@ export type MultiplayerMessage =
   | { type: 'ACTION'; action: BattleAction }
   | { type: 'STATE_SYNC'; state: BattleState }
   | { type: 'TURN_START'; playerId: string; state: BattleState }
-  | { type: 'BATTLE_START'; hostDeck: Card[]; guestDeck: Card[] }
+  | { type: 'BATTLE_START'; hostDeck: Card[]; guestDeck: Card[]; firstPlayerId: 'host' | 'guest' }
   | { type: 'PING' }
   | { type: 'PONG' }
   | { type: 'DISCONNECT'; reason?: string };
@@ -231,7 +231,8 @@ export class MultiplayerService {
       case 'BATTLE_START':
         this.emit('battleStart', {
           hostDeck: message.hostDeck,
-          guestDeck: message.guestDeck
+          guestDeck: message.guestDeck,
+          firstPlayerId: message.firstPlayerId
         });
         break;
 

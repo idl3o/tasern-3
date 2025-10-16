@@ -12,7 +12,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAccount } from 'wagmi';
-import { useMultiplayerStore, selectPhase, selectInviteCode, selectOpponent, selectError } from '../state/multiplayerStore';
+import { useMultiplayerStore, selectPhase, selectInviteCode, selectOpponent, selectError, selectFirstPlayerId } from '../state/multiplayerStore';
 import { useNFTCardsStore } from '../state/nftCardsStore';
 import { DeckSelection } from './DeckSelection';
 import { CardGenerator } from '../ai/CardGenerator';
@@ -26,7 +26,13 @@ import {
 } from '../styles/tasernTheme';
 
 interface MultiplayerLobbyProps {
-  onBattleReady: (localDeck: Card[], opponentDeck: Card[], opponentName: string, opponentWallet: string) => void;
+  onBattleReady: (
+    localDeck: Card[],
+    opponentDeck: Card[],
+    opponentName: string,
+    opponentWallet: string,
+    isLocalPlayerFirst: boolean  // Whether local player goes first
+  ) => void;
   onClose?: () => void;
 }
 
@@ -45,6 +51,7 @@ export const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onBattleRead
   const inviteCode = useMultiplayerStore(selectInviteCode);
   const opponent = useMultiplayerStore(selectOpponent);
   const error = useMultiplayerStore(selectError);
+  const firstPlayerId = useMultiplayerStore(selectFirstPlayerId);
 
   const {
     isInitialized,
@@ -68,11 +75,18 @@ export const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onBattleRead
 
   // When both players ready, start battle
   useEffect(() => {
-    if (phase === 'ready' && localDeck && opponent?.deck) {
+    if (phase === 'ready' && localDeck && opponent?.deck && firstPlayerId) {
       console.log('🎮 Both players ready! Starting battle...');
-      onBattleReady(localDeck, opponent.deck, opponent.name, opponent.walletAddress);
+
+      // Determine if local player goes first
+      // If local is host and firstPlayerId is 'host', or local is guest and firstPlayerId is 'guest'
+      const isLocalPlayerFirst = (isHost && firstPlayerId === 'host') || (!isHost && firstPlayerId === 'guest');
+
+      console.log(`🎲 Local player goes ${isLocalPlayerFirst ? 'FIRST' : 'SECOND'}`);
+
+      onBattleReady(localDeck, opponent.deck, opponent.name, opponent.walletAddress, isLocalPlayerFirst);
     }
-  }, [phase, localDeck, opponent, onBattleReady]);
+  }, [phase, localDeck, opponent, firstPlayerId, isHost, onBattleReady]);
 
   const handleCreateLobby = () => {
     if (!address || !playerName.trim()) {
