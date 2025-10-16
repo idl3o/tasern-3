@@ -236,7 +236,7 @@ export const useMultiplayerStore = create<MultiplayerStore>()(
 
       // Check if both players ready
       const opponent = get().opponent;
-      if (opponent?.deck) {
+      if (opponent?.isReady) {
         set((state) => {
           state.phase = 'ready';
         });
@@ -256,8 +256,8 @@ export const useMultiplayerStore = create<MultiplayerStore>()(
     startBattle: () => {
       const { isHost, service, localDeck, opponent } = get();
 
-      if (!service || !localDeck || !opponent?.deck) {
-        console.error('❌ Cannot start battle - missing decks');
+      if (!service || !localDeck || !opponent?.isReady) {
+        console.error('❌ Cannot start battle - not ready');
         return;
       }
 
