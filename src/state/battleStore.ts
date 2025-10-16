@@ -151,7 +151,8 @@ export const useBattleStore = create<BattleStore>()(
       const { isMultiplayer, multiplayerService, localPlayerId } = get();
 
       // If this is a local action in multiplayer, broadcast to opponent
-      if (isMultiplayer && action.playerId === localPlayerId && multiplayerService) {
+      // Note: END_TURN is already broadcast in endTurn(), so skip it here to avoid double-broadcasting
+      if (isMultiplayer && action.playerId === localPlayerId && multiplayerService && action.type !== 'END_TURN') {
         console.log('📤 Broadcasting action to opponent:', action.type);
         multiplayerService.send({
           type: 'ACTION',
@@ -212,6 +213,20 @@ export const useBattleStore = create<BattleStore>()(
       if (!currentState) {
         console.error('❌ No battle state');
         return;
+      }
+
+      const { isMultiplayer, multiplayerService, localPlayerId } = get();
+
+      // In multiplayer, broadcast END_TURN action to opponent
+      if (isMultiplayer && multiplayerService && currentState.activePlayerId === localPlayerId) {
+        console.log('📤 Broadcasting END_TURN to opponent');
+        multiplayerService.send({
+          type: 'ACTION',
+          action: {
+            type: 'END_TURN',
+            playerId: localPlayerId
+          }
+        });
       }
 
       try {
