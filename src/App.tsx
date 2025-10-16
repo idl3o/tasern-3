@@ -253,13 +253,16 @@ export const App: React.FC = () => {
 
     setShowMultiplayerLobby(false);
 
-    // Pass players in order based on who goes first
-    // Both clients will create identical battle state because player IDs are deterministic (based on wallet addresses)
-    if (isLocalPlayerFirst) {
-      initializeMultiplayerBattle(localPlayer, remotePlayer, multiplayerService, walletAddress);
-    } else {
-      initializeMultiplayerBattle(remotePlayer, localPlayer, multiplayerService, walletAddress);
-    }
+    // Defer battle initialization to avoid React state update during render error
+    setTimeout(() => {
+      // Pass players in order based on who goes first
+      // Both clients will create identical battle state because player IDs are deterministic (based on wallet addresses)
+      if (isLocalPlayerFirst) {
+        initializeMultiplayerBattle(localPlayer, remotePlayer, multiplayerService, walletAddress);
+      } else {
+        initializeMultiplayerBattle(remotePlayer, localPlayer, multiplayerService, walletAddress);
+      }
+    }, 0);
   };
 
   // Auto-process AI turns for AI vs AI battles
