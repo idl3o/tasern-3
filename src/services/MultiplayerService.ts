@@ -16,12 +16,12 @@ import type { BattleAction, BattleState, Card } from '../types/core';
 
 export type MultiplayerMessage =
   | { type: 'INVITE'; inviteCode: string; playerName: string; walletAddress: string }
-  | { type: 'ACCEPT'; playerName: string; walletAddress: string; deck: Card[] }
-  | { type: 'DECK_SELECTED'; deck: Card[] }
+  | { type: 'ACCEPT'; playerName: string; walletAddress: string }
+  | { type: 'DECK_READY' }  // Just signal that deck is selected, no need to send it
   | { type: 'ACTION'; action: BattleAction }
   | { type: 'STATE_SYNC'; state: BattleState }
   | { type: 'TURN_START'; playerId: string; state: BattleState }
-  | { type: 'BATTLE_START'; hostDeck: Card[]; guestDeck: Card[]; firstPlayerId: 'host' | 'guest' }
+  | { type: 'BATTLE_START'; firstPlayerId: 'host' | 'guest' }  // Only send turn order
   | { type: 'PING' }
   | { type: 'PONG' }
   | { type: 'DISCONNECT'; reason?: string };
@@ -219,19 +219,16 @@ export class MultiplayerService {
       case 'ACCEPT':
         this.emit('opponentAccepted', {
           playerName: message.playerName,
-          walletAddress: message.walletAddress,
-          deck: message.deck
+          walletAddress: message.walletAddress
         });
         break;
 
-      case 'DECK_SELECTED':
-        this.emit('deckSelected', { deck: message.deck });
+      case 'DECK_READY':
+        this.emit('deckReady');
         break;
 
       case 'BATTLE_START':
         this.emit('battleStart', {
-          hostDeck: message.hostDeck,
-          guestDeck: message.guestDeck,
           firstPlayerId: message.firstPlayerId
         });
         break;

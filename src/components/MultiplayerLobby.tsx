@@ -75,8 +75,11 @@ export const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onBattleRead
 
   // When both players ready, start battle
   useEffect(() => {
-    if (phase === 'ready' && localDeck && opponent?.deck && firstPlayerId) {
+    if (phase === 'ready' && localDeck && opponent?.isReady && firstPlayerId && opponent.walletAddress) {
       console.log('🎮 Both players ready! Starting battle...');
+
+      // Generate opponent's deck locally (same as they generated theirs)
+      const opponentDeck = generateFullDeck(opponent.walletAddress);
 
       // Determine if local player goes first
       // If local is host and firstPlayerId is 'host', or local is guest and firstPlayerId is 'guest'
@@ -84,7 +87,7 @@ export const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onBattleRead
 
       console.log(`🎲 Local player goes ${isLocalPlayerFirst ? 'FIRST' : 'SECOND'}`);
 
-      onBattleReady(localDeck, opponent.deck, opponent.name, opponent.walletAddress, isLocalPlayerFirst);
+      onBattleReady(localDeck, opponentDeck, opponent.name, opponent.walletAddress, isLocalPlayerFirst);
     }
   }, [phase, localDeck, opponent, firstPlayerId, isHost, onBattleReady]);
 
@@ -251,7 +254,7 @@ export const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onBattleRead
   }
 
   // Waiting for opponent's deck
-  if (phase === 'connected' && localDeck && !opponent?.deck) {
+  if (phase === 'connected' && localDeck && !opponent?.isReady) {
     return (
       <div style={styles.overlay}>
         <div style={styles.container}>

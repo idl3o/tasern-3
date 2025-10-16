@@ -201,8 +201,7 @@ export const useMultiplayerStore = create<MultiplayerStore>()(
         service.send({
           type: 'ACCEPT',
           playerName,
-          walletAddress,
-          deck: [] // Will be set during deck selection
+          walletAddress
         });
 
         console.log('✅ Joined lobby successfully');
@@ -228,10 +227,9 @@ export const useMultiplayerStore = create<MultiplayerStore>()(
         state.localDeck = deck;
       });
 
-      // Notify opponent
+      // Notify opponent that deck is ready (don't send the actual deck)
       service.send({
-        type: 'DECK_SELECTED',
-        deck
+        type: 'DECK_READY'
       });
 
       console.log('🎴 Deck selected:', deck.length, 'cards');
@@ -275,11 +273,9 @@ export const useMultiplayerStore = create<MultiplayerStore>()(
           state.firstPlayerId = firstPlayerId;
         });
 
-        // Notify guest
+        // Notify guest of turn order (no need to send decks)
         service.send({
           type: 'BATTLE_START',
-          hostDeck: localDeck,
-          guestDeck: opponent.deck,
           firstPlayerId
         });
       }
@@ -348,27 +344,27 @@ function setupEventListeners(
   });
 
   // Opponent accepted invite (host receives this)
-  service.on('opponentAccepted', (data: { playerName: string; walletAddress: string; deck: Card[] }) => {
+  service.on('opponentAccepted', (data: { playerName: string; walletAddress: string }) => {
     console.log('✅ Opponent accepted:', data.playerName);
 
     set((state: MultiplayerStore) => {
       state.opponent = {
         name: data.playerName,
         walletAddress: data.walletAddress,
-        deck: data.deck.length > 0 ? data.deck : null,
-        isReady: data.deck.length > 0
+        deck: null,
+        isReady: false
       };
       state.phase = 'connected';
     });
   });
 
-  // Opponent selected deck
-  service.on('deckSelected', ({ deck }: { deck: Card[] }) => {
-    console.log('🎴 Opponent selected deck:', deck.length, 'cards');
+  // Opponent's deck is ready
+  service.on('deckReady', () => {
+    console.log('🎴 Opponent deck is ready');
 
     set((state: MultiplayerStore) => {
       if (state.opponent) {
-        state.opponent.deck = deck;
+        // Mark opponent as ready, but don't set deck (they have it locally)
         state.opponent.isReady = true;
       }
 
@@ -389,8 +385,8 @@ function setupEventListeners(
   });
 
   // Battle starting
-  service.on('battleStart', ({ hostDeck, guestDeck, firstPlayerId }: { hostDeck: Card[]; guestDeck: Card[]; firstPlayerId: 'host' | 'guest' }) => {
-    console.log('🎮 Battle starting! Host:', hostDeck.length, 'Guest:', guestDeck.length);
+  service.on('battleStart', ({ firstPlayerId }: { firstPlayerId: 'host' | 'guest' }) => {
+    console.log('🎮 Battle starting!');
     console.log(`🎲 ${firstPlayerId} goes first!`);
 
     set((state: MultiplayerStore) => {
