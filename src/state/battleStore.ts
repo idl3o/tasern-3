@@ -363,3 +363,5 @@ export const selectCurrentTurn = (state: BattleStore) => state.battleState?.curr
 export const selectPhase = (state: BattleStore) => state.battleState?.phase;
 export const selectWinner = (state: BattleStore) => state.battleState?.winner;
 export const selectBattleLog = (state: BattleStore) => state.getBattleLog();
+export const selectLocalPlayerId = (state: BattleStore) => state.localPlayerId;
+export const selectIsMultiplayer = (state: BattleStore) => state.isMultiplayer;

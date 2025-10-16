@@ -14,6 +14,8 @@ import {
   selectActivePlayer,
   selectIsProcessing,
   selectPhase,
+  selectLocalPlayerId,
+  selectIsMultiplayer,
 } from '../state/battleStore';
 import { BattlefieldGrid } from './BattlefieldGrid';
 import { PlayerStatus } from './PlayerStatus';
@@ -34,6 +36,8 @@ export const BattleView: React.FC = () => {
   const activePlayer = useBattleStore(selectActivePlayer);
   const isProcessing = useBattleStore(selectIsProcessing);
   const phase = useBattleStore(selectPhase);
+  const localPlayerId = useBattleStore(selectLocalPlayerId);
+  const isMultiplayer = useBattleStore(selectIsMultiplayer);
 
   const { endTurn, executeAction } = useBattleStore();
 
@@ -79,15 +83,24 @@ export const BattleView: React.FC = () => {
     }
   };
 
+  // Helper: Check if it's the local player's turn
+  const isLocalPlayerTurn = () => {
+    if (!activePlayer) return false;
+    if (isMultiplayer) {
+      return activePlayer.id === localPlayerId;
+    }
+    return activePlayer.type === 'human';
+  };
+
   const handleCardSelect = (card: Card) => {
-    if (activePlayer?.type === 'human' && !isProcessing) {
+    if (isLocalPlayerTurn() && !isProcessing) {
       setSelectedCard(selectedCard?.id === card.id ? null : card);
       setSelectedBattlefieldCard(null); // Clear battlefield selection
     }
   };
 
   const handleBattlefieldClick = (position: Position, card: any) => {
-    if (!activePlayer || activePlayer.type !== 'human' || isProcessing) {
+    if (!isLocalPlayerTurn() || isProcessing) {
       return;
     }
 
@@ -135,7 +148,7 @@ export const BattleView: React.FC = () => {
   };
 
   const handleCastleAttack = (targetPlayerId: string) => {
-    if (!activePlayer || activePlayer.type !== 'human' || isProcessing || !selectedBattlefieldCard) {
+    if (!isLocalPlayerTurn() || isProcessing || !selectedBattlefieldCard || !activePlayer) {
       return;
     }
 
@@ -177,16 +190,19 @@ export const BattleView: React.FC = () => {
         <h1 style={styles.title}>⚔️ Tasern Siegefront ⚔️</h1>
         <div style={styles.headerRight}>
           <div style={styles.phaseIndicator}>
-            {phase === 'deployment' && '📍 Deployment Phase'}
-            {phase === 'battle' && '⚔️ Battle Phase'}
-            {phase === 'victory' && '🏆 Victory!'}
+            {phase === 'victory' ? '🏆 Victory!' : `⚔️ Turn ${battleState.currentTurn}`}
           </div>
-          {activePlayer && (
+          {activePlayer && phase !== 'victory' && (
             <div style={{
               ...styles.turnIndicator,
-              ...(activePlayer.type === 'human' ? styles.turnIndicatorYou : styles.turnIndicatorOpponent)
+              // Check if active player is the local player (for multiplayer) or is human type (for local games)
+              ...((isMultiplayer && activePlayer.id === localPlayerId) || (!isMultiplayer && activePlayer.type === 'human')
+                ? styles.turnIndicatorYou
+                : styles.turnIndicatorOpponent)
             }}>
-              {activePlayer.type === 'human' ? '👤 YOUR TURN' : `🤖 ${activePlayer.name}'s Turn`}
+              {(isMultiplayer && activePlayer.id === localPlayerId) || (!isMultiplayer && activePlayer.type === 'human')
+                ? '👤 YOUR TURN'
+                : `${activePlayer.type === 'ai' ? '🤖' : '👥'} ${activePlayer.name}'s Turn`}
             </div>
           )}
         </div>
@@ -248,8 +264,8 @@ export const BattleView: React.FC = () => {
         </div>
       </div>
 
-      {/* Bottom: Controls */}
-      {activePlayer && (
+      {/* Bottom: Controls - Only show for local player */}
+      {activePlayer && isLocalPlayerTurn() && (
         <div style={styles.controlsPanel}>
           <BattleControls
             activePlayer={activePlayer}
@@ -262,8 +278,8 @@ export const BattleView: React.FC = () => {
         </div>
       )}
 
-      {/* Human Player Hand - Only show for active human player */}
-      {activePlayer && activePlayer.type === 'human' && (
+      {/* Human Player Hand - Only show for local player */}
+      {activePlayer && isLocalPlayerTurn() && (
         <div style={styles.handPanel}>
           <HandDisplay
             cards={activePlayer.hand}
