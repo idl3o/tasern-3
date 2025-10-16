@@ -30,7 +30,8 @@ interface BattleStore {
   initializeMultiplayerBattle: (
     localPlayer: Player,
     remotePlayer: Player,
-    service: MultiplayerService
+    service: MultiplayerService,
+    localWalletAddress: string
   ) => void;
   executeAction: (action: BattleAction) => void;
   endTurn: () => void;
@@ -92,9 +93,13 @@ export const useBattleStore = create<BattleStore>()(
     initializeMultiplayerBattle: (
       localPlayer: Player,
       remotePlayer: Player,
-      service: MultiplayerService
+      service: MultiplayerService,
+      localWalletAddress: string
     ) => {
       console.log('🌐 Initializing multiplayer battle');
+      console.log('   Local wallet:', localWalletAddress);
+      console.log('   Player 1 (first turn):', localPlayer.id);
+      console.log('   Player 2:', remotePlayer.id);
 
       try {
         const newState = BattleEngine.initializeBattle(localPlayer, remotePlayer);
@@ -108,6 +113,9 @@ export const useBattleStore = create<BattleStore>()(
           }
         });
 
+        // Use deterministic player ID based on wallet address
+        const localPlayerDeterministicId = `player-${localWalletAddress}`;
+
         set((state) => {
           state.battleState = {
             ...newState,
@@ -115,9 +123,11 @@ export const useBattleStore = create<BattleStore>()(
           };
           state.isMultiplayer = true;
           state.multiplayerService = service;
-          state.localPlayerId = localPlayer.id;
+          state.localPlayerId = localPlayerDeterministicId; // Use deterministic ID
           state.error = null;
         });
+
+        console.log(`✅ Multiplayer battle initialized - localPlayerId set to: ${localPlayerDeterministicId}`);
 
         // Setup listener for remote player actions
         service.on('action', (data: { action: BattleAction }) => {

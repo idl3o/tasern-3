@@ -233,29 +233,32 @@ export const App: React.FC = () => {
     console.log('   Opponent:', opponentName, opponentWallet);
     console.log(`   🎲 Turn order: ${isLocalPlayerFirst ? 'YOU GO FIRST!' : 'OPPONENT GOES FIRST'}`);
 
-    // Create local player (you)
+    // Create local player (you) - use wallet address as ID for consistency
     const localPlayer = PlayerFactory.createHuman('You');
+    localPlayer.id = `player-${walletAddress}`; // Use wallet address for deterministic ID
     localPlayer.hand = localDeck.slice(0, 5);
     localPlayer.deck = localDeck.slice(5);
 
-    // Create remote player (opponent)
+    // Create remote player (opponent) - use their wallet address as ID
     const remotePlayer = PlayerFactory.createRemoteHuman(
       opponentName,
       multiplayerService
     );
+    remotePlayer.id = `player-${opponentWallet}`; // Use opponent wallet for deterministic ID
     remotePlayer.hand = opponentDeck.slice(0, 5);
     remotePlayer.deck = opponentDeck.slice(5);
 
-    console.log(`📚 Local player deck: ${localPlayer.hand.length} in hand, ${localPlayer.deck.length} in deck`);
-    console.log(`📚 Remote player deck: ${remotePlayer.hand.length} in hand, ${remotePlayer.deck.length} in deck`);
+    console.log(`📚 Local player (${localPlayer.id}) deck: ${localPlayer.hand.length} in hand, ${localPlayer.deck.length} in deck`);
+    console.log(`📚 Remote player (${remotePlayer.id}) deck: ${remotePlayer.hand.length} in hand, ${remotePlayer.deck.length} in deck`);
 
     setShowMultiplayerLobby(false);
 
     // Pass players in order based on who goes first
+    // Both clients will create identical battle state because player IDs are deterministic (based on wallet addresses)
     if (isLocalPlayerFirst) {
-      initializeMultiplayerBattle(localPlayer, remotePlayer, multiplayerService);
+      initializeMultiplayerBattle(localPlayer, remotePlayer, multiplayerService, walletAddress);
     } else {
-      initializeMultiplayerBattle(remotePlayer, localPlayer, multiplayerService);
+      initializeMultiplayerBattle(remotePlayer, localPlayer, multiplayerService, walletAddress);
     }
   };
 
