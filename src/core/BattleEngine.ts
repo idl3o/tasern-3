@@ -613,19 +613,27 @@ export class BattleEngine {
       };
     }
 
-    // Resource exhaustion (human players only)
-    for (const playerId of playerIds) {
-      const player = state.players[playerId];
-      if (player.type === 'human' && player.hand.length === 0 && player.deck.length === 0) {
-        const cardsOnBoard = state.battlefield.flat().filter((c) => c?.ownerId === playerId);
-        if (cardsOnBoard.length === 0) {
-          const winnerId = playerIds.find((id) => id !== playerId)!;
-          console.log(`🏆 ${state.players[winnerId].name} wins by resource exhaustion!`);
-          return {
-            winnerId,
-            condition: 'RESOURCE_EXHAUSTION',
-            turn: state.currentTurn,
-          };
+    // Resource exhaustion (human vs AI games only, not multiplayer)
+    // In multiplayer, both players are 'human' type (one local, one remote)
+    // Remote players have empty decks on this client but manage their own deck
+    // So we skip this check if both players are human (indicates multiplayer)
+    const humanPlayerCount = playerIds.filter(id => state.players[id].type === 'human').length;
+    const isMultiplayer = humanPlayerCount === 2;
+
+    if (!isMultiplayer) {
+      for (const playerId of playerIds) {
+        const player = state.players[playerId];
+        if (player.type === 'human' && player.hand.length === 0 && player.deck.length === 0) {
+          const cardsOnBoard = state.battlefield.flat().filter((c) => c?.ownerId === playerId);
+          if (cardsOnBoard.length === 0) {
+            const winnerId = playerIds.find((id) => id !== playerId)!;
+            console.log(`🏆 ${state.players[winnerId].name} wins by resource exhaustion!`);
+            return {
+              winnerId,
+              condition: 'RESOURCE_EXHAUSTION',
+              turn: state.currentTurn,
+            };
+          }
         }
       }
     }
