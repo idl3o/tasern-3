@@ -131,9 +131,15 @@ export const useBattleStore = create<BattleStore>()(
 
         // Setup listener for remote player actions
         service.on('action', (data: { action: BattleAction }) => {
-          console.log('📨 Received opponent action:', data.action.type, 'from playerId:', data.action.playerId);
+          console.log('🔔 ========================================');
+          console.log('📨 RECEIVED OPPONENT ACTION');
+          console.log('   Action type:', data.action.type);
+          console.log('   Action from playerId:', data.action.playerId);
           console.log('   Current activePlayerId:', get().battleState?.activePlayerId);
           console.log('   Local playerId:', get().localPlayerId);
+          console.log('   Is processing:', get().isProcessing);
+          console.log('   Full action:', JSON.stringify(data.action, null, 2));
+          console.log('🔔 ========================================');
           get().executeAction(data.action);
         });
 
@@ -165,7 +171,13 @@ export const useBattleStore = create<BattleStore>()(
       // If this is a local action in multiplayer, broadcast to opponent
       // Note: END_TURN is already broadcast in endTurn(), so skip it here to avoid double-broadcasting
       if (isMultiplayer && action.playerId === localPlayerId && multiplayerService && action.type !== 'END_TURN') {
-        console.log('📤 Broadcasting action to opponent:', action.type);
+        console.log('📡 ========================================');
+        console.log('📤 BROADCASTING ACTION TO OPPONENT');
+        console.log('   Action type:', action.type);
+        console.log('   From playerId:', action.playerId);
+        console.log('   Local playerId:', localPlayerId);
+        console.log('   Full action:', JSON.stringify(action, null, 2));
+        console.log('📡 ========================================');
         multiplayerService.send({
           type: 'ACTION',
           action

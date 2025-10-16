@@ -195,6 +195,9 @@ export class MultiplayerService {
     conn.on('data', (data) => {
       const message = data as MultiplayerMessage;
       console.log('📨 Received message:', message.type);
+      if (message.type === 'ACTION') {
+        console.log('   Raw message data:', JSON.stringify(message, null, 2));
+      }
 
       this.handleMessage(message);
     });
@@ -234,6 +237,7 @@ export class MultiplayerService {
         break;
 
       case 'ACTION':
+        console.log('🎯 Emitting action event with:', message.action);
         this.emit('action', { action: message.action });
         break;
 
@@ -272,12 +276,17 @@ export class MultiplayerService {
   send(message: MultiplayerMessage) {
     if (!this.connection || !this.connection.open) {
       console.warn('⚠️ Cannot send - no active connection');
+      console.warn('   Connection exists:', !!this.connection);
+      console.warn('   Connection open:', this.connection?.open);
       return;
     }
 
     try {
       this.connection.send(message);
       console.log('📤 Sent message:', message.type);
+      if (message.type === 'ACTION') {
+        console.log('   Action details:', JSON.stringify(message.action, null, 2));
+      }
     } catch (error) {
       console.error('❌ Failed to send message:', error);
       this.emit('error', { error });
