@@ -49,7 +49,7 @@ export const Tutorial: React.FC<TutorialProps> = ({ onClose }) => {
       content: (
         <>
           <p><strong>Select your card</strong> on the battlefield, then <strong>click an enemy card or castle</strong> to attack.</p>
-          <p>Each card can attack once per turn. Destroy the enemy castle (30 HP) to win!</p>
+          <p>Each card can attack once per turn. Destroy the enemy castle (50 HP) to win!</p>
           <p>Cards have <strong>Attack</strong>, <strong>HP</strong>, <strong>Defense</strong>, and <strong>Speed</strong> stats.</p>
         </>
       ),

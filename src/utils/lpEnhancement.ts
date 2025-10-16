@@ -4,8 +4,12 @@
  * Formula discovered through transaction analysis and EIP-1167 proxy detection.
  * LP holdings enhance card stats based on proven multipliers from tasern 2.
  *
+ * IMPORTANT: LP enhancements apply ONLY to Tasern NFT cards, NOT to AI-generated cards.
+ * This creates a meaningful economic layer where holding LP tokens directly strengthens
+ * your NFT collection, rewarding ecosystem commitment.
+ *
  * Philosophy: NFT LP holdings boost card power. The more you commit to the
- * ecosystem, the stronger your cards become.
+ * regenerative finance ecosystem, the stronger your NFT cards become.
  */
 
 import type { Card } from '../types/core';

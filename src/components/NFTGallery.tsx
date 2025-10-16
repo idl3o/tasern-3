@@ -30,10 +30,21 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ onClose, onSelectCard })
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
   const [scanLogs, setScanLogs] = useState<string[]>([]);
 
-  // Scan for NFTs when wallet connects
+  // Scan for NFTs when wallet connects (only if not already scanned)
   useEffect(() => {
     if (isConnected && account) {
-      scanWallet(account);
+      // Check if we already have NFT cards for this wallet in the store
+      const existingCards = useNFTCardsStore.getState().getNFTCards(account);
+
+      if (existingCards.length === 0) {
+        // No cached cards - scan wallet
+        scanWallet(account);
+      } else {
+        // Use cached cards
+        console.log(`📦 Using ${existingCards.length} cached NFT cards for ${account.slice(0, 6)}...${account.slice(-4)}`);
+        setCards(existingCards);
+        // Note: We don't have enhancedNFTs cached, but cards are enough for display
+      }
     } else {
       setEnhancedNFTs([]);
       setCards([]);
@@ -113,9 +124,20 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ onClose, onSelectCard })
         {/* Header */}
         <div style={styles.header}>
           <h1 style={styles.title}>🎴 NFT Card Gallery 🎴</h1>
-          <button style={styles.closeButton} onClick={onClose}>
-            ✕
-          </button>
+          <div style={styles.headerButtons}>
+            {isConnected && account && !isScanning && (
+              <button
+                style={styles.rescanButton}
+                onClick={() => scanWallet(account)}
+                title="Rescan wallet for new NFTs or LP changes"
+              >
+                🔄 Rescan
+              </button>
+            )}
+            <button style={styles.closeButton} onClick={onClose}>
+              ✕
+            </button>
+          </div>
         </div>
 
         <p style={styles.subtitle}>
@@ -269,6 +291,24 @@ const styles: Record<string, React.CSSProperties> = {
     letterSpacing: '0.1em',
     textShadow: TASERN_SHADOWS.glowGold,
     margin: 0,
+  },
+  headerButtons: {
+    display: 'flex',
+    gap: '0.5rem',
+    alignItems: 'center',
+  },
+  rescanButton: {
+    background: `linear-gradient(135deg, ${TASERN_COLORS.bronze} 0%, ${TASERN_COLORS.leather} 100%)`,
+    border: `2px solid ${TASERN_COLORS.gold}`,
+    borderRadius: '8px',
+    padding: '8px 16px',
+    color: TASERN_COLORS.parchment,
+    fontSize: '14px',
+    fontFamily: TASERN_TYPOGRAPHY.heading,
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
   },
   closeButton: {
     background: 'transparent',

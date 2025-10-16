@@ -63,8 +63,14 @@ export interface TasernNFT {
 }
 
 /**
- * Known Tasern Universe NFT contracts on Polygon
- * Add discovered contracts here
+ * Tasern Hub address (talesoftasern.eth)
+ * All legitimate Tasern NFTs originate from or interact with this hub
+ */
+export const TASERN_HUB_ADDRESS = '0x0780b1456d5e60cf26c8cd6541b85e805c8c05f2';
+
+/**
+ * Known Tasern Universe NFT contracts on Polygon (whitelist for fast verification)
+ * Add discovered contracts here to skip API verification
  */
 export const TASERN_NFT_CONTRACTS = [
   '0x0780b1456d5e60cf26c8cd6541b85e805c8c05f2', // TOT Hub - Tales of Tasern
@@ -188,6 +194,91 @@ export async function scanNFTContract(
   }
 
   return nfts;
+}
+
+/**
+ * Verify if an NFT contract is associated with Tasern Hub using Alchemy getAssetTransfers
+ * Checks for any historical interaction (minting, transfers, etc.) with Tasern Hub
+ */
+export async function verifyTasernHubAssociation(
+  contractAddress: string
+): Promise<boolean> {
+  try {
+    const alchemyApiKey = process.env.REACT_APP_ALCHEMY_API_KEY || 'demo';
+    const alchemyUrl = `https://polygon-mainnet.g.alchemy.com/v2/${alchemyApiKey}`;
+
+    // Check interactions in both directions (contract -> hub, hub -> contract)
+    const requests = [
+      // Check if hub sent NFTs from this contract
+      fetch(alchemyUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'alchemy_getAssetTransfers',
+          params: [{
+            fromAddress: TASERN_HUB_ADDRESS,
+            contractAddresses: [contractAddress],
+            category: ['erc721', 'erc1155'],
+            maxCount: '0x1', // Only need to find 1 interaction
+            excludeZeroValue: false
+          }]
+        })
+      }),
+      // Check if this contract sent to hub
+      fetch(alchemyUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'alchemy_getAssetTransfers',
+          params: [{
+            toAddress: TASERN_HUB_ADDRESS,
+            contractAddresses: [contractAddress],
+            category: ['erc721', 'erc1155'],
+            maxCount: '0x1',
+            excludeZeroValue: false
+          }]
+        })
+      })
+    ];
+
+    const responses = await Promise.all(requests);
+    const results = await Promise.all(responses.map(r => r.json()));
+
+    // If either direction has transfers, it's a Tasern NFT
+    const hasInteraction = results.some(result =>
+      result.result?.transfers && result.result.transfers.length > 0
+    );
+
+    if (hasInteraction) {
+      console.log(`✅ Verified ${contractAddress} is associated with Tasern Hub`);
+    }
+
+    return hasInteraction;
+  } catch (error) {
+    console.error(`Error verifying Tasern Hub association for ${contractAddress}:`, error);
+    return false;
+  }
+}
+
+/**
+ * Check if contract is a Tasern NFT (hybrid approach)
+ * 1. Fast check against whitelist
+ * 2. If not whitelisted, verify via Alchemy API
+ */
+export async function isTasernNFT(contractAddress: string): Promise<boolean> {
+  const normalized = contractAddress.toLowerCase();
+
+  // Fast path: check whitelist
+  if (TASERN_NFT_CONTRACTS.some(addr => addr.toLowerCase() === normalized)) {
+    return true;
+  }
+
+  // Slow path: verify via Alchemy API
+  return await verifyTasernHubAssociation(contractAddress);
 }
 
 /**

@@ -255,9 +255,13 @@ export class UniversalImpactScanner {
 
   /**
    * Load NFTs from a wallet using Alchemy API with fallback
+   * FILTERS to only Tasern Universe NFTs using hybrid verification
    */
   private async loadNFTsFromWallet(walletAddress: string, log: LogCallback): Promise<any[]> {
     try {
+      // Import Tasern verification utilities
+      const { isTasernNFT, TASERN_HUB_ADDRESS } = await import('./nftScanner');
+
       // Try Alchemy API first
       const alchemyApiKey = process.env.REACT_APP_ALCHEMY_API_KEY || 'demo';
       const alchemyUrl = `https://polygon-mainnet.g.alchemy.com/nft/v3/${alchemyApiKey}/getNFTsForOwner?owner=${walletAddress}&withMetadata=true&pageSize=100`;
@@ -266,8 +270,34 @@ export class UniversalImpactScanner {
       const data = await response.json();
 
       if (data.ownedNfts && data.ownedNfts.length > 0) {
-        log(`Loaded ${data.ownedNfts.length} NFTs from Alchemy API`, 'success');
-        return data.ownedNfts;
+        log(`Loaded ${data.ownedNfts.length} total NFTs from Alchemy API`, 'info');
+
+        // Filter to only Tasern Universe NFTs using hybrid verification
+        const tasernNFTs: any[] = [];
+        const uniqueContracts = new Set<string>();
+
+        for (const nft of data.ownedNfts) {
+          const contractAddress = (nft.contractAddress || nft.contract?.address || '').toLowerCase();
+
+          if (!contractAddress) continue;
+
+          // Check if this contract is Tasern (uses whitelist + API verification)
+          const isTasern = await isTasernNFT(contractAddress);
+
+          if (isTasern) {
+            tasernNFTs.push(nft);
+            uniqueContracts.add(contractAddress);
+          }
+        }
+
+        if (tasernNFTs.length === 0) {
+          log(`No Tasern Universe NFTs found (checked ${data.ownedNfts.length} NFTs)`, 'warning');
+          log(`Tasern Hub: ${TASERN_HUB_ADDRESS}`, 'info');
+          return [];
+        }
+
+        log(`✅ Found ${tasernNFTs.length} Tasern NFTs from ${uniqueContracts.size} collection(s)`, 'success');
+        return tasernNFTs;
       }
 
       // No NFTs found - return empty array (production mode)

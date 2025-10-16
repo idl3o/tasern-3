@@ -94,8 +94,19 @@ export const useBattleStore = create<BattleStore>()(
 
       try {
         console.log('⚡ Executing action in store:', action.type);
+        console.log('📍 Active player before action:', currentState.activePlayerId);
 
         const newState = BattleEngine.executeAction(currentState, action);
+
+        console.log('📍 Active player after action:', newState.activePlayerId);
+
+        // Verify active player hasn't changed for attack actions
+        if ((action.type === 'ATTACK_CARD' || action.type === 'ATTACK_CASTLE') &&
+            currentState.activePlayerId !== newState.activePlayerId) {
+          console.error('🚨 BUG DETECTED: Active player changed during attack!');
+          console.error('   Before:', currentState.activePlayerId);
+          console.error('   After:', newState.activePlayerId);
+        }
 
         set((state) => {
           state.battleState = newState;

@@ -58,6 +58,27 @@ export const BattleView: React.FC = () => {
     }
   };
 
+  const handleSurrender = () => {
+    if (!isProcessing && activePlayer?.type === 'human' && battleState) {
+      // Confirm surrender
+      const confirmed = window.confirm('Are you sure you want to surrender?');
+      if (confirmed) {
+        // End the battle by declaring the opponent as winner
+        const opponentId = Object.keys(battleState.players).find(id => id !== activePlayer.id);
+        if (opponentId) {
+          // Force victory for opponent using proper Immer-based state update
+          useBattleStore.setState((state) => {
+            if (state.battleState) {
+              state.battleState.winner = opponentId;
+              state.battleState.phase = 'victory';
+            }
+          });
+          console.log('🏳️ Player surrendered - opponent wins!');
+        }
+      }
+    }
+  };
+
   const handleCardSelect = (card: Card) => {
     if (activePlayer?.type === 'human' && !isProcessing) {
       setSelectedCard(selectedCard?.id === card.id ? null : card);
@@ -96,6 +117,7 @@ export const BattleView: React.FC = () => {
 
     // Case 3: Attacking an enemy card with selected card
     if (selectedBattlefieldCard && card !== null && card.ownerId !== activePlayer.id) {
+      console.log('⚔️ Executing card attack - turn should continue');
       executeAction({
         type: 'ATTACK_CARD',
         playerId: activePlayer.id,
@@ -122,6 +144,7 @@ export const BattleView: React.FC = () => {
       return;
     }
 
+    console.log('🏰 Executing castle attack - turn should continue');
     executeAction({
       type: 'ATTACK_CASTLE',
       playerId: activePlayer.id,
@@ -224,6 +247,7 @@ export const BattleView: React.FC = () => {
             currentTurn={battleState.currentTurn}
             battleLog={battleState.battleLog}
             onEndTurn={handleEndTurn}
+            onSurrender={handleSurrender}
           />
         </div>
       )}

@@ -52,16 +52,24 @@ export const App: React.FC = () => {
 
   const [showNFTGallery, setShowNFTGallery] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
-  const [isScanning, setIsScanning] = useState(false);
+  const [scannedWallets, setScannedWallets] = useState<Set<string>>(new Set());
 
-  // Auto-scan NFTs when wallet connects (if not already scanned)
+  // Auto-scan NFTs when wallet connects (only once per wallet address)
   useEffect(() => {
-    if (walletAddress && nftCards.length === 0 && !isScanning) {
-      console.log('🔍 Wallet connected but no NFTs in store - triggering auto-scan');
-      setIsScanning(true);
-      setShowNFTGallery(true);
+    if (walletAddress && !scannedWallets.has(walletAddress)) {
+      // Check if we already have NFTs in store for this wallet
+      const existingCards = getNFTCards(walletAddress);
+
+      if (existingCards.length === 0) {
+        console.log('🔍 New wallet connected - triggering auto-scan for', `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`);
+        setScannedWallets(prev => new Set(prev).add(walletAddress));
+        setShowNFTGallery(true);
+      } else {
+        console.log('📦 Wallet already has', existingCards.length, 'cached NFT cards - skipping auto-scan');
+        setScannedWallets(prev => new Set(prev).add(walletAddress));
+      }
     }
-  }, [walletAddress, nftCards.length, isScanning]);
+  }, [walletAddress, scannedWallets, getNFTCards]);
 
   const startBattle = (opponentName: string, humanPlayer: boolean = true, humanVsHuman: boolean = false) => {
     let opponent;
@@ -241,9 +249,8 @@ export const App: React.FC = () => {
         </div>
         {/* NFT Gallery Overlay */}
         <NFTGallery onClose={() => {
-          console.log('✅ NFT Gallery closed - resetting scan state');
+          console.log('✅ NFT Gallery closed');
           setShowNFTGallery(false);
-          setIsScanning(false);
         }} />
       </>
     );

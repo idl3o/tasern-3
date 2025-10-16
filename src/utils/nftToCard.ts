@@ -138,9 +138,12 @@ function generateAbility(nft: TasernNFT): import('../types/core').CardAbility | 
  *
  * Stat mapping strategies:
  * 1. Use NFT attributes if present (attack, defense, hp, speed, etc.)
- * 2. Fall back to balanced defaults based on rarity
- * 3. Apply LP bonus multiplier (0.01 LP = +5% to all stats)
- * 4. Add NFT-specific flavor
+ * 2. Fall back to balanced defaults matching AI card power budget for rarity
+ * 3. Apply flat Tasern NFT power boost (+2 ATK/HP, +1 DEF/SPD) - guarantees superiority
+ * 4. Apply LP bonus multiplier (0.01 LP = +5% to all stats)
+ * 5. Add NFT-specific flavor
+ *
+ * Power Guarantee: NFT cards are ALWAYS stronger than equivalent-mana AI cards
  */
 export function nftToCard(nft: TasernNFT, lpBonus: number = 0): Card {
   // Extract stats from NFT metadata
@@ -150,21 +153,42 @@ export function nftToCard(nft: TasernNFT, lpBonus: number = 0): Card {
   let speed = getTraitValue(nft, 'speed', 0);
   const manaCost = getTraitValue(nft, 'cost', 0) || getTraitValue(nft, 'mana', 0);
 
-  // If no stats in metadata, generate balanced defaults
+  // If no stats in metadata, generate balanced defaults MATCHING AI card power
+  // AI cards use: baseStats = manaCost * 2, so we reverse-engineer from that
   if (attack === 0 && hp === 0) {
     const rarity = getTraitString(nft, 'rarity', 'common').toLowerCase();
-    const basePower = rarity === 'legendary' ? 8 :
-                      rarity === 'epic' ? 6 :
-                      rarity === 'rare' ? 5 :
-                      rarity === 'uncommon' ? 4 : 3;
 
-    attack = basePower;
-    hp = basePower * 2;
-    defense = Math.floor(basePower * 0.5);
-    speed = basePower;
+    // Determine effective mana cost from rarity (NFTs deserve premium mana costs)
+    const effectiveManaCost = rarity === 'legendary' ? 8 :
+                               rarity === 'epic' ? 7 :
+                               rarity === 'rare' ? 6 :
+                               rarity === 'uncommon' ? 5 : 4; // Common NFT = 4 mana equivalent
+
+    // Use AI card formula as baseline (baseStats = manaCost * 2)
+    const baseStats = effectiveManaCost * 2;
+
+    // Balanced distribution matching AI "Balanced" mode
+    attack = Math.floor(baseStats * 0.6); // Same as AI balanced with 0.5 aggression
+    hp = Math.floor(baseStats * 0.9);
+    defense = Math.floor(effectiveManaCost * 0.7);
+    speed = Math.floor(effectiveManaCost * 0.7);
   }
 
-  // Apply LP bonus
+  // Apply Tasern NFT power boost (+2 flat bonus to attack/HP, +1 to def/speed)
+  // This ensures NFTs are ALWAYS better than equivalent AI cards after rounding
+  const NFT_ATTACK_BONUS = 2;
+  const NFT_HP_BONUS = 2;
+  const NFT_DEFENSE_BONUS = 1;
+  const NFT_SPEED_BONUS = 1;
+
+  attack += NFT_ATTACK_BONUS;
+  hp += NFT_HP_BONUS;
+  defense += NFT_DEFENSE_BONUS;
+  speed += NFT_SPEED_BONUS;
+
+  // Apply LP bonus (multiplicative with NFT boost)
+  // NOTE: LP enhancements ONLY apply to NFT cards, creating economic value for LP holders
+  // AI-generated cards do NOT receive LP bonuses - this is by design
   const lpMultiplier = 1 + (lpBonus / 100);
   attack = Math.floor(attack * lpMultiplier);
   hp = Math.floor(hp * lpMultiplier);
@@ -193,7 +217,7 @@ export function nftToCard(nft: TasernNFT, lpBonus: number = 0): Card {
     maxHp: hp,
     defense,
     speed,
-    manaCost: manaCost || Math.ceil((attack + hp) / 4),
+    manaCost: manaCost || Math.ceil((attack + hp) / 4), // Auto-calc if not in metadata
     rarity,
     combatType,
     abilities: ability ? [ability] : [],
