@@ -78,8 +78,10 @@ export const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onBattleRead
     if (phase === 'ready' && localDeck && opponent?.isReady && firstPlayerId && opponent.walletAddress) {
       console.log('🎮 Both players ready! Starting battle...');
 
-      // Generate opponent's deck locally (same as they generated theirs)
-      const opponentDeck = generateFullDeck(opponent.walletAddress);
+      // NOTE: We don't generate opponent's deck locally!
+      // The opponent has their own deck in their browser. When they play cards,
+      // we'll receive those actions over WebRTC. We just need an empty deck here.
+      const opponentDeck: Card[] = []; // Empty - opponent manages their own deck
 
       // Determine if local player goes first
       // If local is host and firstPlayerId is 'host', or local is guest and firstPlayerId is 'guest'

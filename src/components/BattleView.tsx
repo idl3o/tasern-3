@@ -112,6 +112,8 @@ export const BattleView: React.FC = () => {
         playerId: activePlayer.id,
         cardId: selectedCard.id,
         position,
+        // Include card data for multiplayer - opponent doesn't have this card in their local state
+        generatedCard: isMultiplayer ? selectedCard : undefined,
       });
       setSelectedCard(null);
       return;
