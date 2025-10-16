@@ -139,6 +139,7 @@ export const BattleView: React.FC = () => {
         playerId: activePlayer.id,
         attackerCardId: selectedBattlefieldCard.cardId,
         targetCardId: card.id,
+        randomSeed: Math.random(), // ⭐ Deterministic crit calculation for multiplayer
       });
       setSelectedBattlefieldCard(null);
       return;
@@ -166,6 +167,7 @@ export const BattleView: React.FC = () => {
       playerId: activePlayer.id,
       attackerCardId: selectedBattlefieldCard.cardId,
       targetPlayerId,
+      randomSeed: Math.random(), // ⭐ Deterministic crit calculation for multiplayer
     });
 
     setSelectedBattlefieldCard(null);

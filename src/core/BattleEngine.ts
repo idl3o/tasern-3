@@ -244,7 +244,7 @@ export class BattleEngine {
       }
 
       // Calculate damage with modifiers
-      const damage = this.calculateDamage(attacker, target, draft);
+      const damage = this.calculateDamage(attacker, target, draft, action.randomSeed);
 
       // Apply damage
       target.hp -= damage;
@@ -344,8 +344,9 @@ export class BattleEngine {
           (draft.weather?.attackMod || 1)
       );
 
-      // 10% crit chance
-      if (Math.random() < 0.1) {
+      // 10% crit chance - use seed if provided (multiplayer), otherwise generate random
+      const critRoll = action.randomSeed !== undefined ? action.randomSeed : Math.random();
+      if (critRoll < 0.1) {
         damage = Math.floor(damage * 1.5);
         draft.battleLog.push({
           turn: draft.currentTurn,
@@ -666,7 +667,8 @@ export class BattleEngine {
   private static calculateDamage(
     attacker: BattleCard,
     defender: BattleCard,
-    state: BattleState
+    state: BattleState,
+    randomSeed?: number
   ): number {
     let damage = attacker.attack;
 
@@ -695,8 +697,9 @@ export class BattleEngine {
       damage *= terrain.attackMod;
     }
 
-    // Critical hit (10% chance)
-    if (Math.random() < 0.1) {
+    // Critical hit (10% chance) - use seed if provided (multiplayer), otherwise generate random
+    const critRoll = randomSeed !== undefined ? randomSeed : Math.random();
+    if (critRoll < 0.1) {
       damage *= 1.5;
     }
 

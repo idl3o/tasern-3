@@ -15,9 +15,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Strategy pattern for player types (Human vs AI)
 
 ### Current Status
-**✅ MILESTONE 2 COMPLETE - NFT Integration & UX Polish!** (October 9, 2025)
+**✅ MILESTONE 3 COMPLETE - Real-Time Multiplayer PVP!** (October 16, 2025)
 
-The game now features complete Web3 NFT integration with seamless UX:
+The game now features working peer-to-peer multiplayer battles:
+- ✅ **WebRTC P2P Networking** - PeerJS for decentralized multiplayer (no game server needed!)
+- ✅ **Live Board Synchronization** - Card deployments and attacks sync in real-time between browsers
+- ✅ **Wallet-Based Identity** - Wallet addresses as consistent peer IDs
+- ✅ **Turn Order System** - Deterministic first player selection based on wallet addresses
+- ✅ **Invite Code System** - Base64-encoded lobby invites for easy sharing
+- ✅ **Empty Deck Pattern** - Remote players don't need local deck copies (cards travel with actions)
+- ✅ **Victory Condition Fix** - Resource exhaustion disabled for multiplayer (detected via both players = 'human')
+
+**Previous Milestone - NFT Integration & UX Polish:** (October 9, 2025)
 - ✅ **Web3 Wallet Integration** - RainbowKit + Wagmi on Polygon mainnet
 - ✅ **NFT Card System** - Wallet-gated NFT scanning with Alchemy API
 - ✅ **LP Enhancement Discovery** - Universal Impact Scanner with EIP-1167 proxy detection
@@ -27,7 +36,7 @@ The game now features complete Web3 NFT integration with seamless UX:
 - ✅ **Visual Enhancements** - Star ratings for LP boosts, provenance badges, NFT badges
 - ✅ **UX Polish** - Close buttons, scroll-to-top, proper overlay positioning
 
-**Previous Milestone - Core Gameplay:**
+**Core Gameplay Milestone:**
 - ✅ Dual menu system: "Play vs AI" and "Watch AI vs AI"
 - ✅ 5 distinct AI personalities from Tasern lore (Stumbleheart, Swiftblade, Thornwick, Grok, Nethys)
 - ✅ Human player hand generation (5 cards, adaptive mode)
@@ -39,7 +48,7 @@ The game now features complete Web3 NFT integration with seamless UX:
 - ✅ Battle log showing all actions
 - ✅ Medieval D&D aesthetic with Tasern theme colors
 
-**Next Phase:** Battle mechanics refinement, card abilities, advanced formations
+**Next Phase:** Polish multiplayer UX, reconnection handling, spectator mode
 
 ### Universe Context
 This game lives in James McGee's Tales of Tasern D&D homebrew universe. The visual style, lore, card naming, and AI personalities all honor this setting. Every design decision should ask: "Does this feel like it belongs in a D&D session?"
@@ -90,7 +99,9 @@ if (player.type === 'ai') {
 }
 ```
 
-**Why**: The previous build had 47 type checks scattered everywhere. It was a maintenance nightmare. Strategy pattern makes AI vs Human vs (future) Multiplayer a clean abstraction.
+**Why**: The previous build had 47 type checks scattered everywhere. It was a maintenance nightmare. Strategy pattern makes AI vs Human vs Multiplayer a clean abstraction.
+
+**Multiplayer Extension**: Remote players use `RemotePlayerStrategy` which waits for actions from WebRTC. The battle engine doesn't know or care if a player is AI, local human, or remote human - it just calls the strategy.
 
 ### 2. Dynamic AI Card Generation (Breakthrough Pattern)
 
@@ -101,6 +112,8 @@ AI players generate cards on-demand during action evaluation:
 - Stats scale with personality (aggression affects attack/HP ratio)
 
 **Philosophy**: AI isn't pretending to be human with a deck. It's genuinely AI - manifesting responses to challenges.
+
+**Multiplayer Breakthrough**: This same pattern solves multiplayer sync! Remote players have empty decks locally, but their cards travel with actions via the `generatedCard` field. The battle engine treats remote cards exactly like AI-generated cards.
 
 ### 3. Immutable State Updates (NEVER MUTATE)
 
@@ -291,6 +304,14 @@ Cards follow strategic mode patterns:
 - State healing (catch corruption before crashes)
 - Pure functions everywhere (easy to test)
 
+**Multiplayer Breakthrough Lessons** (October 16, 2025):
+- **Reuse existing patterns** - The AI's `generatedCard` pattern solved multiplayer sync perfectly
+- **Empty decks for remote players** - Don't try to synchronize decks, let cards travel with actions
+- **Strategy pattern wins again** - RemotePlayerStrategy fits seamlessly, engine doesn't care
+- **Detect multiplayer cleverly** - Two 'human' players = multiplayer (no new flags needed)
+- **Actions are pure data** - WebRTC serialization just works because actions have no methods
+- **Deterministic engine is key** - Same action on both clients = guaranteed same result
+
 ## Testing Requirements
 
 - **Unit Tests** - All pure functions (damage calculation, validation)
@@ -323,6 +344,114 @@ Complete architectural documentation in `init docs/`:
 - **CHRYSALIS.md** - Complete rebuild blueprint with proven patterns from previous build
 - **TASERN_UNIVERSE.md** - Visual design, lore, card naming, CSS themes
 - **LESSONS_LEARNED.md** - Philosophical insights, what worked, what didn't, wisdom
+
+## Multiplayer Architecture (Breakthrough Patterns)
+
+### The Empty Deck Pattern
+
+**Problem**: In multiplayer, both clients need synchronized board state, but each client only knows its own deck.
+
+**Naive Approach** (doesn't work):
+```typescript
+// ❌ Generate opponent's deck locally - causes card ID mismatches!
+const opponentDeck = generateFullDeck(opponent.walletAddress); // Random cards!
+```
+
+**Breakthrough Solution**: Remote players have **empty decks** locally. Cards travel with actions.
+
+```typescript
+// ✅ Remote player has no local deck
+const opponentDeck: Card[] = []; // Empty!
+
+// ✅ When deploying, include the card data in the action
+executeAction({
+  type: 'DEPLOY_CARD',
+  playerId: player.id,
+  cardId: selectedCard.id,
+  position,
+  generatedCard: isMultiplayer ? selectedCard : undefined, // ⭐ Card travels!
+});
+
+// ✅ Battle engine uses card from action
+let card = action.generatedCard || player.hand.find(c => c.id === action.cardId);
+```
+
+**Why This Works**:
+- Reuses the exact same `generatedCard` pattern from AI system
+- No deck synchronization needed - cards are self-contained in actions
+- Attack actions don't need this because cards already exist on synced battlefield
+- Clean, elegant, and requires zero new engine code
+
+### Victory Conditions in Multiplayer
+
+**Problem**: Resource exhaustion victory condition triggers immediately for remote players (they have empty decks).
+
+**Solution**: Detect multiplayer by checking if both players are 'human' type:
+
+```typescript
+// In single-player: one 'human', one 'ai'
+// In multiplayer: two 'human' (one local, one remote)
+const humanPlayerCount = playerIds.filter(id => state.players[id].type === 'human').length;
+const isMultiplayer = humanPlayerCount === 2;
+
+if (!isMultiplayer) {
+  // Only check resource exhaustion in single-player
+  checkResourceExhaustion();
+}
+```
+
+**Why This Works**:
+- Remote players are type 'human' (they're real humans, just remote)
+- AI players are type 'ai'
+- Two humans = multiplayer, one human = single-player
+- Clean detection without adding new flags to BattleState
+
+### WebRTC Action Broadcasting
+
+**Pattern**: Every action is broadcast to opponent via WebRTC before execution:
+
+```typescript
+// 1. Local player takes action
+executeAction(action);
+
+// 2. If multiplayer, broadcast to opponent
+if (isMultiplayer && multiplayerService) {
+  multiplayerService.send({ type: 'ACTION', action });
+}
+
+// 3. Opponent receives action and executes locally
+multiplayerService.on('action', (data) => {
+  executeAction(data.action); // Same action, different client!
+});
+```
+
+**Critical Details**:
+- Both clients execute the same action locally (no client-server model)
+- Actions are pure data (serializable over WebRTC)
+- BattleEngine is deterministic - same action = same result on both sides
+- Only the active player can send actions (enforced in battleStore)
+
+### RemotePlayerStrategy Pattern
+
+Remote players use a special strategy that waits for actions from the network:
+
+```typescript
+class RemotePlayerStrategy implements PlayerStrategy {
+  async selectAction(player: Player, state: BattleState): Promise<BattleAction> {
+    // Wait for action from WebRTC
+    return new Promise((resolve, reject) => {
+      this.pendingActionResolve = resolve;
+      // Action arrives via multiplayerService.on('action', ...)
+    });
+  }
+}
+```
+
+**Why This Works**:
+- Strategy pattern means battle engine doesn't know player is remote
+- Remote player "selects action" by waiting for network message
+- Timeout prevents infinite wait (60 seconds)
+- Disconnect handling rejects pending promises cleanly
 
 ## Key Implementation Patterns
 

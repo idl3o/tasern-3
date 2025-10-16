@@ -234,6 +234,7 @@ export interface AttackCardAction {
   playerId: string;
   attackerCardId: string;
   targetCardId: string;
+  randomSeed?: number; // ⭐ For deterministic crit calculation in multiplayer
 }
 
 export interface AttackCastleAction {
@@ -241,6 +242,7 @@ export interface AttackCastleAction {
   playerId: string;
   attackerCardId: string;
   targetPlayerId: string;
+  randomSeed?: number; // ⭐ For deterministic crit calculation in multiplayer
 }
 
 export interface MoveCardAction {
