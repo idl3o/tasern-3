@@ -121,8 +121,10 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: 'column',
     position: 'absolute',
     left: TASERN_SPACING.sm,
-    gap: '210px',
-    marginTop: '85px',
+    // Dynamic gap that scales with cell height + gap between rows
+    gap: 'calc(min(22vh, 320px) + 1rem)',
+    // Dynamic margin-top to align with first row
+    marginTop: 'calc(min(5vh, 85px))',
   },
   zoneLabel: {
     fontFamily: TASERN_TYPOGRAPHY.heading,
@@ -138,7 +140,8 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: TASERN_SPACING.md,
-    marginLeft: '60px',
+    // Responsive margin for zone labels
+    marginLeft: 'clamp(40px, 4vw, 60px)',
   },
   row: {
     display: 'flex',
@@ -146,8 +149,11 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
   },
   cell: {
-    width: '220px',
-    height: '320px',
+    // Responsive cell dimensions - scales with viewport but caps at original size
+    // Width: 12-15vw scales nicely, max 220px
+    width: 'min(15vw, 220px)',
+    // Height: maintains aspect ratio (roughly 1.45:1), max 320px
+    height: 'min(22vh, 320px)',
     borderRadius: TASERN_BORDERS.radiusMedium,
     display: 'flex',
     alignItems: 'center',

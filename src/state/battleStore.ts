@@ -268,17 +268,53 @@ export const useBattleStore = create<BattleStore>()(
         if (nextPlayer.type === 'ai') {
           console.log('🤖 AI turn starting...');
 
-          // Small delay for better UX
-          setTimeout(async () => {
+          // AI action loop - keep taking actions until END_TURN
+          const processAIActions = async () => {
+            let currentState = get().battleState;
+            if (!currentState) return;
+
+            const player = currentState.players[currentState.activePlayerId];
+            if (player.type !== 'ai') return;
+
             try {
-              const action = await nextPlayer.strategy.selectAction(nextPlayer, newState);
-              get().executeAction(action);
+              // Keep selecting and executing actions until AI decides to end turn
+              while (true) {
+                const action = await player.strategy.selectAction(player, currentState);
+
+                if (action.type === 'END_TURN') {
+                  // AI wants to end turn
+                  get().endTurn();
+                  break;
+                }
+
+                // Execute the action
+                get().executeAction(action);
+
+                // Small delay between actions for better UX
+                await new Promise(resolve => setTimeout(resolve, 800));
+
+                // Get updated state after action
+                currentState = get().battleState;
+                if (!currentState || currentState.winner) {
+                  // Game ended
+                  break;
+                }
+
+                // Verify it's still AI's turn (shouldn't change, but safety check)
+                if (currentState.activePlayerId !== player.id) {
+                  console.warn('⚠️ Active player changed unexpectedly');
+                  break;
+                }
+              }
             } catch (error) {
               console.error('❌ AI failed to select action:', error);
               // AI failed, end turn
               get().endTurn();
             }
-          }, 500);
+          };
+
+          // Start AI action loop with initial delay
+          setTimeout(processAIActions, 500);
         }
       } catch (error) {
         console.error('❌ Failed to end turn:', error);

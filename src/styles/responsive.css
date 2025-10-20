@@ -1,0 +1,194 @@
+/**
+ * Responsive Styles for Tasern Siegefront
+ *
+ * Handles responsive layout across different screen sizes
+ */
+
+/* Battle View Layout - Responsive Breakpoints */
+.battle-view-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.5rem;
+}
+
+.battle-main-content {
+  display: flex;
+  gap: 2rem;
+  flex: 1;
+  align-items: flex-start;
+}
+
+.battle-side-panel {
+  flex: 0 1 350px;
+  min-width: 280px;
+}
+
+.battle-center-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  min-width: 0; /* Allow flex item to shrink below content size */
+}
+
+/* Header Responsiveness */
+.battle-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.battle-header-right {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: flex-end;
+}
+
+/* Victory Card */
+.victory-card {
+  min-width: min(500px, 90vw);
+  padding: clamp(1.5rem, 4vw, 4rem);
+}
+
+/* Tablet and smaller (< 1200px) */
+@media (max-width: 1199px) {
+  .battle-main-content {
+    gap: 1rem;
+  }
+
+  .battle-side-panel {
+    flex: 0 1 280px;
+    min-width: 220px;
+  }
+
+  .battle-view-container {
+    padding: 1rem;
+    gap: 1rem;
+  }
+}
+
+/* Tablet portrait and smaller (< 900px) */
+@media (max-width: 899px) {
+  .battle-main-content {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .battle-side-panel {
+    width: 100%;
+    max-width: 500px;
+    flex: 1 1 auto;
+  }
+
+  .battle-center-panel {
+    width: 100%;
+    order: -1; /* Move battlefield to top on mobile */
+  }
+
+  .battle-header {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+
+  .battle-header-right {
+    align-items: center;
+  }
+}
+
+/* Mobile (< 600px) */
+@media (max-width: 599px) {
+  .battle-view-container {
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+
+  .battle-header {
+    padding: 1rem;
+  }
+
+  .battle-main-content {
+    gap: 0.75rem;
+  }
+
+  .victory-card {
+    padding: 1.5rem;
+  }
+}
+
+/* Hand Display Responsiveness */
+.hand-display-container {
+  display: flex;
+  justify-content: center;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 0.5rem 0;
+}
+
+@media (max-width: 899px) {
+  .hand-display-container {
+    justify-content: flex-start;
+  }
+}
+
+/* Controls Panel */
+.controls-panel-container {
+  display: flex;
+  justify-content: center;
+}
+
+@media (max-width: 599px) {
+  .controls-panel-container {
+    justify-content: stretch;
+  }
+}
+
+/* Card Display Responsiveness */
+.card-display {
+  width: min(200px, 28vw);
+  /* Scale down slightly on smaller screens */
+}
+
+@media (max-width: 1199px) {
+  .card-display {
+    width: min(180px, 30vw);
+  }
+}
+
+@media (max-width: 899px) {
+  .card-display {
+    width: min(160px, 35vw);
+  }
+}
+
+@media (max-width: 599px) {
+  .card-display {
+    width: min(140px, 40vw);
+  }
+}
+
+/* Hand Card Wrappers */
+.hand-card-wrapper {
+  min-width: 180px;
+  max-width: 180px;
+}
+
+@media (max-width: 899px) {
+  .hand-card-wrapper {
+    min-width: 160px;
+    max-width: 160px;
+  }
+}
+
+@media (max-width: 599px) {
+  .hand-card-wrapper {
+    min-width: 140px;
+    max-width: 140px;
+  }
+}

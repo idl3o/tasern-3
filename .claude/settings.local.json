@@ -28,7 +28,8 @@
       "Bash(del \"src\\utils\\nftProvenance.ts\")",
       "Bash(git config:*)",
       "Bash(del \"src\\hooks\\useRealtimeGame.ts\")",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []

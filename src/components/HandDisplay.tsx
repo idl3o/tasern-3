@@ -15,6 +15,7 @@ import {
   TASERN_BORDERS,
   TASERN_SPACING,
 } from '../styles/tasernTheme';
+import '../styles/responsive.css';
 
 interface HandDisplayProps {
   cards: Card[];
@@ -45,6 +46,7 @@ export const HandDisplay: React.FC<HandDisplayProps> = ({
           cards.map((card) => (
             <div
               key={card.id}
+              className="hand-card-wrapper"
               style={styles.cardWrapper}
             >
               <CardDisplay

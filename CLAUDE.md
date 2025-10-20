@@ -218,6 +218,35 @@ Traits:
 2. **Resource Exhaustion** - Human players only (AI generates dynamically)
 3. **Turn Limit** - Player with highest castle HP wins (default: 50 turns)
 
+### Turn 1 Summoning Sickness (First Player Balance)
+
+**Problem**: Going first gives positional advantage (access to middle column), but without balance, Player 2 gets to attack first, creating unfair advantage.
+
+**Solution**: Player 1 only - Turn 1 summoning sickness
+
+**Mechanic**:
+- **Turn 1 (Player 1)**: Deploy cards → **Cannot attack** (summoning sickness)
+- **Turn 2 (Player 2)**: Deploy cards → **Can attack immediately**
+- **Turn 3+ (Both)**: All deployed cards can attack immediately
+
+**Balance Trade-off**:
+- ✅ **P1 Advantage**: Gets prime real estate (middle column = contested center, castle-adjacent positions)
+- ✅ **P2 Advantage**: Gets to attack first (can hit P1's defenseless turn 1 cards)
+- ✅ **Elegant**: One-time first-turn handicap, no ongoing summoning sickness mechanic
+
+**Implementation** (BattleEngine.ts:240-246, 341-347):
+```typescript
+// Turn 1 summoning sickness for Player 1 (going first handicap)
+const playerIds = Object.keys(draft.players);
+const firstPlayerId = playerIds[0];
+if (draft.currentTurn === 1 && attacker.ownerId === firstPlayerId) {
+  console.warn('❌ Turn 1 summoning sickness - cannot attack on first turn');
+  return;
+}
+```
+
+**Philosophy**: Positional vs temporal trade-off. P1's spatial advantage (middle column) balances P2's temporal advantage (first strike). Creates dynamic opening strategies.
+
 ### Formations (6 Types)
 
 Positional bonuses based on card arrangement:

@@ -38,6 +38,8 @@ export class ConsciousnessAI {
     this.cardGenerator = new CardGenerator();
   }
 
+  // Helper methods for attack validation
+
   /**
    * The main decision loop - called every turn
    */
@@ -59,6 +61,13 @@ export class ConsciousnessAI {
     // STEP 4: GENERATE OPTIONS - All possible actions
     const actions = this.generatePossibleActions(player, state, mode);
     console.log(`🎲 Generated ${actions.length} possible actions`);
+
+    // Debug: Log action types
+    const actionTypeCounts = actions.reduce((acc, a) => {
+      acc[a.type] = (acc[a.type] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    console.log('📊 Action breakdown:', actionTypeCounts);
 
     if (actions.length === 0) {
       // No actions available, end turn
@@ -207,6 +216,13 @@ export class ConsciousnessAI {
       .flat()
       .filter((c) => c !== null && c.ownerId === player.id);
 
+    console.log(`🃏 AI has ${myCards.length} cards on battlefield`);
+    myCards.forEach(card => {
+      if (card) {
+        console.log(`   - ${card.name} at (${card.position.row},${card.position.col}): hasAttacked=${card.hasAttacked}, hasMoved=${card.hasMoved}, type=${card.combatType}`);
+      }
+    });
+
     // Generate deployment actions (with dynamically generated cards!)
     // Optimization: Generate fewer cards if board is already crowded
     const emptyPositions = state.battlefield.flat().filter(c => c === null).length;
@@ -251,6 +267,8 @@ export class ConsciousnessAI {
           .flat()
           .filter((c) => c !== null && c.ownerId !== player.id);
 
+        console.log(`   🎯 ${card.name} checking targets: ${enemyCards.length} enemy cards`);
+
         enemyCards.forEach((target) => {
           if (target && this.canAttackTarget(card, target)) {
             const attackAction: AttackCardAction = {
@@ -260,18 +278,26 @@ export class ConsciousnessAI {
               targetCardId: target.id,
             };
             actions.push(attackAction);
+            console.log(`      ✅ Can attack ${target.name}`);
+          } else if (target) {
+            console.log(`      ❌ Cannot attack ${target.name} (out of range)`);
           }
         });
 
-        // Attack castle
+        // Attack castle (only if card can actually reach the castle)
         const enemy = Object.values(state.players).find((p) => p.id !== player.id)!;
-        const castleAction: AttackCastleAction = {
-          type: 'ATTACK_CASTLE',
-          playerId: player.id,
-          attackerCardId: card.id,
-          targetPlayerId: enemy.id,
-        };
-        actions.push(castleAction);
+        const canAttackCastle = this.canAttackCastle(card, enemy.id, state);
+        console.log(`      🏰 Can attack castle: ${canAttackCastle} (col=${card.position.col}, type=${card.combatType})`);
+
+        if (canAttackCastle) {
+          const castleAction: AttackCastleAction = {
+            type: 'ATTACK_CASTLE',
+            playerId: player.id,
+            attackerCardId: card.id,
+            targetPlayerId: enemy.id,
+          };
+          actions.push(castleAction);
+        }
       }
     });
 
@@ -376,6 +402,16 @@ export class ConsciousnessAI {
     const playerIds = Object.keys(state.players);
     const playerIndex = playerIds.indexOf(player.id);
     const pos = action.position;
+
+    // IMPORTANT: Penalize deployment if we have unattacked cards on battlefield
+    const myCards = state.battlefield.flat().filter(c => c && c.ownerId === player.id);
+    const unattackedCards = myCards.filter(c => c && !c.hasAttacked);
+
+    if (unattackedCards.length > 0) {
+      // Significant penalty - we should attack first!
+      score -= 40 * unattackedCards.length;
+      console.log(`   ⚠️ Deploy penalty: ${unattackedCards.length} unattacked cards (-${40 * unattackedCards.length})`);
+    }
 
     // Value based on card stats
     score += card.attack * 2;
@@ -666,9 +702,9 @@ export class ConsciousnessAI {
 
   /**
    * Check if attacker can attack target based on combat type and range
-   * Melee: Can only attack adjacent rows (row ±1)
-   * Ranged: Can attack any row
-   * Hybrid: Can attack any row
+   * Melee: Can only attack adjacent columns (col ±1)
+   * Ranged: Can attack any column
+   * Hybrid: Can attack any column
    */
   private canAttackTarget(attacker: BattleCard, target: BattleCard): boolean {
     const colDiff = Math.abs(attacker.position.col - target.position.col);
@@ -684,6 +720,26 @@ export class ConsciousnessAI {
     }
 
     return true; // Default: allow
+  }
+
+  /**
+   * Check if attacker can attack enemy castle
+   * Melee: Must be in middle column (col 1) - contested center zone
+   * Ranged/Hybrid: Can attack from any column
+   */
+  private canAttackCastle(
+    attacker: BattleCard,
+    targetPlayerId: string,
+    state: BattleState
+  ): boolean {
+    // Ranged and hybrid can attack castle from anywhere
+    if (attacker.combatType === 'ranged' || attacker.combatType === 'hybrid') {
+      return true;
+    }
+
+    // Melee cards must be in the middle column (col 1)
+    // This is the contested center where melee units can reach both castles
+    return attacker.position.col === 1;
   }
 
   onTurnStart(player: Player, state: BattleState): void {

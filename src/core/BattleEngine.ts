@@ -237,6 +237,15 @@ export class BattleEngine {
         return;
       }
 
+      // Turn 1 summoning sickness for Player 1 (going first handicap)
+      // Block attacks during P1's first turn only (not during P2's turn 1 action)
+      const playerIds = Object.keys(draft.players);
+      const firstPlayerId = playerIds[0];
+      if (draft.currentTurn === 1 && draft.activePlayerId === firstPlayerId) {
+        console.warn('❌ Turn 1 summoning sickness - cannot attack on first turn');
+        return;
+      }
+
       // Check attack range
       if (!this.canAttackTarget(attacker, target)) {
         console.warn('❌ Target out of attack range');
@@ -327,6 +336,15 @@ export class BattleEngine {
 
       if (attacker.ownerId === targetPlayer.id) {
         console.warn('❌ Cannot attack own castle');
+        return;
+      }
+
+      // Turn 1 summoning sickness for Player 1 (going first handicap)
+      // Block attacks during P1's first turn only (not during P2's turn 1 action)
+      const playerIds = Object.keys(draft.players);
+      const firstPlayerId = playerIds[0];
+      if (draft.currentTurn === 1 && draft.activePlayerId === firstPlayerId) {
+        console.warn('❌ Turn 1 summoning sickness - cannot attack on first turn');
         return;
       }
 

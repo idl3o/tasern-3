@@ -31,6 +31,7 @@ import {
   TASERN_SPACING,
   TASERN_ICONS,
 } from '../styles/tasernTheme';
+import '../styles/responsive.css';
 
 export const BattleView: React.FC = () => {
   const battleState = useBattleStore(selectBattleState);
@@ -189,11 +190,11 @@ export const BattleView: React.FC = () => {
   }
 
   return (
-    <div style={styles.container}>
+    <div className="battle-view-container" style={styles.container}>
       {/* Header */}
-      <header style={styles.header}>
+      <header className="battle-header" style={styles.header}>
         <h1 style={styles.title}>⚔️ Tasern Siegefront ⚔️</h1>
-        <div style={styles.headerRight}>
+        <div className="battle-header-right" style={styles.headerRight}>
           <div style={styles.phaseIndicator}>
             {phase === 'victory' ? '🏆 Victory!' : `⚔️ Turn ${battleState.currentTurn}`}
           </div>
@@ -214,9 +215,9 @@ export const BattleView: React.FC = () => {
       </header>
 
       {/* Main Battle Area */}
-      <div style={styles.mainContent}>
+      <div className="battle-main-content" style={styles.mainContent}>
         {/* Left: Player 1 Status */}
-        <div style={styles.sidePanel}>
+        <div className="battle-side-panel" style={styles.sidePanel}>
           <PlayerStatus
             player={players[0]}
             isActive={activePlayer?.id === players[0].id}
@@ -231,7 +232,7 @@ export const BattleView: React.FC = () => {
         </div>
 
         {/* Center: Battlefield */}
-        <div style={styles.centerPanel}>
+        <div className="battle-center-panel" style={styles.centerPanel}>
           <BattlefieldGrid
             battlefield={battleState.battlefield}
             playerNames={playerNames}
@@ -254,7 +255,7 @@ export const BattleView: React.FC = () => {
         </div>
 
         {/* Right: Player 2 Status */}
-        <div style={styles.sidePanel}>
+        <div className="battle-side-panel" style={styles.sidePanel}>
           <PlayerStatus
             player={players[1]}
             isActive={activePlayer?.id === players[1].id}
@@ -271,7 +272,7 @@ export const BattleView: React.FC = () => {
 
       {/* Bottom: Controls - Only show for local player */}
       {activePlayer && isLocalPlayerTurn() && (
-        <div style={styles.controlsPanel}>
+        <div className="controls-panel-container" style={styles.controlsPanel}>
           <BattleControls
             activePlayer={activePlayer}
             isProcessing={isProcessing}
@@ -285,7 +286,7 @@ export const BattleView: React.FC = () => {
 
       {/* Human Player Hand - Only show for local player */}
       {activePlayer && isLocalPlayerTurn() && (
-        <div style={styles.handPanel}>
+        <div className="hand-display-container" style={styles.handPanel}>
           <HandDisplay
             cards={activePlayer.hand}
             onCardSelect={handleCardSelect}
@@ -298,7 +299,7 @@ export const BattleView: React.FC = () => {
       {/* Victory Overlay */}
       {phase === 'victory' && battleState.winner && (
         <div style={styles.victoryOverlay}>
-          <div style={styles.victoryCard}>
+          <div className="victory-card" style={styles.victoryCard}>
             <h1 style={styles.victoryTitle}>🏆 Victory!</h1>
             <h2 style={styles.victoryWinner}>
               {battleState.players[battleState.winner].name} wins!

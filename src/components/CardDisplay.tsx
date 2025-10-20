@@ -20,6 +20,7 @@ import {
   getRarityColor,
   getRarityGlow,
 } from '../styles/tasernTheme';
+import '../styles/responsive.css';
 
 interface CardDisplayProps {
   card: BattleCard | Card;
@@ -62,7 +63,7 @@ export const CardDisplay: React.FC<CardDisplayProps> = ({
       : TASERN_COLORS.red;
 
   return (
-    <div style={cardStyle} onClick={onClick}>
+    <div className="card-display" style={cardStyle} onClick={onClick}>
       {/* Card Header */}
       <div style={styles.header}>
         <div style={styles.name}>{card.name}</div>
