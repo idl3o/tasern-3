@@ -2,7 +2,45 @@
  * Responsive Styles for Tasern Siegefront
  *
  * Handles responsive layout across different screen sizes
+ * Mobile-first approach with touch-friendly interactions
  */
+
+/* Touch-friendly base styles */
+* {
+  -webkit-tap-highlight-color: rgba(244, 228, 193, 0.2);
+  -webkit-touch-callout: none;
+}
+
+/* Increase tap targets on mobile */
+button,
+a,
+[role="button"],
+[onclick] {
+  min-height: 44px; /* Apple's recommended minimum touch target */
+  min-width: 44px;
+  cursor: pointer;
+}
+
+/* Smooth scrolling for mobile */
+html {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent text selection during drag/touch */
+.no-select {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Active/hover states for touch */
+button:active,
+.card-display:active {
+  transform: scale(0.98);
+  transition: transform 0.1s ease;
+}
 
 /* Battle View Layout - Responsive Breakpoints */
 .battle-view-container {
