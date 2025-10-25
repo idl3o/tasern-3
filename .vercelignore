@@ -1,0 +1,17 @@
+node_modules
+.git
+.env.local
+.env
+*.log
+.DS_Store
+src/demo
+*.test.ts
+*.test.tsx
+coverage
+.vscode
+init docs
+LP_DISCOVERY_HANDOFF.md
+WEB3_INTEGRATION_COMPLETE.md
+DEPLOYMENT.md
+HARVEST_MANIFEST.md
+INTEGRATION_SUMMARY.md
