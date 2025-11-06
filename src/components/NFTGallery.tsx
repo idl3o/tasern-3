@@ -31,6 +31,7 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ onClose, onSelectCard })
   const [scanLogs, setScanLogs] = useState<string[]>([]);
   const [lastScanTime, setLastScanTime] = useState<number | null>(null);
   const [rescanCooldown, setRescanCooldown] = useState<number>(0);
+  const [showOnlyWithLP, setShowOnlyWithLP] = useState<boolean>(false);
 
   // Cooldown timer countdown
   useEffect(() => {
@@ -291,12 +292,22 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ onClose, onSelectCard })
           </div>
         )}
 
-        {/* LP Enhancement Summary */}
+        {/* LP Enhancement Summary with Filter Toggle */}
         {isConnected && !isScanning && enhancedNFTs.length > 0 && (
           <div style={styles.bonusSection}>
             <span style={styles.bonusText}>
               💎 {enhancedNFTs.filter(n => n.impactAssets.totalValue > 0).length} NFT{enhancedNFTs.filter(n => n.impactAssets.totalValue > 0).length !== 1 ? 's' : ''} with LP enhancements
             </span>
+            <button
+              style={{
+                ...styles.filterToggle,
+                ...(showOnlyWithLP ? styles.filterToggleActive : {})
+              }}
+              onClick={() => setShowOnlyWithLP(!showOnlyWithLP)}
+              title={showOnlyWithLP ? 'Show all NFTs' : 'Show only NFTs with LP holdings'}
+            >
+              {showOnlyWithLP ? '💎 LP Only' : '🎴 Show All'}
+            </button>
           </div>
         )}
 
@@ -316,6 +327,11 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ onClose, onSelectCard })
             {cards.map((card, index) => {
               // Get enhanced NFT data for this card
               const enhancedNFT = enhancedNFTs[index];
+
+              // Filter: Skip cards without LP if filter is active
+              if (showOnlyWithLP && enhancedNFT?.impactAssets.totalValue === 0) {
+                return null;
+              }
 
               return (
                 <div
@@ -494,11 +510,34 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'rgba(212, 175, 55, 0.1)',
     border: `1px solid ${TASERN_COLORS.gold}`,
     borderRadius: '8px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '1rem',
   },
   bonusText: {
     fontFamily: TASERN_TYPOGRAPHY.heading,
     fontSize: TASERN_TYPOGRAPHY.bodyLarge,
     color: TASERN_COLORS.gold,
+  },
+  filterToggle: {
+    background: `linear-gradient(135deg, ${TASERN_COLORS.bronze} 0%, ${TASERN_COLORS.leather} 100%)`,
+    border: `2px solid ${TASERN_COLORS.bronze}`,
+    borderRadius: '6px',
+    padding: '6px 12px',
+    color: TASERN_COLORS.parchment,
+    fontSize: '12px',
+    fontFamily: TASERN_TYPOGRAPHY.heading,
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+  },
+  filterToggleActive: {
+    background: `linear-gradient(135deg, ${TASERN_COLORS.gold} 0%, #FFD700 100%)`,
+    border: `2px solid ${TASERN_COLORS.gold}`,
+    color: '#1a1a1a',
+    boxShadow: TASERN_SHADOWS.glowGold,
   },
   emptySection: {
     textAlign: 'center',

@@ -29,7 +29,14 @@
       "Bash(git config:*)",
       "Bash(del \"src\\hooks\\useRealtimeGame.ts\")",
       "Bash(rm:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(if exist .env type .env)",
+      "Bash(vercel secrets add:*)",
+      "Bash(vercel --version:*)",
+      "Bash(vercel secrets:*)",
+      "Bash(vercel link:*)",
+      "Bash(vercel env:*)",
+      "Bash(vercel --prod:*)"
     ],
     "deny": [],
     "ask": []
