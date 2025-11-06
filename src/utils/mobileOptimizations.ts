@@ -4,6 +4,11 @@
  * Utilities for improving mobile performance
  */
 
+// Extend TouchEvent to include iOS-specific scale property
+interface TouchEventWithScale extends TouchEvent {
+  scale?: number;
+}
+
 /**
  * Prevent default touch behaviors (bounce, zoom on double-tap)
  */
@@ -12,7 +17,8 @@ export function preventMobileBehaviors() {
   document.addEventListener(
     'touchmove',
     (e) => {
-      if (e.scale && e.scale !== 1) {
+      const touchEvent = e as TouchEventWithScale;
+      if (touchEvent.scale && touchEvent.scale !== 1) {
         e.preventDefault();
       }
     },
@@ -77,11 +83,12 @@ export function prefersReducedMotion(): boolean {
 
 /**
  * Lock screen orientation (for full-screen gameplay)
+ * Accepts values like: 'portrait', 'landscape', 'portrait-primary', etc.
  */
-export async function lockOrientation(orientation: OrientationLockType): Promise<void> {
+export async function lockOrientation(orientation: string): Promise<void> {
   try {
-    if ('lock' in screen.orientation) {
-      await screen.orientation.lock(orientation);
+    if ('lock' in screen.orientation && typeof (screen.orientation as any).lock === 'function') {
+      await (screen.orientation as any).lock(orientation);
     }
   } catch (error) {
     console.warn('Screen orientation lock not supported:', error);
