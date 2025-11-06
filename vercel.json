@@ -96,10 +96,5 @@
       "source": "/(.*)",
       "destination": "/index.html"
     }
-  ],
-
-  "env": {
-    "REACT_APP_ALCHEMY_API_KEY": "@alchemy_api_key",
-    "REACT_APP_WALLETCONNECT_PROJECT_ID": "@walletconnect_project_id"
-  }
+  ]
 }
