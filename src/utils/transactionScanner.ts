@@ -34,6 +34,11 @@ interface AssociatedContract {
   transactionHash: string;
 }
 
+interface CachedEnhancement {
+  data: { totalValue: bigint; associations: any[] };
+  timestamp: number;
+}
+
 // Use Alchemy for Token API
 const alchemyApiKey = process.env.REACT_APP_ALCHEMY_API_KEY || 'demo';
 const alchemyUrl = `https://polygon-mainnet.g.alchemy.com/v2/${alchemyApiKey}`;
@@ -45,6 +50,82 @@ const publicClient = createPublicClient({
 
 export class TransactionScanner {
   private cache: Map<string, TokenBalance[]> = new Map();
+  private enhancementCache: Map<string, CachedEnhancement> = new Map();
+  private readonly ENHANCEMENT_CACHE_TTL = 3600000; // 1 hour in milliseconds
+  private readonly CACHE_STORAGE_KEY = 'tasern_enhancement_cache';
+
+  constructor() {
+    this.loadCacheFromStorage();
+  }
+
+  /**
+   * Load enhancement cache from localStorage
+   * Persists across page refreshes for instant loads
+   */
+  private loadCacheFromStorage(): void {
+    try {
+      const stored = localStorage.getItem(this.CACHE_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        const now = Date.now();
+        let loadedCount = 0;
+        let expiredCount = 0;
+
+        // Restore cache entries, filtering out expired ones
+        Object.entries(parsed).forEach(([key, value]: [string, any]) => {
+          const age = now - value.timestamp;
+          if (age < this.ENHANCEMENT_CACHE_TTL) {
+            // Restore BigInt values
+            const data = {
+              totalValue: BigInt(value.data.totalValue),
+              associations: value.data.associations.map((a: any) => ({
+                ...a,
+                value: BigInt(a.value)
+              }))
+            };
+            this.enhancementCache.set(key, { data, timestamp: value.timestamp });
+            loadedCount++;
+          } else {
+            expiredCount++;
+          }
+        });
+
+        if (loadedCount > 0) {
+          console.log(`💾 Loaded ${loadedCount} cached enhancements from localStorage (${expiredCount} expired)`);
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to load enhancement cache from localStorage:', error);
+    }
+  }
+
+  /**
+   * Save enhancement cache to localStorage
+   * Allows cache to persist across page refreshes
+   */
+  private saveCacheToStorage(): void {
+    try {
+      const toStore: Record<string, any> = {};
+
+      this.enhancementCache.forEach((value, key) => {
+        // Convert BigInt to string for JSON serialization
+        toStore[key] = {
+          timestamp: value.timestamp,
+          data: {
+            totalValue: value.data.totalValue.toString(),
+            associations: value.data.associations.map(a => ({
+              ...a,
+              value: a.value.toString()
+            }))
+          }
+        };
+      });
+
+      localStorage.setItem(this.CACHE_STORAGE_KEY, JSON.stringify(toStore));
+    } catch (error) {
+      console.warn('Failed to save enhancement cache to localStorage:', error);
+    }
+  }
 
   /**
    * Get token balances for a specific address using Alchemy Token API
@@ -270,12 +351,28 @@ export class TransactionScanner {
   /**
    * Get NFT enhancements by directly checking NFT contract for token balances
    * Uses Alchemy Token API - much faster than block scanning
+   * Cached for 1 hour to reduce API calls (associations rarely change)
    */
   async getNFTEnhancements(
     walletAddress: string,
     nftContract: string,
     tokenId: string
   ): Promise<{ totalValue: bigint; associations: any[] }> {
+    // Check cache first
+    const cacheKey = `${walletAddress}-${nftContract}-${tokenId}`;
+    const cached = this.enhancementCache.get(cacheKey);
+
+    if (cached) {
+      const age = Date.now() - cached.timestamp;
+      if (age < this.ENHANCEMENT_CACHE_TTL) {
+        console.log(`💾 Using cached enhancements for ${nftContract}#${tokenId} (age: ${Math.floor(age / 1000)}s)`);
+        return cached.data;
+      } else {
+        console.log(`⏰ Cache expired for ${nftContract}#${tokenId}, refreshing...`);
+        this.enhancementCache.delete(cacheKey);
+      }
+    }
+
     console.log(`Checking NFT contract ${nftContract} for impact asset holdings...`);
 
     // Known impact asset contracts on Polygon
@@ -307,10 +404,22 @@ export class TransactionScanner {
       console.log(`✅ Found ${balance.tokenBalance} of token ${balance.contractAddress} at NFT contract`);
     }
 
-    return {
+    const result = {
       totalValue,
       associations: enhancementDetails
     };
+
+    // Cache the result (in-memory + localStorage)
+    this.enhancementCache.set(cacheKey, {
+      data: result,
+      timestamp: Date.now()
+    });
+    console.log(`💾 Cached enhancements for ${nftContract}#${tokenId}`);
+
+    // Persist to localStorage for cross-session caching
+    this.saveCacheToStorage();
+
+    return result;
   }
 }
 

@@ -29,6 +29,18 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ onClose, onSelectCard })
   const [scanProgress, setScanProgress] = useState<ScanProgress | null>(null);
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
   const [scanLogs, setScanLogs] = useState<string[]>([]);
+  const [lastScanTime, setLastScanTime] = useState<number | null>(null);
+  const [rescanCooldown, setRescanCooldown] = useState<number>(0);
+
+  // Cooldown timer countdown
+  useEffect(() => {
+    if (rescanCooldown > 0) {
+      const timer = setTimeout(() => {
+        setRescanCooldown(prev => Math.max(0, prev - 1));
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [rescanCooldown]);
 
   // Scan for NFTs when wallet connects (only if not already scanned)
   useEffect(() => {
@@ -55,6 +67,66 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ onClose, onSelectCard })
       }
     }
   }, [isConnected, account, setNFTCards]);
+
+  const quickRefresh = async (walletAddress: string) => {
+    if (enhancedNFTs.length === 0) {
+      console.warn('No NFTs to refresh - run full scan first');
+      return;
+    }
+
+    setIsScanning(true);
+    setScanProgress(null);
+    setScanLogs([]);
+
+    try {
+      console.log(`⚡ Quick refresh: Updating LP balances for ${enhancedNFTs.length} cards...`);
+
+      // Initialize scanner
+      const scanner = new UniversalImpactScanner();
+
+      // Progress callback
+      const onProgress = (progress: ScanProgress) => {
+        setScanProgress(progress);
+      };
+
+      // Log callback
+      const onLog = (message: string, type: 'info' | 'success' | 'warning' | 'error') => {
+        const emoji = type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️';
+        setScanLogs(prev => [...prev, `${emoji} ${message}`]);
+      };
+
+      // Quick refresh LP balances only
+      const refreshedData = await scanner.quickRefreshLPBalances(
+        walletAddress,
+        enhancedNFTs,
+        onProgress,
+        onLog
+      );
+
+      console.log(`✅ Quick refresh complete! Updated ${refreshedData.length} cards`);
+
+      setEnhancedNFTs(refreshedData);
+
+      // Convert to cards
+      const playableCards = enhancedNFTsToCards(refreshedData);
+      setCards(playableCards);
+
+      // Update store
+      setNFTCards(walletAddress, playableCards);
+
+      const lpEnhancedCount = refreshedData.filter(nft => nft.impactAssets.totalValue > 0).length;
+      console.log(`💎 ${lpEnhancedCount} NFTs have LP enhancements`);
+
+      // Set last scan time and start cooldown (15 seconds for quick refresh)
+      setLastScanTime(Date.now());
+      setRescanCooldown(15);
+    } catch (error) {
+      console.error('Error during quick refresh:', error);
+      setScanLogs(prev => [...prev, `❌ Quick refresh failed: ${error}`]);
+    } finally {
+      setIsScanning(false);
+    }
+  };
 
   const scanWallet = async (walletAddress: string) => {
     setIsScanning(true);
@@ -99,6 +171,10 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ onClose, onSelectCard })
 
       const lpEnhancedCount = enhancedData.filter(nft => nft.impactAssets.totalValue > 0).length;
       console.log(`💎 ${lpEnhancedCount} NFTs have LP enhancements`);
+
+      // Set last scan time and start cooldown (30 seconds)
+      setLastScanTime(Date.now());
+      setRescanCooldown(30);
     } catch (error) {
       console.error('Error scanning wallet:', error);
       setScanLogs(prev => [...prev, `❌ Scan failed: ${error}`]);
@@ -118,6 +194,17 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ onClose, onSelectCard })
     }
   };
 
+  // Format time since last scan
+  const getTimeSinceLastScan = (): string => {
+    if (!lastScanTime) return '';
+    const seconds = Math.floor((Date.now() - lastScanTime) / 1000);
+    if (seconds < 60) return `${seconds}s ago`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    return `${hours}h ago`;
+  };
+
   return (
     <div style={styles.overlay}>
       <div style={styles.container}>
@@ -125,13 +212,38 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ onClose, onSelectCard })
         <div style={styles.header}>
           <h1 style={styles.title}>🎴 NFT Card Gallery 🎴</h1>
           <div style={styles.headerButtons}>
+            {isConnected && account && !isScanning && enhancedNFTs.length > 0 && (
+              <button
+                style={{
+                  ...styles.quickRefreshButton,
+                  ...(rescanCooldown > 0 ? styles.rescanButtonDisabled : {})
+                }}
+                onClick={() => rescanCooldown === 0 && quickRefresh(account)}
+                disabled={rescanCooldown > 0}
+                title={
+                  rescanCooldown > 0
+                    ? `Please wait ${rescanCooldown}s before refreshing`
+                    : 'Quick refresh LP balances only (5-10x faster)'
+                }
+              >
+                {rescanCooldown > 0 ? `⏳ ${rescanCooldown}s` : '⚡ Quick Refresh'}
+              </button>
+            )}
             {isConnected && account && !isScanning && (
               <button
-                style={styles.rescanButton}
-                onClick={() => scanWallet(account)}
-                title="Rescan wallet for new NFTs or LP changes"
+                style={{
+                  ...styles.rescanButton,
+                  ...(rescanCooldown > 0 ? styles.rescanButtonDisabled : {})
+                }}
+                onClick={() => rescanCooldown === 0 && scanWallet(account)}
+                disabled={rescanCooldown > 0}
+                title={
+                  rescanCooldown > 0
+                    ? `Please wait ${rescanCooldown}s before rescanning`
+                    : `Full rescan: Check for new NFTs + update LP${lastScanTime ? ` (Last: ${getTimeSinceLastScan()})` : ''}`
+                }
               >
-                🔄 Rescan
+                {rescanCooldown > 0 ? `⏳ ${rescanCooldown}s` : `🔄 Full Scan${lastScanTime ? ` (${getTimeSinceLastScan()})` : ''}`}
               </button>
             )}
             <button style={styles.closeButton} onClick={onClose}>
@@ -214,7 +326,10 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ onClose, onSelectCard })
                   }}
                   onClick={() => handleCardClick(card)}
                 >
-                  <CardDisplay card={card} />
+                  <CardDisplay
+                    card={card}
+                    imageUrl={enhancedNFT?.image}
+                  />
                   <div style={styles.nftBadge}>NFT</div>
 
                   {/* LP Enhancement Badge */}
@@ -297,6 +412,19 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '0.5rem',
     alignItems: 'center',
   },
+  quickRefreshButton: {
+    background: `linear-gradient(135deg, ${TASERN_COLORS.green} 0%, #047857 100%)`,
+    border: `2px solid ${TASERN_COLORS.gold}`,
+    borderRadius: '8px',
+    padding: '8px 16px',
+    color: TASERN_COLORS.parchment,
+    fontSize: '14px',
+    fontFamily: TASERN_TYPOGRAPHY.heading,
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+  },
   rescanButton: {
     background: `linear-gradient(135deg, ${TASERN_COLORS.bronze} 0%, ${TASERN_COLORS.leather} 100%)`,
     border: `2px solid ${TASERN_COLORS.gold}`,
@@ -309,6 +437,12 @@ const styles: Record<string, React.CSSProperties> = {
     transition: 'all 0.2s',
     textTransform: 'uppercase',
     letterSpacing: '0.05em',
+  },
+  rescanButtonDisabled: {
+    opacity: 0.5,
+    cursor: 'not-allowed',
+    background: `linear-gradient(135deg, ${TASERN_COLORS.stone} 0%, ${TASERN_COLORS.leather} 100%)`,
+    border: `2px solid ${TASERN_COLORS.stone}`,
   },
   closeButton: {
     background: 'transparent',

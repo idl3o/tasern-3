@@ -121,65 +121,79 @@ export class UniversalImpactScanner {
 
       log(`Found ${nfts.length} unique NFTs, analyzing for impact assets...`, 'info');
 
-      // Step 2: Analyze each NFT for impact asset holdings
+      // Step 2: Analyze each NFT for impact asset holdings (PARALLEL PROCESSING)
       const enhancedNFTs: EnhancedNFTData[] = [];
+      const BATCH_SIZE = 4; // Process 4 NFTs in parallel for optimal performance
 
-      for (let i = 0; i < nfts.length; i++) {
-        const nft = nfts[i];
-        const progress = {
-          current: i + 1,
-          total: nfts.length,
-          message: `Analyzing ${nft.name || 'NFT'} (${i + 1}/${nfts.length})`,
-          percentage: ((i + 1) / nfts.length) * 100
-        };
-        updateProgress(progress);
+      for (let i = 0; i < nfts.length; i += BATCH_SIZE) {
+        const batch = nfts.slice(i, i + BATCH_SIZE);
 
-        try {
-          // Check if this is an ERC1155 token with multiple copies
-          const balance = parseInt(nft.balance || '1', 10);
-
-          if (balance > 1) {
-            log(`Found ${balance} copies of ${nft.name}, dividing LP holdings...`, 'info');
-          }
-
-          // Get the base enhanced NFT data with full LP holdings
-          const baseEnhancedNFT = await this.analyzeNFTForImpactAssets(nft, walletAddress, log);
-
-          // Create separate entries for each copy, dividing LP holdings equally
-          for (let copyIndex = 0; copyIndex < balance; copyIndex++) {
-            // Clone the enhanced NFT and adjust holdings for this copy
-            const enhancedNFTCopy: EnhancedNFTData = {
-              ...baseEnhancedNFT,
-              // Divide impact assets by number of copies
-              impactAssets: {
-                dddBalance: baseEnhancedNFT.impactAssets.dddBalance / balance,
-                axlRegenBalance: baseEnhancedNFT.impactAssets.axlRegenBalance / balance,
-                lpBalance: baseEnhancedNFT.impactAssets.lpBalance / balance,
-                totalValue: baseEnhancedNFT.impactAssets.totalValue / balance,
-                discoveryMethod: baseEnhancedNFT.impactAssets.discoveryMethod,
-                implementationAddress: baseEnhancedNFT.impactAssets.implementationAddress
-              },
-              // Store copy information for unique card ID generation
-              copyIndex,
-              totalCopies: balance
+        // Process batch in parallel
+        const batchResults = await Promise.all(
+          batch.map(async (nft, batchIndex) => {
+            const globalIndex = i + batchIndex;
+            const progress = {
+              current: globalIndex + 1,
+              total: nfts.length,
+              message: `Analyzing ${nft.name || 'NFT'} (${globalIndex + 1}/${nfts.length})`,
+              percentage: ((globalIndex + 1) / nfts.length) * 100
             };
+            updateProgress(progress);
 
-            // Recalculate enhancement level and stat multipliers for divided holdings
-            enhancedNFTCopy.enhancementLevel = this.calculateEnhancementLevel(enhancedNFTCopy.impactAssets.totalValue);
-            enhancedNFTCopy.statMultipliers = this.calculateStatMultipliers(enhancedNFTCopy.impactAssets);
+            try {
+              // Check if this is an ERC1155 token with multiple copies
+              const balance = parseInt(nft.balance || '1', 10);
 
-            enhancedNFTs.push(enhancedNFTCopy);
-          }
+              if (balance > 1) {
+                log(`Found ${balance} copies of ${nft.name}, dividing LP holdings...`, 'info');
+              }
 
-          if (baseEnhancedNFT.impactAssets.totalValue > 0) {
-            const perCopyValue = baseEnhancedNFT.impactAssets.totalValue / balance;
-            log(`✅ ${nft.name}: Found ${baseEnhancedNFT.impactAssets.totalValue.toFixed(6)} total impact assets (${perCopyValue.toFixed(6)} per copy, ${balance} copies)`, 'success');
-          }
-        } catch (error) {
-          log(`Error analyzing ${nft.name}: ${error}`, 'error');
-          // Add NFT with no impact assets on error
-          enhancedNFTs.push(this.createEmptyEnhancedNFT(nft));
-        }
+              // Get the base enhanced NFT data with full LP holdings
+              const baseEnhancedNFT = await this.analyzeNFTForImpactAssets(nft, walletAddress, log);
+
+              // Create separate entries for each copy, dividing LP holdings equally
+              const copies: EnhancedNFTData[] = [];
+              for (let copyIndex = 0; copyIndex < balance; copyIndex++) {
+                // Clone the enhanced NFT and adjust holdings for this copy
+                const enhancedNFTCopy: EnhancedNFTData = {
+                  ...baseEnhancedNFT,
+                  // Divide impact assets by number of copies
+                  impactAssets: {
+                    dddBalance: baseEnhancedNFT.impactAssets.dddBalance / balance,
+                    axlRegenBalance: baseEnhancedNFT.impactAssets.axlRegenBalance / balance,
+                    lpBalance: baseEnhancedNFT.impactAssets.lpBalance / balance,
+                    totalValue: baseEnhancedNFT.impactAssets.totalValue / balance,
+                    discoveryMethod: baseEnhancedNFT.impactAssets.discoveryMethod,
+                    implementationAddress: baseEnhancedNFT.impactAssets.implementationAddress
+                  },
+                  // Store copy information for unique card ID generation
+                  copyIndex,
+                  totalCopies: balance
+                };
+
+                // Recalculate enhancement level and stat multipliers for divided holdings
+                enhancedNFTCopy.enhancementLevel = this.calculateEnhancementLevel(enhancedNFTCopy.impactAssets.totalValue);
+                enhancedNFTCopy.statMultipliers = this.calculateStatMultipliers(enhancedNFTCopy.impactAssets);
+
+                copies.push(enhancedNFTCopy);
+              }
+
+              if (baseEnhancedNFT.impactAssets.totalValue > 0) {
+                const perCopyValue = baseEnhancedNFT.impactAssets.totalValue / balance;
+                log(`✅ ${nft.name}: Found ${baseEnhancedNFT.impactAssets.totalValue.toFixed(6)} total impact assets (${perCopyValue.toFixed(6)} per copy, ${balance} copies)`, 'success');
+              }
+
+              return copies;
+            } catch (error) {
+              log(`Error analyzing ${nft.name}: ${error}`, 'error');
+              // Add NFT with no impact assets on error
+              return [this.createEmptyEnhancedNFT(nft)];
+            }
+          })
+        );
+
+        // Flatten batch results and add to enhancedNFTs
+        batchResults.forEach(copies => enhancedNFTs.push(...copies));
       }
 
       const enhancedCount = enhancedNFTs.filter(nft => nft.impactAssets.totalValue > 0).length;
@@ -191,6 +205,109 @@ export class UniversalImpactScanner {
       log(`Scan failed: ${error}`, 'error');
       throw error;
     }
+  }
+
+  /**
+   * Quick refresh LP balances only (skips NFT list fetching)
+   * Much faster for checking LP changes without full rescan
+   */
+  async quickRefreshLPBalances(
+    walletAddress: string,
+    existingNFTs: EnhancedNFTData[],
+    progressCallback?: ProgressCallback,
+    logCallback?: LogCallback
+  ): Promise<EnhancedNFTData[]> {
+    const log = logCallback || (() => {});
+    const updateProgress = progressCallback || (() => {});
+
+    log(`🔄 Quick refresh: Updating LP balances only...`, 'info');
+
+    // Group NFTs by contract+tokenId (undo the copy splitting)
+    const uniqueNFTs = new Map<string, EnhancedNFTData[]>();
+    for (const nft of existingNFTs) {
+      const key = `${nft.contractAddress}-${nft.tokenId}`;
+      if (!uniqueNFTs.has(key)) {
+        uniqueNFTs.set(key, []);
+      }
+      uniqueNFTs.get(key)!.push(nft);
+    }
+
+    const refreshedNFTs: EnhancedNFTData[] = [];
+    const entries = Array.from(uniqueNFTs.entries());
+
+    // Process in parallel batches
+    const BATCH_SIZE = 4;
+    for (let i = 0; i < entries.length; i += BATCH_SIZE) {
+      const batch = entries.slice(i, i + BATCH_SIZE);
+
+      const batchResults = await Promise.all(
+        batch.map(async ([key, copies], batchIndex) => {
+          const globalIndex = i + batchIndex;
+          updateProgress({
+            current: globalIndex + 1,
+            total: entries.length,
+            message: `Refreshing ${copies[0].name} (${globalIndex + 1}/${entries.length})`,
+            percentage: ((globalIndex + 1) / entries.length) * 100
+          });
+
+          try {
+            // Create minimal NFT object for analysis
+            const nftData = {
+              contractAddress: copies[0].contractAddress,
+              tokenId: copies[0].tokenId,
+              name: copies[0].name,
+              description: copies[0].description,
+              image: copies[0].image,
+              tokenType: copies[0].tokenType
+            };
+
+            // Re-analyze for fresh impact asset data
+            const freshData = await this.analyzeNFTForImpactAssets(nftData, walletAddress, log);
+
+            // Apply to all copies
+            const balance = copies.length;
+            const updatedCopies: EnhancedNFTData[] = [];
+
+            for (let copyIndex = 0; copyIndex < balance; copyIndex++) {
+              const copy = copies[copyIndex];
+              const enhancedCopy: EnhancedNFTData = {
+                ...copy,
+                impactAssets: {
+                  dddBalance: freshData.impactAssets.dddBalance / balance,
+                  axlRegenBalance: freshData.impactAssets.axlRegenBalance / balance,
+                  lpBalance: freshData.impactAssets.lpBalance / balance,
+                  totalValue: freshData.impactAssets.totalValue / balance,
+                  discoveryMethod: freshData.impactAssets.discoveryMethod,
+                  implementationAddress: freshData.impactAssets.implementationAddress
+                },
+                enhancementLevel: this.calculateEnhancementLevel(freshData.impactAssets.totalValue / balance),
+                statMultipliers: this.calculateStatMultipliers({
+                  ...freshData.impactAssets,
+                  lpBalance: freshData.impactAssets.lpBalance / balance,
+                  totalValue: freshData.impactAssets.totalValue / balance
+                })
+              };
+
+              updatedCopies.push(enhancedCopy);
+            }
+
+            if (freshData.impactAssets.totalValue > 0) {
+              log(`✅ ${copies[0].name}: LP=${freshData.impactAssets.lpBalance.toFixed(4)}`, 'success');
+            }
+
+            return updatedCopies;
+          } catch (error) {
+            log(`Error refreshing ${copies[0].name}: ${error}`, 'error');
+            return copies; // Return unchanged on error
+          }
+        })
+      );
+
+      batchResults.forEach(copies => refreshedNFTs.push(...copies));
+    }
+
+    log(`✅ Quick refresh complete!`, 'success');
+    return refreshedNFTs;
   }
 
   /**

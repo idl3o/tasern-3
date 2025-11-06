@@ -29,6 +29,7 @@ interface CardDisplayProps {
   isTargetable?: boolean;
   onClick?: () => void;
   ownerName?: string;
+  imageUrl?: string; // NFT artwork URL
 }
 
 export const CardDisplay: React.FC<CardDisplayProps> = ({
@@ -38,7 +39,28 @@ export const CardDisplay: React.FC<CardDisplayProps> = ({
   isTargetable = false,
   onClick,
   ownerName,
+  imageUrl,
 }) => {
+  const [imageLoaded, setImageLoaded] = React.useState(false);
+  const [imageError, setImageError] = React.useState(false);
+
+  // Convert IPFS URLs to HTTP gateway URLs
+  const processImageUrl = (url: string | undefined): string | undefined => {
+    if (!url) return undefined;
+    if (url.startsWith('ipfs://')) {
+      return url.replace('ipfs://', 'https://ipfs.io/ipfs/');
+    }
+    return url;
+  };
+
+  const processedImageUrl = processImageUrl(imageUrl);
+
+  // Reset image state when imageUrl changes
+  React.useEffect(() => {
+    setImageLoaded(false);
+    setImageError(false);
+  }, [processedImageUrl]);
+
   const battleCard = isOnBattlefield ? (card as BattleCard) : null;
   const rarityColor = getRarityColor(card.rarity);
   const rarityGlow = getRarityGlow(card.rarity);
@@ -72,17 +94,43 @@ export const CardDisplay: React.FC<CardDisplayProps> = ({
         </div>
       </div>
 
-      {/* Card Art Placeholder */}
+      {/* Card Art - Shows NFT image if available */}
       <div style={styles.artContainer}>
-        <div style={styles.artPlaceholder}>
-          <span style={styles.artIcon}>
-            {card.rarity === 'legendary' && '⭐'}
-            {card.rarity === 'epic' && '💜'}
-            {card.rarity === 'rare' && '💎'}
-            {card.rarity === 'uncommon' && '🗡️'}
-            {card.rarity === 'common' && '⚔️'}
-          </span>
-        </div>
+        {processedImageUrl && !imageError ? (
+          <>
+            {/* Actual NFT Image */}
+            <img
+              src={processedImageUrl}
+              alt={card.name}
+              style={{
+                ...styles.nftImage,
+                opacity: imageLoaded ? 1 : 0,
+              }}
+              onLoad={() => setImageLoaded(true)}
+              onError={() => {
+                console.warn(`Failed to load NFT image: ${processedImageUrl}`);
+                setImageError(true);
+              }}
+            />
+            {/* Loading placeholder while image loads */}
+            {!imageLoaded && (
+              <div style={styles.artPlaceholder}>
+                <span style={styles.artIcon}>⌛</span>
+              </div>
+            )}
+          </>
+        ) : (
+          /* Fallback placeholder for generated cards or failed images */
+          <div style={styles.artPlaceholder}>
+            <span style={styles.artIcon}>
+              {card.rarity === 'legendary' && '⭐'}
+              {card.rarity === 'epic' && '💜'}
+              {card.rarity === 'rare' && '💎'}
+              {card.rarity === 'uncommon' && '🗡️'}
+              {card.rarity === 'common' && '⚔️'}
+            </span>
+          </div>
+        )}
         {/* Combat Type Badge */}
         <div style={styles.combatTypeBadge}>
           {card.combatType === 'melee' && '🗡️'}
@@ -226,6 +274,17 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'center',
     border: `${TASERN_BORDERS.widthThin} solid ${TASERN_COLORS.bronze}`,
+  },
+  nftImage: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    borderRadius: TASERN_BORDERS.radiusSmall,
+    border: `${TASERN_BORDERS.widthThin} solid ${TASERN_COLORS.gold}`,
+    transition: 'opacity 0.3s ease',
+    position: 'absolute' as const,
+    top: 0,
+    left: 0,
   },
   artIcon: {
     fontSize: '3rem',
