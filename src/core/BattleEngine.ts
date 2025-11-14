@@ -25,20 +25,92 @@ import type {
   MoveCardAction,
   UseAbilityAction,
   AIMemory,
+  GridConfig,
+  MapTheme,
+  TerrainEffect,
 } from '../types/core';
+import { GRID_PRESETS, MAP_LAYOUTS, MAP_THEMES, WEATHER_TYPES, TERRAIN_TYPES, type MapPreset, type CompleteMapPreset, COMPLETE_MAP_PRESETS } from '../types/core';
 import { AbilityEngine } from './AbilityEngine';
 
 export class BattleEngine {
   /**
    * Initialize a new battle between two players
+   * Supports either GridConfig (simple) or CompleteMapPreset (themed)
    */
-  static initializeBattle(player1: Player, player2: Player): BattleState {
+  static initializeBattle(
+    player1: Player,
+    player2: Player,
+    config?: GridConfig | CompleteMapPreset
+  ): BattleState {
     console.log('🏰 Initializing battle:', player1.name, 'vs', player2.name);
+
+    // Determine if config is a map preset name or GridConfig object
+    let gridConfig: GridConfig;
+    let mapTheme: MapTheme;
+    let initialWeather: WeatherEffect | null = null;
+    let blockedTiles: Position[] = [];
+    let terrainEffects: TerrainEffect[] = [];
+
+    if (!config) {
+      // Default to classic 3x3
+      gridConfig = GRID_PRESETS.CLASSIC_3X3;
+      mapTheme = 'CLASSIC_STONE';
+    } else if (typeof config === 'string') {
+      // It's a CompleteMapPreset name
+      const mapPreset = COMPLETE_MAP_PRESETS[config as CompleteMapPreset];
+      const layout = MAP_LAYOUTS[mapPreset.layout];
+
+      gridConfig = {
+        rows: layout.rows,
+        cols: layout.cols,
+        name: mapPreset.name,
+        description: mapPreset.fullDescription,
+      };
+      mapTheme = mapPreset.theme;
+      blockedTiles = layout.blockedTiles;
+
+      // Initialize weather if specified
+      if (mapPreset.weather) {
+        const weatherData = WEATHER_TYPES[mapPreset.weather];
+        initialWeather = {
+          ...weatherData,
+          turnsRemaining: 5, // Default duration
+        };
+      }
+
+      // Initialize terrain effects from special tiles
+      terrainEffects = layout.specialTiles.map(spec => {
+        const terrainData = TERRAIN_TYPES[spec.type as any];
+        return {
+          ...terrainData,
+          position: spec.position,
+        };
+      });
+
+      console.log(`🗺️ Map: ${mapPreset.name}`);
+      console.log(`🎨 Theme: ${MAP_THEMES[mapTheme].name} ${MAP_THEMES[mapTheme].icon}`);
+      if (initialWeather) console.log(`🌤️ Weather: ${initialWeather.type} ${initialWeather.icon}`);
+      if (blockedTiles.length > 0) console.log(`🚫 Blocked tiles: ${blockedTiles.length}`);
+    } else {
+      // It's a GridConfig object (backwards compat)
+      gridConfig = config;
+      mapTheme = config.theme || 'CLASSIC_STONE';
+      blockedTiles = config.blockedTiles || [];
+
+      if (config.weather) {
+        const weatherData = WEATHER_TYPES[config.weather];
+        initialWeather = {
+          ...weatherData,
+          turnsRemaining: 5,
+        };
+      }
+    }
+
+    console.log(`📐 Grid: ${gridConfig.name} (${gridConfig.rows}x${gridConfig.cols})`);
 
     // Initialize AI memories for both players
     const aiMemories: Record<string, AIMemory> = {};
 
-    // Create memory for AI players
     if (player1.type === 'ai') {
       aiMemories[player1.id] = {
         previousActions: [],
@@ -58,6 +130,15 @@ export class BattleEngine {
       };
     }
 
+    // Create dynamic battlefield based on grid config
+    const battlefield: (BattleCard | null)[][] = [];
+    for (let row = 0; row < gridConfig.rows; row++) {
+      battlefield[row] = [];
+      for (let col = 0; col < gridConfig.cols; col++) {
+        battlefield[row][col] = null;
+      }
+    }
+
     return {
       id: `battle-${Date.now()}`,
       currentTurn: 1,
@@ -67,13 +148,12 @@ export class BattleEngine {
         [player1.id]: { ...player1, mana: player1.maxMana },
         [player2.id]: { ...player2, mana: player2.maxMana },
       },
-      battlefield: [
-        [null, null, null],
-        [null, null, null],
-        [null, null, null],
-      ],
-      weather: null,
-      terrainEffects: [],
+      battlefield,
+      gridConfig,
+      mapTheme,
+      blockedTiles,
+      weather: initialWeather,
+      terrainEffects,
       controlledZones: {},
       winner: null,
       battleLog: [
@@ -81,7 +161,7 @@ export class BattleEngine {
           turn: 1,
           playerId: 'system',
           action: 'Battle initialized',
-          result: `${player1.name} vs ${player2.name}`,
+          result: `${player1.name} vs ${player2.name} on ${gridConfig.name}`,
           timestamp: Date.now(),
         },
       ],
@@ -137,7 +217,7 @@ export class BattleEngine {
       const { position } = action;
 
       // Check if position is valid and empty
-      if (!this.isValidPosition(position) || draft.battlefield[position.row][position.col]) {
+      if (!this.isValidPosition(position, draft.gridConfig, draft.blockedTiles) || draft.battlefield[position.row][position.col]) {
         console.warn('❌ Invalid or occupied position');
         return;
       }
@@ -358,7 +438,7 @@ export class BattleEngine {
       let damage = attacker.attack;
       damage = Math.floor(
         damage *
-          this.getFormationBonus(attacker, draft.battlefield).attackMod *
+          this.getFormationBonus(attacker, draft.battlefield, draft.gridConfig).attackMod *
           (draft.weather?.attackMod || 1)
       );
 
@@ -413,7 +493,7 @@ export class BattleEngine {
 
       const { toPosition } = action;
 
-      if (!this.isValidPosition(toPosition) || draft.battlefield[toPosition.row][toPosition.col]) {
+      if (!this.isValidPosition(toPosition, draft.gridConfig, draft.blockedTiles) || draft.battlefield[toPosition.row][toPosition.col]) {
         console.warn('❌ Invalid or occupied position');
         return;
       }
@@ -675,8 +755,21 @@ export class BattleEngine {
     return null;
   }
 
-  private static isValidPosition(pos: Position): boolean {
-    return pos.row >= 0 && pos.row < 3 && pos.col >= 0 && pos.col < 3;
+  /**
+   * Check if a position is blocked by an obstacle
+   */
+  private static isBlockedTile(pos: Position, blockedTiles: Position[]): boolean {
+    return blockedTiles.some(blocked => blocked.row === pos.row && blocked.col === pos.col);
+  }
+
+  /**
+   * Check if a position is valid (within bounds and not blocked)
+   */
+  private static isValidPosition(pos: Position, gridConfig: GridConfig, blockedTiles: Position[] = []): boolean {
+    const inBounds = pos.row >= 0 && pos.row < gridConfig.rows && pos.col >= 0 && pos.col < gridConfig.cols;
+    if (!inBounds) return false;
+
+    return !this.isBlockedTile(pos, blockedTiles);
   }
 
   /**
@@ -699,7 +792,7 @@ export class BattleEngine {
     damage *= attackerZone.attackMod;
 
     // Formation bonus
-    const formationBonus = this.getFormationBonus(attacker, state.battlefield);
+    const formationBonus = this.getFormationBonus(attacker, state.battlefield, state.gridConfig);
     damage *= formationBonus.attackMod;
 
     // Weather modifier
@@ -770,25 +863,33 @@ export class BattleEngine {
 
   /**
    * Get formation bonus for a card
+   * Adapts to different grid sizes for strategic variety
    */
-  private static getFormationBonus(card: BattleCard, battlefield: BattleCard[][]): FormationBonus {
+  private static getFormationBonus(
+    card: BattleCard,
+    battlefield: BattleCard[][],
+    gridConfig: GridConfig
+  ): FormationBonus {
     const allies = battlefield.flat().filter((c) => c && c.ownerId === card.ownerId);
 
-    // Check each formation type
+    // VANGUARD: 2+ cards in front row (row 0)
     const frontCards = allies.filter((c) => c.position.row === 0);
     if (frontCards.length >= 2) {
       return { type: 'VANGUARD', attackMod: 1.2, defenseMod: 1.0, speedMod: 1.0 };
     }
 
-    const backCards = allies.filter((c) => c.position.row === 2);
+    // ARCHER_LINE: 2+ cards in back row (last row)
+    const backRow = gridConfig.rows - 1;
+    const backCards = allies.filter((c) => c.position.row === backRow);
     if (backCards.length >= 2) {
       return { type: 'ARCHER_LINE', attackMod: 1.15, defenseMod: 0.9, speedMod: 1.0 };
     }
 
-    // Check horizontal line
-    for (let row = 0; row < 3; row++) {
+    // PHALANX: Horizontal line with majority of columns filled (at least 60%)
+    const phalanxThreshold = Math.ceil(gridConfig.cols * 0.6);
+    for (let row = 0; row < gridConfig.rows; row++) {
       const rowCards = allies.filter((c) => c.position.row === row);
-      if (rowCards.length === 3) {
+      if (rowCards.length >= phalanxThreshold) {
         return { type: 'PHALANX', attackMod: 1.0, defenseMod: 1.3, speedMod: 0.9 };
       }
     }
@@ -821,7 +922,7 @@ export class BattleEngine {
 
   /**
    * Check if attacker can attack enemy castle
-   * Melee: Must be in middle column (col 1) - contested center zone
+   * Melee: Must be in middle column(s) - contested center zone
    * Ranged/Hybrid: Can attack from any column
    */
   private static canAttackCastle(
@@ -834,15 +935,32 @@ export class BattleEngine {
       return true;
     }
 
-    // Melee cards must be in the middle column (col 1)
+    // Melee cards must be in the middle column(s)
     // This is the contested center where melee units can reach both castles
-    return attacker.position.col === 1;
+    const totalCols = state.gridConfig.cols;
+    const middleCol = Math.floor(totalCols / 2);
+
+    // For odd-width grids: exact middle column
+    // For even-width grids: either of the two middle columns
+    if (totalCols % 2 === 1) {
+      return attacker.position.col === middleCol;
+    } else {
+      return attacker.position.col === middleCol - 1 || attacker.position.col === middleCol;
+    }
   }
 
   /**
    * Check if a player can deploy to a specific position
    * Deployment zones based on player order (column-based)
    * Players face each other left-to-right across the battlefield
+   *
+   * Logic:
+   * - For odd columns (3, 5, etc.): middle column is contested
+   *   - Player 1 can deploy to left half + middle
+   *   - Player 2 can deploy to right half + middle
+   * - For even columns (2, 4, etc.): split evenly with 1-column overlap in middle
+   *   - Player 1 can deploy to left half + one column into middle
+   *   - Player 2 can deploy to right half + one column into middle
    */
   private static canDeployToPosition(
     position: Position,
@@ -851,13 +969,17 @@ export class BattleEngine {
   ): boolean {
     const playerIds = Object.keys(state.players);
     const playerIndex = playerIds.indexOf(playerId);
+    const totalCols = state.gridConfig.cols;
 
-    // Player 1 (left side) can deploy to columns 0-1 (left and center)
-    // Player 2 (right side) can deploy to columns 1-2 (center and right)
+    // Calculate deployment zones
+    const middleCol = Math.floor(totalCols / 2);
+
     if (playerIndex === 0) {
-      return position.col <= 1; // Columns 0-1
+      // Player 1 (left side) can deploy to left half + middle
+      return position.col <= middleCol;
     } else {
-      return position.col >= 1; // Columns 1-2
+      // Player 2 (right side) can deploy to right half + middle
+      return position.col >= middleCol;
     }
   }
 
@@ -898,8 +1020,8 @@ export class BattleEngine {
   static getValidDeploymentPositions(playerId: string, state: BattleState): Position[] {
     const positions: Position[] = [];
 
-    for (let row = 0; row < 3; row++) {
-      for (let col = 0; col < 3; col++) {
+    for (let row = 0; row < state.gridConfig.rows; row++) {
+      for (let col = 0; col < state.gridConfig.cols; col++) {
         const pos: Position = { row, col };
 
         // Check if position is empty and within deployment zone
@@ -918,8 +1040,8 @@ export class BattleEngine {
   static getValidMovementPositions(card: BattleCard, state: BattleState): Position[] {
     const positions: Position[] = [];
 
-    for (let row = 0; row < 3; row++) {
-      for (let col = 0; col < 3; col++) {
+    for (let row = 0; row < state.gridConfig.rows; row++) {
+      for (let col = 0; col < state.gridConfig.cols; col++) {
         const pos: Position = { row, col };
 
         // Check if position is empty and within movement range

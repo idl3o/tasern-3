@@ -10,7 +10,7 @@
 
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
-import type { BattleState, BattleAction, Player, VictoryResult } from '../types/core';
+import type { BattleState, BattleAction, Player, VictoryResult, GridConfig, CompleteMapPreset } from '../types/core';
 import { BattleEngine } from '../core/BattleEngine';
 import type { MultiplayerService } from '../services/MultiplayerService';
 
@@ -26,12 +26,13 @@ interface BattleStore {
   localPlayerId: string | null;
 
   // Actions
-  initializeBattle: (player1: Player, player2: Player) => void;
+  initializeBattle: (player1: Player, player2: Player, config?: GridConfig | CompleteMapPreset) => void;
   initializeMultiplayerBattle: (
     localPlayer: Player,
     remotePlayer: Player,
     service: MultiplayerService,
-    localWalletAddress: string
+    localWalletAddress: string,
+    config?: GridConfig | CompleteMapPreset
   ) => void;
   executeAction: (action: BattleAction) => void;
   endTurn: () => void;
@@ -56,11 +57,11 @@ export const useBattleStore = create<BattleStore>()(
     localPlayerId: null,
 
     // Initialize a new battle (local or vs AI)
-    initializeBattle: (player1: Player, player2: Player) => {
+    initializeBattle: (player1: Player, player2: Player, config?: GridConfig | CompleteMapPreset) => {
       console.log('🎮 Initializing battle in store');
 
       try {
-        const newState = BattleEngine.initializeBattle(player1, player2);
+        const newState = BattleEngine.initializeBattle(player1, player2, config);
 
         // Initialize hands for human players
         const updatedPlayers = { ...newState.players };
@@ -94,7 +95,8 @@ export const useBattleStore = create<BattleStore>()(
       localPlayer: Player,
       remotePlayer: Player,
       service: MultiplayerService,
-      localWalletAddress: string
+      localWalletAddress: string,
+      config?: GridConfig | CompleteMapPreset
     ) => {
       console.log('🌐 Initializing multiplayer battle');
       console.log('   Local wallet:', localWalletAddress);
@@ -102,7 +104,7 @@ export const useBattleStore = create<BattleStore>()(
       console.log('   Player 2:', remotePlayer.id);
 
       try {
-        const newState = BattleEngine.initializeBattle(localPlayer, remotePlayer);
+        const newState = BattleEngine.initializeBattle(localPlayer, remotePlayer, config);
 
         // Initialize hands for players
         const updatedPlayers = { ...newState.players };

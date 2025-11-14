@@ -6,9 +6,10 @@
  */
 
 import type { WeatherEffect, WeatherType } from '../types/core';
+import { WEATHER_TYPES } from '../types/core';
 
 export class WeatherSystem {
-  private static readonly WEATHER_TYPES: WeatherType[] = [
+  private static readonly BASIC_WEATHER_TYPES: WeatherType[] = [
     'CLEAR',
     'RAIN',
     'STORM',
@@ -27,7 +28,7 @@ export class WeatherSystem {
       return null;
     }
 
-    const type = this.WEATHER_TYPES[Math.floor(Math.random() * this.WEATHER_TYPES.length)];
+    const type = this.BASIC_WEATHER_TYPES[Math.floor(Math.random() * this.BASIC_WEATHER_TYPES.length)];
 
     if (type === 'CLEAR') {
       return null;
@@ -41,73 +42,19 @@ export class WeatherSystem {
    */
   static createWeatherEffect(type: WeatherType): WeatherEffect {
     const duration = Math.floor(Math.random() * 4) + 3; // 3-6 turns
+    const weatherData = WEATHER_TYPES[type];
 
-    switch (type) {
-      case 'RAIN':
-        return {
-          type: 'RAIN',
-          attackMod: 0.9,
-          defenseMod: 1.0,
-          speedMod: 0.95,
-          turnsRemaining: duration,
-        };
-
-      case 'STORM':
-        return {
-          type: 'STORM',
-          attackMod: 0.8,
-          defenseMod: 1.0,
-          speedMod: 0.9,
-          turnsRemaining: duration,
-        };
-
-      case 'FOG':
-        return {
-          type: 'FOG',
-          attackMod: 0.85,
-          defenseMod: 1.1,
-          speedMod: 1.0,
-          turnsRemaining: duration,
-        };
-
-      case 'SNOW':
-        return {
-          type: 'SNOW',
-          attackMod: 1.0,
-          defenseMod: 0.9,
-          speedMod: 0.85,
-          turnsRemaining: duration,
-        };
-
-      default:
-        return {
-          type: 'CLEAR',
-          attackMod: 1.0,
-          defenseMod: 1.0,
-          speedMod: 1.0,
-          turnsRemaining: 0,
-        };
-    }
+    return {
+      ...weatherData,
+      turnsRemaining: duration,
+    };
   }
 
   /**
    * Get weather icon for UI
    */
   static getWeatherIcon(type: WeatherType): string {
-    switch (type) {
-      case 'CLEAR':
-        return '☀️';
-      case 'RAIN':
-        return '🌧️';
-      case 'STORM':
-        return '⛈️';
-      case 'FOG':
-        return '🌫️';
-      case 'SNOW':
-        return '❄️';
-      default:
-        return '☀️';
-    }
+    return WEATHER_TYPES[type]?.icon || '☀️';
   }
 
   /**
@@ -125,6 +72,16 @@ export class WeatherSystem {
         return 'Dense fog rolls in, obscuring vision';
       case 'SNOW':
         return 'Snow begins to fall, freezing the battlefield';
+      case 'BLIZZARD':
+        return 'A howling blizzard engulfs the battlefield, visibility near zero';
+      case 'SANDSTORM':
+        return 'Stinging sands whip across the battlefield, blinding combatants';
+      case 'HEATWAVE':
+        return 'Scorching heat radiates across the field, sapping strength';
+      case 'ARCANE_STORM':
+        return 'Reality itself warps as arcane energy crackles through the air';
+      case 'BLOOD_MOON':
+        return 'A crimson moon rises, filling warriors with bloodlust';
       default:
         return 'The weather shifts';
     }
@@ -135,6 +92,8 @@ export class WeatherSystem {
    */
   static getWeatherTactics(type: WeatherType): string {
     switch (type) {
+      case 'CLEAR':
+        return 'Standard conditions. No weather modifiers.';
       case 'RAIN':
         return 'Attack power reduced. Focus on defense.';
       case 'STORM':
@@ -143,6 +102,16 @@ export class WeatherSystem {
         return 'Attack reduced but defense increased. Good for turtling.';
       case 'SNOW':
         return 'Speed greatly reduced. Plan moves carefully.';
+      case 'BLIZZARD':
+        return 'Severe penalties to attack and speed. Defensive stance advised.';
+      case 'SANDSTORM':
+        return 'Reduced visibility affects all stats. Brace for attrition.';
+      case 'HEATWAVE':
+        return 'Increased aggression but reduced defense. High-risk offense.';
+      case 'ARCANE_STORM':
+        return 'Magical chaos! Attack and speed boosted but defense weakened.';
+      case 'BLOOD_MOON':
+        return 'Extreme bloodlust! Massive attack bonus but vulnerable defense.';
       default:
         return 'Standard conditions.';
     }

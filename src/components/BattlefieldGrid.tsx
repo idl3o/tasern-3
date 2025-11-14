@@ -8,7 +8,8 @@
  */
 
 import React from 'react';
-import type { Battlefield, Position, BattleCard } from '../types/core';
+import type { Battlefield, Position, BattleCard, GridConfig, MapTheme } from '../types/core';
+import { MAP_THEMES } from '../types/core';
 import { CardDisplay } from './CardDisplay';
 import {
   TASERN_COLORS,
@@ -20,6 +21,9 @@ import {
 
 interface BattlefieldGridProps {
   battlefield: Battlefield;
+  gridConfig: GridConfig;
+  mapTheme: MapTheme;
+  blockedTiles: Position[];
   playerNames: Record<string, string>;
   onCellClick?: (position: Position, card: BattleCard | null) => void;
   highlightedPositions?: Position[];
@@ -27,29 +31,77 @@ interface BattlefieldGridProps {
 
 export const BattlefieldGrid: React.FC<BattlefieldGridProps> = ({
   battlefield,
+  gridConfig,
+  mapTheme,
+  blockedTiles,
   playerNames,
   onCellClick,
   highlightedPositions = [],
 }) => {
+  const themeData = MAP_THEMES[mapTheme];
+
   const isHighlighted = (row: number, col: number): boolean => {
     return highlightedPositions.some((pos) => pos.row === row && pos.col === col);
   };
 
-  const getZoneLabel = (row: number): string => {
-    if (row === 0) return 'Front Line';
-    if (row === 1) return 'Mid Field';
-    return 'Back Line';
+  const isBlocked = (row: number, col: number): boolean => {
+    return blockedTiles.some((pos) => pos.row === row && pos.col === col);
   };
 
+  const getZoneLabel = (row: number, totalRows: number): string => {
+    if (row === 0) return 'Front Line';
+    if (row === totalRows - 1) return 'Back Line';
+    if (totalRows === 2) return ''; // No middle for 2-row grids
+    if (totalRows === 3) return 'Mid Field';
+    // For larger grids, label middle rows
+    const middle = Math.floor(totalRows / 2);
+    if (row === middle) return 'Center';
+    if (row < middle) return `Forward ${row}`;
+    return `Rear ${totalRows - row - 1}`;
+  };
+
+  // Calculate dynamic cell sizes based on grid dimensions
+  const getCellStyle = (): React.CSSProperties => {
+    // Adjust cell size based on grid dimensions
+    // Smaller cells for larger grids
+    const baseCellWidth = 220;
+    const baseCellHeight = 320;
+
+    const widthScale = Math.max(0.5, 1 - (gridConfig.cols - 3) * 0.15);
+    const heightScale = Math.max(0.5, 1 - (gridConfig.rows - 3) * 0.15);
+
+    const cellWidth = Math.floor(baseCellWidth * widthScale);
+    const cellHeight = Math.floor(baseCellHeight * heightScale);
+
+    return {
+      width: `min(${15 * widthScale}vw, ${cellWidth}px)`,
+      height: `min(${22 * heightScale}vh, ${cellHeight}px)`,
+    };
+  };
+
+  const zoneLabelGap = `calc(min(${22 * Math.max(0.5, 1 - (gridConfig.rows - 3) * 0.15)}vh, ${Math.floor(320 * Math.max(0.5, 1 - (gridConfig.rows - 3) * 0.15))}px) + 1rem)`;
+
   return (
-    <div style={styles.container}>
+    <div style={{
+      ...styles.container,
+      background: `linear-gradient(135deg, ${themeData.backgroundColor} 0%, rgba(0, 0, 0, 0.8) 100%)`,
+      border: `${TASERN_BORDERS.widthMedium} solid ${themeData.borderColor}`,
+    }}>
       {/* Zone Labels */}
-      <div style={styles.zoneLabels}>
-        {[0, 1, 2].map((row) => (
+      <div style={{ ...styles.zoneLabels, gap: zoneLabelGap }}>
+        {Array.from({ length: gridConfig.rows }).map((_, row) => (
           <div key={row} style={styles.zoneLabel}>
-            {getZoneLabel(row)}
+            {getZoneLabel(row, gridConfig.rows)}
           </div>
         ))}
+      </div>
+
+      {/* Grid Info */}
+      <div style={{
+        ...styles.gridInfo,
+        color: themeData.accentColor,
+      }}>
+        {themeData.icon} {gridConfig.name} {themeData.icon}
       </div>
 
       {/* Battlefield Grid */}
@@ -59,18 +111,33 @@ export const BattlefieldGrid: React.FC<BattlefieldGridProps> = ({
             {row.map((card, colIndex) => {
               const position: Position = { row: rowIndex, col: colIndex };
               const highlighted = isHighlighted(rowIndex, colIndex);
+              const blocked = isBlocked(rowIndex, colIndex);
 
               return (
                 <div
                   key={`${rowIndex}-${colIndex}`}
                   style={{
                     ...styles.cell,
+                    ...getCellStyle(),
                     ...(highlighted ? styles.cellHighlighted : {}),
-                    ...(card ? styles.cellOccupied : styles.cellEmpty),
+                    ...(blocked ? {
+                      ...styles.cellBlocked,
+                      background: `linear-gradient(135deg, ${themeData.cellColor} 0%, ${themeData.backgroundColor} 100%)`,
+                      border: `${TASERN_BORDERS.widthMedium} solid ${themeData.borderColor}`,
+                    } : card ? styles.cellOccupied : {
+                      ...styles.cellEmpty,
+                      background: `rgba(107, 114, 128, 0.2)`,
+                      border: `${TASERN_BORDERS.widthThin} dashed ${themeData.borderColor}`,
+                    }),
                   }}
-                  onClick={() => onCellClick?.(position, card)}
+                  onClick={() => !blocked && onCellClick?.(position, card)}
                 >
-                  {card ? (
+                  {blocked ? (
+                    <div style={styles.blockedSlot}>
+                      <span style={styles.obstacleIcon}>{themeData.icon}</span>
+                      <span style={styles.obstacleText}>BLOCKED</span>
+                    </div>
+                  ) : card ? (
                     <CardDisplay
                       card={card}
                       isOnBattlefield={true}
@@ -116,6 +183,16 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: TASERN_BORDERS.radiusLarge,
     border: `${TASERN_BORDERS.widthMedium} solid ${TASERN_COLORS.stone}`,
   },
+  gridInfo: {
+    fontFamily: TASERN_TYPOGRAPHY.heading,
+    fontSize: TASERN_TYPOGRAPHY.bodyMedium,
+    color: TASERN_COLORS.gold,
+    textAlign: 'center',
+    textTransform: 'uppercase',
+    letterSpacing: '0.1em',
+    marginBottom: TASERN_SPACING.sm,
+    textShadow: TASERN_SHADOWS.textGold,
+  },
   zoneLabels: {
     display: 'flex',
     flexDirection: 'column',
@@ -149,11 +226,7 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
   },
   cell: {
-    // Responsive cell dimensions - scales with viewport but caps at original size
-    // Width: 12-15vw scales nicely, max 220px
-    width: 'min(15vw, 220px)',
-    // Height: maintains aspect ratio (roughly 1.45:1), max 320px
-    height: 'min(22vh, 320px)',
+    // Dynamic dimensions applied via getCellStyle()
     borderRadius: TASERN_BORDERS.radiusMedium,
     display: 'flex',
     alignItems: 'center',
@@ -215,5 +288,32 @@ const styles: Record<string, React.CSSProperties> = {
     padding: TASERN_SPACING.xs,
     background: 'rgba(139, 105, 20, 0.3)',
     borderRadius: TASERN_BORDERS.radiusSmall,
+  },
+  cellBlocked: {
+    cursor: 'not-allowed',
+    opacity: 0.7,
+  },
+  blockedSlot: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: TASERN_SPACING.sm,
+    width: '100%',
+    height: '100%',
+  },
+  obstacleIcon: {
+    fontSize: '4rem',
+    opacity: 0.8,
+    filter: 'drop-shadow(0 0 10px rgba(0, 0, 0, 0.5))',
+  },
+  obstacleText: {
+    fontFamily: TASERN_TYPOGRAPHY.heading,
+    fontSize: TASERN_TYPOGRAPHY.bodySmall,
+    color: TASERN_COLORS.stone,
+    textTransform: 'uppercase',
+    letterSpacing: '0.1em',
+    opacity: 0.6,
+    textShadow: '0 2px 4px rgba(0, 0, 0, 0.5)',
   },
 };

@@ -235,6 +235,9 @@ export const BattleView: React.FC = () => {
         <div className="battle-center-panel" style={styles.centerPanel}>
           <BattlefieldGrid
             battlefield={battleState.battlefield}
+            gridConfig={battleState.gridConfig}
+            mapTheme={battleState.mapTheme}
+            blockedTiles={battleState.blockedTiles}
             playerNames={playerNames}
             onCellClick={handleBattlefieldClick}
             highlightedPositions={selectedBattlefieldCard ? [selectedBattlefieldCard.position] : []}

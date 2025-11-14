@@ -75,6 +75,7 @@ export const TASERN_SHADOWS = {
   glowArcane: '0 0 20px rgba(153, 50, 204, 0.6)',
   glowRed: '0 0 20px rgba(220, 20, 60, 0.6)',
   glowBlue: '0 0 20px rgba(30, 58, 138, 0.6)',
+  textGold: '0 0 10px rgba(212, 175, 55, 0.8)',
 } as const;
 
 export const TASERN_TYPOGRAPHY = {
@@ -90,6 +91,7 @@ export const TASERN_TYPOGRAPHY = {
   titleSmall: '1.5rem',
   headingLarge: '1.25rem',
   headingMedium: '1.125rem',
+  headingSmall: '1rem',
   bodyLarge: '1rem',
   bodyMedium: '0.875rem',
   bodySmall: '0.75rem',

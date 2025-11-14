@@ -17,7 +17,8 @@ import { useNFTCardsStore } from './state/nftCardsStore';
 import { useMultiplayerStore } from './state/multiplayerStore';
 import { PlayerFactory } from './core/PlayerFactory';
 import { HumanStrategy } from './strategies/HumanStrategy';
-import type { Card, Player, AIPersonality } from './types/core';
+import type { Card, Player, AIPersonality, GridPreset, CompleteMapPreset } from './types/core';
+import { GRID_PRESETS, COMPLETE_MAP_PRESETS } from './types/core';
 import {
   LADY_SWIFTBLADE,
   THORNWICK_THE_TACTICIAN,
@@ -57,6 +58,8 @@ export const App: React.FC = () => {
   const [showTutorial, setShowTutorial] = useState(false);
   const [showMultiplayerLobby, setShowMultiplayerLobby] = useState(false);
   const [scannedWallets, setScannedWallets] = useState<Set<string>>(new Set());
+  const [selectedGridPreset, setSelectedGridPreset] = useState<GridPreset>('CLASSIC_3X3');
+  const [selectedMapPreset, setSelectedMapPreset] = useState<CompleteMapPreset | null>(null);
 
   // Auto-scan NFTs when wallet connects (only once per wallet address)
   useEffect(() => {
@@ -110,6 +113,9 @@ export const App: React.FC = () => {
         activePlayerId: tempPlayer.id,
         players: { [tempPlayer.id]: tempPlayer },
         battlefield: [[null, null, null], [null, null, null], [null, null, null]],
+        gridConfig: GRID_PRESETS.CLASSIC_3X3,
+        mapTheme: 'CLASSIC_STONE',
+        blockedTiles: [],
         weather: null,
         terrainEffects: [],
         controlledZones: {},
@@ -132,6 +138,9 @@ export const App: React.FC = () => {
         activePlayerId: tempPlayer.id,
         players: { [tempPlayer.id]: tempPlayer },
         battlefield: [[null, null, null], [null, null, null], [null, null, null]],
+        gridConfig: GRID_PRESETS.CLASSIC_3X3,
+        mapTheme: 'CLASSIC_STONE',
+        blockedTiles: [],
         weather: null,
         terrainEffects: [],
         controlledZones: {},
@@ -145,7 +154,9 @@ export const App: React.FC = () => {
       // AI vs AI battle starts immediately
       const player1 = PlayerFactory.createAI('Lady Swiftblade', LADY_SWIFTBLADE);
       const player2 = PlayerFactory.createAI(opponent.name, opponent);
-      initializeBattle(player1, player2);
+      // Use selected map preset (string key) if available, otherwise use grid config object
+      const battleConfig = selectedMapPreset || GRID_PRESETS[selectedGridPreset];
+      initializeBattle(player1, player2, battleConfig);
     }
   };
 
@@ -165,6 +176,9 @@ export const App: React.FC = () => {
           activePlayerId: tempPlayer.id,
           players: { [tempPlayer.id]: tempPlayer },
           battlefield: [[null, null, null], [null, null, null], [null, null, null]],
+          gridConfig: GRID_PRESETS.CLASSIC_3X3,
+          mapTheme: 'CLASSIC_STONE',
+          blockedTiles: [],
           weather: null,
           terrainEffects: [],
           controlledZones: {},
@@ -194,7 +208,9 @@ export const App: React.FC = () => {
         console.log(`📚 Player 2 deck: ${player2.hand.length} in hand, ${player2.deck.length} in deck`);
 
         setDeckSelectionState(null);
-        initializeBattle(player1, player2);
+        // Use selected map preset (string key) if available, otherwise use grid config object
+        const battleConfig = selectedMapPreset || GRID_PRESETS[selectedGridPreset];
+        initializeBattle(player1, player2, battleConfig);
       }
     } else {
       // Human vs AI
@@ -210,7 +226,9 @@ export const App: React.FC = () => {
       );
 
       setDeckSelectionState(null);
-      initializeBattle(player1, player2);
+      // Use selected map preset (string key) if available, otherwise use grid config object
+      const battleConfig = selectedMapPreset || GRID_PRESETS[selectedGridPreset];
+      initializeBattle(player1, player2, battleConfig);
     }
   };
 
@@ -258,9 +276,9 @@ export const App: React.FC = () => {
       // Pass players in order based on who goes first
       // Both clients will create identical battle state because player IDs are deterministic (based on wallet addresses)
       if (isLocalPlayerFirst) {
-        initializeMultiplayerBattle(localPlayer, remotePlayer, multiplayerService, walletAddress);
+        initializeMultiplayerBattle(localPlayer, remotePlayer, multiplayerService, walletAddress, GRID_PRESETS[selectedGridPreset]);
       } else {
-        initializeMultiplayerBattle(remotePlayer, localPlayer, multiplayerService, walletAddress);
+        initializeMultiplayerBattle(remotePlayer, localPlayer, multiplayerService, walletAddress, GRID_PRESETS[selectedGridPreset]);
       }
     }, 0);
   };
@@ -348,6 +366,67 @@ export const App: React.FC = () => {
               📖 How to Play
             </button>
           </div>
+
+          {/* Map Selection */}
+          <div style={styles.gridSelectionContainer}>
+            <h2 style={styles.sectionTitle}>Choose Your Battlefield</h2>
+
+            {/* Complete Map Presets */}
+            <div style={styles.mapPresetContainer}>
+              <h3 style={styles.subsectionTitle}>Themed Maps (Layout + Theme + Weather)</h3>
+              <div style={styles.mapButtonContainer}>
+                {(Object.keys(COMPLETE_MAP_PRESETS) as CompleteMapPreset[]).map((preset) => {
+                  const mapData = COMPLETE_MAP_PRESETS[preset];
+                  return (
+                    <button
+                      key={preset}
+                      style={{
+                        ...styles.mapButton,
+                        ...(selectedMapPreset === preset ? styles.mapButtonSelected : {}),
+                      }}
+                      onClick={() => {
+                        setSelectedMapPreset(preset);
+                        setSelectedGridPreset(mapData.layout);
+                      }}
+                    >
+                      <div style={styles.mapButtonName}>{mapData.name}</div>
+                      <div style={styles.mapButtonDesc}>{mapData.fullDescription}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div style={styles.divider}></div>
+
+            {/* Basic Grid Sizes */}
+            <div style={styles.basicGridContainer}>
+              <h3 style={styles.subsectionTitle}>Basic Arenas (Size Only)</h3>
+              <div style={styles.gridButtonContainer}>
+                {(Object.keys(GRID_PRESETS) as GridPreset[]).map((preset) => (
+                  <button
+                    key={preset}
+                    style={{
+                      ...styles.gridButton,
+                      ...(selectedGridPreset === preset && !selectedMapPreset ? styles.gridButtonSelected : {}),
+                    }}
+                    onClick={() => {
+                      setSelectedGridPreset(preset);
+                      setSelectedMapPreset(null);
+                    }}
+                  >
+                    <div style={styles.gridButtonName}>{GRID_PRESETS[preset].name}</div>
+                    <div style={styles.gridButtonSize}>
+                      {GRID_PRESETS[preset].rows}x{GRID_PRESETS[preset].cols}
+                    </div>
+                    <div style={styles.gridButtonDesc}>{GRID_PRESETS[preset].description}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div style={styles.divider}></div>
 
           <div style={styles.personalityGrid}>
             <h2 style={styles.sectionTitle}>Play vs AI</h2>
@@ -555,5 +634,101 @@ const styles: Record<string, React.CSSProperties> = {
     textTransform: 'uppercase',
     letterSpacing: '0.05em',
     boxShadow: TASERN_SHADOWS.soft,
+  },
+  gridSelectionContainer: {
+    marginTop: '1.5rem',
+  },
+  gridButtonContainer: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+    gap: '1rem',
+    marginTop: '1rem',
+  },
+  gridButton: {
+    fontFamily: TASERN_TYPOGRAPHY.body,
+    padding: '1rem',
+    background: 'rgba(139, 105, 20, 0.2)',
+    border: `2px solid ${TASERN_COLORS.bronze}`,
+    borderRadius: '8px',
+    color: TASERN_COLORS.parchment,
+    cursor: 'pointer',
+    transition: 'all 0.3s',
+    textAlign: 'center',
+  },
+  gridButtonSelected: {
+    background: `linear-gradient(135deg, rgba(212, 175, 55, 0.3) 0%, rgba(139, 105, 20, 0.3) 100%)`,
+    border: `2px solid ${TASERN_COLORS.gold}`,
+    boxShadow: TASERN_SHADOWS.glowGold,
+    transform: 'scale(1.05)',
+  },
+  gridButtonName: {
+    fontFamily: TASERN_TYPOGRAPHY.heading,
+    fontSize: TASERN_TYPOGRAPHY.headingSmall,
+    color: TASERN_COLORS.gold,
+    marginBottom: '0.25rem',
+  },
+  gridButtonSize: {
+    fontSize: TASERN_TYPOGRAPHY.headingMedium,
+    color: TASERN_COLORS.parchment,
+    fontWeight: 'bold',
+    marginBottom: '0.25rem',
+  },
+  gridButtonDesc: {
+    fontSize: TASERN_TYPOGRAPHY.bodySmall,
+    color: TASERN_COLORS.parchment,
+    opacity: 0.8,
+    fontStyle: 'italic',
+  },
+  subsectionTitle: {
+    fontFamily: TASERN_TYPOGRAPHY.heading,
+    fontSize: TASERN_TYPOGRAPHY.headingSmall,
+    color: TASERN_COLORS.gold,
+    marginBottom: '1rem',
+    textAlign: 'center',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+    opacity: 0.9,
+  },
+  mapPresetContainer: {
+    marginBottom: '1.5rem',
+  },
+  basicGridContainer: {
+    marginTop: '1rem',
+  },
+  mapButtonContainer: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+    gap: '1rem',
+    marginTop: '1rem',
+  },
+  mapButton: {
+    fontFamily: TASERN_TYPOGRAPHY.body,
+    padding: '1.25rem',
+    background: 'rgba(139, 105, 20, 0.3)',
+    border: `2px solid ${TASERN_COLORS.bronze}`,
+    borderRadius: '10px',
+    color: TASERN_COLORS.parchment,
+    cursor: 'pointer',
+    transition: 'all 0.3s',
+    textAlign: 'left',
+  },
+  mapButtonSelected: {
+    background: `linear-gradient(135deg, rgba(212, 175, 55, 0.4) 0%, rgba(139, 105, 20, 0.4) 100%)`,
+    border: `3px solid ${TASERN_COLORS.gold}`,
+    boxShadow: TASERN_SHADOWS.glowGold,
+    transform: 'scale(1.03)',
+  },
+  mapButtonName: {
+    fontFamily: TASERN_TYPOGRAPHY.heading,
+    fontSize: TASERN_TYPOGRAPHY.headingMedium,
+    color: TASERN_COLORS.gold,
+    marginBottom: '0.5rem',
+    textShadow: TASERN_SHADOWS.textGold,
+  },
+  mapButtonDesc: {
+    fontSize: TASERN_TYPOGRAPHY.bodySmall,
+    color: TASERN_COLORS.parchment,
+    opacity: 0.9,
+    lineHeight: '1.4',
   },
 };

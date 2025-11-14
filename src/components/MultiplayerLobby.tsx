@@ -17,6 +17,7 @@ import { useNFTCardsStore } from '../state/nftCardsStore';
 import { DeckSelection } from './DeckSelection';
 import { CardGenerator } from '../ai/CardGenerator';
 import type { Card, Player, BattleState } from '../types/core';
+import { GRID_PRESETS } from '../types/core';
 import {
   TASERN_COLORS,
   TASERN_TYPOGRAPHY,
@@ -148,6 +149,9 @@ export const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onBattleRead
       activePlayerId: 'player1',
       players: {},
       battlefield: Array(3).fill(null).map(() => Array(3).fill(null)),
+      gridConfig: GRID_PRESETS.CLASSIC_3X3,
+      mapTheme: 'CLASSIC_STONE',
+      blockedTiles: [],
       weather: null,
       terrainEffects: [],
       controlledZones: {},
