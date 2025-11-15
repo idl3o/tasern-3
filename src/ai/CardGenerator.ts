@@ -25,22 +25,48 @@ export class CardGenerator {
 
   /**
    * Generate cards for current strategic situation
+   * ENDLESS CARDS: AI never runs out - generates variety at different mana costs
    */
   generateStrategicCards(
     state: BattleState,
     player: Player,
     mode: AIMode,
-    count: number = 3
+    count: number = 5
   ): Card[] {
     const cards: Card[] = [];
     const personality = player.aiPersonality;
 
+    // Generate cards at different mana tiers for maximum flexibility
+    // This ensures AI always has options regardless of current mana
+    const manaTiers = this.getManaTiers(player, count);
+
     for (let i = 0; i < count; i++) {
-      const card = this.generateCard(player, mode, personality);
+      const targetManaCost = manaTiers[i];
+      const card = this.generateCardAtCost(player, mode, personality, targetManaCost);
       cards.push(card);
     }
 
+    console.log(`🎴 Generated ${cards.length} endless cards: ${cards.map(c => `${c.name} (${c.manaCost} mana)`).join(', ')}`);
     return cards;
+  }
+
+  /**
+   * Get mana tiers for card generation
+   * Returns array of target mana costs: [low, medium, high, current, max]
+   */
+  private getManaTiers(player: Player, count: number): number[] {
+    const tiers: number[] = [];
+    const currentMana = player.mana;
+    const maxMana = player.maxMana;
+
+    // Always include options at different price points
+    if (count >= 1) tiers.push(Math.max(1, Math.min(3, currentMana)));        // Low cost (1-3)
+    if (count >= 2) tiers.push(Math.max(2, Math.min(5, currentMana)));        // Medium cost (4-5)
+    if (count >= 3) tiers.push(Math.max(3, Math.min(currentMana, maxMana))); // Current mana (max affordable)
+    if (count >= 4) tiers.push(Math.max(1, Math.floor(currentMana * 0.7)));  // 70% of mana (efficient)
+    if (count >= 5) tiers.push(Math.max(2, Math.floor(currentMana * 0.5)));  // 50% of mana (conservative)
+
+    return tiers.slice(0, count);
   }
 
   /**
@@ -49,6 +75,14 @@ export class CardGenerator {
   private generateCard(player: Player, mode: AIMode, personality?: AIPersonality): Card {
     // Determine mana cost (3-7 range typically)
     const manaCost = this.determineManaCost(player, mode);
+    return this.generateCardAtCost(player, mode, personality, manaCost);
+  }
+
+  /**
+   * Generate card at specific mana cost (for endless generation)
+   */
+  private generateCardAtCost(player: Player, mode: AIMode, personality: AIPersonality | undefined, targetManaCost: number): Card {
+    const manaCost = targetManaCost;
 
     // Determine rarity
     const rarity = this.determineRarity(mode, personality);

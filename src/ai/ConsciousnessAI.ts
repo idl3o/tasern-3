@@ -29,13 +29,30 @@ import type {
 } from '../types/core';
 import { CardGenerator } from './CardGenerator';
 import { BattleEngine } from '../core/BattleEngine';
+import { FluidState } from './FluidState';
 
 export class ConsciousnessAI {
   private cardGenerator: CardGenerator;
   private readonly VARIANCE = 0.3; // 30% randomness in decisions
 
+  // Fluid state system - one per player (stored by player ID)
+  private fluidStates: Map<string, FluidState> = new Map();
+
   constructor() {
     this.cardGenerator = new CardGenerator();
+  }
+
+  /**
+   * Get or create fluid state for a player
+   */
+  private getFluidState(player: Player): FluidState {
+    if (!this.fluidStates.has(player.id)) {
+      if (!player.aiPersonality) {
+        throw new Error('AI player must have personality for fluid state');
+      }
+      this.fluidStates.set(player.id, new FluidState(player.aiPersonality));
+    }
+    return this.fluidStates.get(player.id)!;
   }
 
   // Helper methods for attack validation
@@ -49,17 +66,29 @@ export class ConsciousnessAI {
     // STEP 1: HEAL - Validate state
     this.healState(player, state);
 
-    // STEP 2: SELF-AWARENESS - Check confidence
-    const memory = this.getOrCreateMemory(player, state);
-    const confidence = this.assessConfidence(memory, state);
-    console.log(`🎯 Confidence: ${(confidence * 100).toFixed(0)}%`);
+    // STEP 1.5: FLUID STATE UPDATE - Apply triggers and update state
+    const fluidState = this.getFluidState(player);
+    const triggers = fluidState.analyzeStateAndGenerateTriggers(player, state);
+    triggers.forEach(trigger => fluidState.applyTrigger(trigger));
+    fluidState.update();
 
-    // STEP 3: STRATEGIC ANALYSIS - Determine mode
-    const mode = this.determineStrategicMode(player, state, memory);
-    console.log(`🎭 Strategic mode: ${mode}`);
+    // STEP 2: SELF-AWARENESS - Check confidence (now from fluid state)
+    const memory = this.getOrCreateMemory(player, state);
+    const currentState = fluidState.getCurrentState();
+    console.log(`🎯 Confidence: ${(currentState.confidence * 100).toFixed(0)}%`);
+
+    // STEP 3: STRATEGIC ANALYSIS - Determine mode (from fluid state)
+    const mode = fluidState.getDominantMode() as AIMode;
+    const stateDescription = fluidState.getStateDescription();
+    console.log(`🎭 Strategic mode: ${stateDescription}`);
+
+    // Get fluid-modified personality for card generation
+    const fluidPersonality = player.aiPersonality
+      ? fluidState.getFluidPersonality(player.aiPersonality)
+      : undefined;
 
     // STEP 4: GENERATE OPTIONS - All possible actions
-    const actions = this.generatePossibleActions(player, state, mode);
+    const actions = this.generatePossibleActions(player, state, mode, fluidPersonality);
     console.log(`🎲 Generated ${actions.length} possible actions`);
 
     // Debug: Log action types
@@ -75,9 +104,9 @@ export class ConsciousnessAI {
       return { type: 'END_TURN', playerId: player.id };
     }
 
-    // STEP 5: SCORE & CHOOSE - Evaluate and select
-    const scoredActions = this.scoreActions(actions, player, state, mode);
-    const chosenAction = this.selectActionWithVariance(scoredActions, player);
+    // STEP 5: SCORE & CHOOSE - Evaluate and select (using fluid personality)
+    const scoredActions = this.scoreActions(actions, player, state, mode, fluidPersonality);
+    const chosenAction = this.selectActionWithVariance(scoredActions, player, fluidPersonality);
 
     console.log(
       `✅ Chose: ${chosenAction.action.type} (score: ${chosenAction.score.toFixed(2)})`
@@ -207,7 +236,8 @@ export class ConsciousnessAI {
   private generatePossibleActions(
     player: Player,
     state: BattleState,
-    mode: AIMode
+    mode: AIMode,
+    fluidPersonality?: any
   ): BattleAction[] {
     const actions: BattleAction[] = [];
 
@@ -224,13 +254,21 @@ export class ConsciousnessAI {
     });
 
     // Generate deployment actions (with dynamically generated cards!)
-    // Optimization: Generate fewer cards if board is already crowded
+    // AI has ENDLESS cards - generate abundant options at different mana costs
     const emptyPositions = state.battlefield.flat().filter(c => c === null).length;
-    const cardOptions = emptyPositions <= 3 ? 1 : 2; // 1-2 cards instead of 3
+
+    // Generate 3-5 card options at varying mana costs (low, medium, high)
+    // This gives AI real choices and ensures it never runs out of cards
+    const cardOptions = Math.min(emptyPositions > 0 ? 5 : 0, 5);
+
+    // Use fluid personality for card generation if available
+    const generationPlayer = fluidPersonality
+      ? { ...player, aiPersonality: fluidPersonality }
+      : player;
 
     const generatedCards = this.cardGenerator.generateStrategicCards(
       state,
-      player,
+      generationPlayer,
       mode,
       cardOptions
     );
@@ -357,11 +395,12 @@ export class ConsciousnessAI {
     actions: BattleAction[],
     player: Player,
     state: BattleState,
-    mode: AIMode
+    mode: AIMode,
+    fluidPersonality?: any
   ): ScoredAction[] {
     return actions.map((action) => {
       let score = 0;
-      const personality = player.aiPersonality;
+      const personality = fluidPersonality || player.aiPersonality;
 
       switch (action.type) {
         case 'DEPLOY_CARD':
@@ -403,14 +442,15 @@ export class ConsciousnessAI {
     const playerIndex = playerIds.indexOf(player.id);
     const pos = action.position;
 
-    // IMPORTANT: Penalize deployment if we have unattacked cards on battlefield
+    // Moderate penalty if we have many unattacked cards (but don't block deployment entirely)
+    // AI has ENDLESS cards so it should feel free to deploy strategically
     const myCards = state.battlefield.flat().filter(c => c && c.ownerId === player.id);
     const unattackedCards = myCards.filter(c => c && !c.hasAttacked);
 
-    if (unattackedCards.length > 0) {
-      // Significant penalty - we should attack first!
-      score -= 40 * unattackedCards.length;
-      console.log(`   ⚠️ Deploy penalty: ${unattackedCards.length} unattacked cards (-${40 * unattackedCards.length})`);
+    if (unattackedCards.length > 2) {
+      // Light penalty - prefer attacking with existing cards, but allow deployment
+      score -= 15 * (unattackedCards.length - 2); // Only penalize if 3+ unattacked
+      console.log(`   ⚠️ Deploy penalty: ${unattackedCards.length} unattacked cards (-${15 * (unattackedCards.length - 2)})`);
     }
 
     // Value based on card stats
@@ -575,9 +615,10 @@ export class ConsciousnessAI {
 
   private selectActionWithVariance(
     scoredActions: ScoredAction[],
-    player: Player
+    player: Player,
+    fluidPersonality?: any
   ): ScoredAction {
-    const personality = player.aiPersonality;
+    const personality = fluidPersonality || player.aiPersonality;
 
     // Sort by score
     scoredActions.sort((a, b) => b.score - a.score);
@@ -744,6 +785,9 @@ export class ConsciousnessAI {
 
   onTurnStart(player: Player, state: BattleState): void {
     console.log('🌅 AI consciousness initializing for new turn');
+    // Fluid state updates happen in selectAction, but we can log here
+    const fluidState = this.getFluidState(player);
+    console.log('🌊 Current mental state:', fluidState.getStateDescription());
   }
 
   onTurnEnd(player: Player, state: BattleState): void {

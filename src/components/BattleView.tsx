@@ -216,7 +216,7 @@ export const BattleView: React.FC = () => {
 
       {/* Main Battle Area */}
       <div className="battle-main-content" style={styles.mainContent}>
-        {/* Left: Player 1 Status */}
+        {/* Left: Player 1 Status + Hand (if player 1 is local) */}
         <div className="battle-side-panel" style={styles.sidePanel}>
           <PlayerStatus
             player={players[0]}
@@ -229,6 +229,18 @@ export const BattleView: React.FC = () => {
               players[0].id !== activePlayer.id
             }
           />
+
+          {/* Player 1's Hand - Show if they're the local player */}
+          {players[0].id === activePlayer?.id && isLocalPlayerTurn() && (
+            <div style={styles.sidePanelHand}>
+              <HandDisplay
+                cards={players[0].hand}
+                onCardSelect={handleCardSelect}
+                selectedCardId={selectedCard?.id}
+                playerName={players[0].name}
+              />
+            </div>
+          )}
         </div>
 
         {/* Center: Battlefield */}
@@ -257,7 +269,7 @@ export const BattleView: React.FC = () => {
           )}
         </div>
 
-        {/* Right: Player 2 Status */}
+        {/* Right: Player 2 Status + Hand (if player 2 is local) */}
         <div className="battle-side-panel" style={styles.sidePanel}>
           <PlayerStatus
             player={players[1]}
@@ -270,6 +282,18 @@ export const BattleView: React.FC = () => {
               players[1].id !== activePlayer.id
             }
           />
+
+          {/* Player 2's Hand - Show if they're the local player */}
+          {players[1].id === activePlayer?.id && isLocalPlayerTurn() && (
+            <div style={styles.sidePanelHand}>
+              <HandDisplay
+                cards={players[1].hand}
+                onCardSelect={handleCardSelect}
+                selectedCardId={selectedCard?.id}
+                playerName={players[1].name}
+              />
+            </div>
+          )}
         </div>
       </div>
 
@@ -283,18 +307,6 @@ export const BattleView: React.FC = () => {
             battleLog={battleState.battleLog}
             onEndTurn={handleEndTurn}
             onSurrender={handleSurrender}
-          />
-        </div>
-      )}
-
-      {/* Human Player Hand - Only show for local player */}
-      {activePlayer && isLocalPlayerTurn() && (
-        <div className="hand-display-container" style={styles.handPanel}>
-          <HandDisplay
-            cards={activePlayer.hand}
-            onCardSelect={handleCardSelect}
-            selectedCardId={selectedCard?.id}
-            playerName={activePlayer.name}
           />
         </div>
       )}
@@ -326,11 +338,13 @@ export const BattleView: React.FC = () => {
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    minHeight: '100vh',
+    height: '100vh',
+    maxHeight: '100vh',
     display: 'flex',
     flexDirection: 'column',
-    gap: TASERN_SPACING.lg,
+    gap: TASERN_SPACING.md,
     padding: TASERN_SPACING.lg,
+    overflow: 'hidden', // Prevent scrolling - everything fits in viewport
   },
   emptyState: {
     minHeight: '100vh',
@@ -417,24 +431,33 @@ const styles: Record<string, React.CSSProperties> = {
     gap: TASERN_SPACING.xl,
     flex: 1,
     alignItems: 'flex-start',
+    minHeight: 0, // Allow flex children to shrink below content size
+    overflow: 'hidden', // Prevent internal scrolling
   },
   sidePanel: {
-    flex: '0 0 350px',
+    flex: '0 0 400px', // Increased width to accommodate hand
+    maxHeight: '100%', // Don't overflow viewport
+    overflow: 'auto', // Allow scrolling if needed
+    display: 'flex',
+    flexDirection: 'column',
+    gap: TASERN_SPACING.md,
+  },
+  sidePanelHand: {
+    // HandDisplay has its own styling, this just provides spacing
+    marginTop: TASERN_SPACING.md,
   },
   centerPanel: {
     flex: 1,
     display: 'flex',
     flexDirection: 'column',
     gap: TASERN_SPACING.lg,
+    minHeight: 0, // Allow flex children to shrink
+    minWidth: 0, // Allow flex children to shrink horizontally
   },
   controlsPanel: {
     display: 'flex',
     justifyContent: 'center',
-  },
-  handPanel: {
-    display: 'flex',
-    justifyContent: 'center',
-    maxWidth: '100%',
+    flexShrink: 0, // Don't shrink controls
   },
   weatherDisplay: {
     display: 'flex',

@@ -78,6 +78,8 @@ const styles: Record<string, React.CSSProperties> = {
     border: `${TASERN_BORDERS.widthMedium} solid ${TASERN_COLORS.bronze}`,
     borderRadius: TASERN_BORDERS.radiusMedium,
     boxShadow: TASERN_SHADOWS.medium,
+    maxHeight: '100%', // Don't overflow parent
+    overflow: 'hidden', // Container doesn't scroll, only cardsContainer does
   },
   header: {
     display: 'flex',
@@ -102,14 +104,17 @@ const styles: Record<string, React.CSSProperties> = {
   },
   cardsContainer: {
     display: 'flex',
+    flexDirection: 'column', // Vertical stack
     gap: TASERN_SPACING.md,
-    overflowX: 'auto',
+    overflowY: 'auto', // Vertical scroll
+    overflowX: 'hidden',
     padding: TASERN_SPACING.sm,
+    maxHeight: '600px', // Allow scrolling if many cards
     minHeight: '200px',
   },
   cardWrapper: {
-    minWidth: '180px',
-    maxWidth: '180px',
+    width: '100%', // Full width of container
+    flexShrink: 0, // Don't shrink cards
   },
   emptyState: {
     flex: 1,
