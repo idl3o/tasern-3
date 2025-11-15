@@ -216,7 +216,7 @@ export const BattleView: React.FC = () => {
 
       {/* Main Battle Area */}
       <div className="battle-main-content" style={styles.mainContent}>
-        {/* Left: Player 1 Status + Hand (if player 1 is local) */}
+        {/* Left: Player 1 Status OR Opponent Status + Controls */}
         <div className="battle-side-panel" style={styles.sidePanel}>
           <PlayerStatus
             player={players[0]}
@@ -238,6 +238,20 @@ export const BattleView: React.FC = () => {
                 onCardSelect={handleCardSelect}
                 selectedCardId={selectedCard?.id}
                 playerName={players[0].name}
+              />
+            </div>
+          )}
+
+          {/* Controls + Battle Log - Show on opponent's side if player 2 is active */}
+          {players[1].id === activePlayer?.id && isLocalPlayerTurn() && (
+            <div style={styles.sidePanelControls}>
+              <BattleControls
+                activePlayer={activePlayer}
+                isProcessing={isProcessing}
+                currentTurn={battleState.currentTurn}
+                battleLog={battleState.battleLog}
+                onEndTurn={handleEndTurn}
+                onSurrender={handleSurrender}
               />
             </div>
           )}
@@ -269,7 +283,7 @@ export const BattleView: React.FC = () => {
           )}
         </div>
 
-        {/* Right: Player 2 Status + Hand (if player 2 is local) */}
+        {/* Right: Player 2 Status OR Opponent Status + Controls */}
         <div className="battle-side-panel" style={styles.sidePanel}>
           <PlayerStatus
             player={players[1]}
@@ -294,22 +308,22 @@ export const BattleView: React.FC = () => {
               />
             </div>
           )}
+
+          {/* Controls + Battle Log - Show on opponent's side if player 1 is active */}
+          {players[0].id === activePlayer?.id && isLocalPlayerTurn() && (
+            <div style={styles.sidePanelControls}>
+              <BattleControls
+                activePlayer={activePlayer}
+                isProcessing={isProcessing}
+                currentTurn={battleState.currentTurn}
+                battleLog={battleState.battleLog}
+                onEndTurn={handleEndTurn}
+                onSurrender={handleSurrender}
+              />
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Bottom: Controls - Only show for local player */}
-      {activePlayer && isLocalPlayerTurn() && (
-        <div className="controls-panel-container" style={styles.controlsPanel}>
-          <BattleControls
-            activePlayer={activePlayer}
-            isProcessing={isProcessing}
-            currentTurn={battleState.currentTurn}
-            battleLog={battleState.battleLog}
-            onEndTurn={handleEndTurn}
-            onSurrender={handleSurrender}
-          />
-        </div>
-      )}
 
       {/* Victory Overlay */}
       {phase === 'victory' && battleState.winner && (
@@ -446,6 +460,13 @@ const styles: Record<string, React.CSSProperties> = {
     // HandDisplay has its own styling, this just provides spacing
     marginTop: TASERN_SPACING.md,
   },
+  sidePanelControls: {
+    // BattleControls has its own styling, this just provides spacing
+    marginTop: TASERN_SPACING.md,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: TASERN_SPACING.sm,
+  },
   centerPanel: {
     flex: 1,
     display: 'flex',
@@ -453,11 +474,6 @@ const styles: Record<string, React.CSSProperties> = {
     gap: TASERN_SPACING.lg,
     minHeight: 0, // Allow flex children to shrink
     minWidth: 0, // Allow flex children to shrink horizontally
-  },
-  controlsPanel: {
-    display: 'flex',
-    justifyContent: 'center',
-    flexShrink: 0, // Don't shrink controls
   },
   weatherDisplay: {
     display: 'flex',
