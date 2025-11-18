@@ -15,9 +15,11 @@
     align-items: stretch;
     width: 100%;
     max-width: 100vw;
-    gap: 1.5rem; /* Increased gap between sections */
-    overflow-x: hidden !important; /* Never allow horizontal scroll */
+    gap: 0.75rem; /* Reduced gap to fit more content */
+    overflow: hidden !important; /* NO scrolling */
     box-sizing: border-box;
+    flex: 1; /* Take available space */
+    min-height: 0; /* Allow shrinking */
   }
 
   /* Side panels: Remove fixed widths, use full width */
@@ -25,13 +27,14 @@
     width: 100%;
     max-width: 100%;
     min-width: unset;
-    flex: 1 1 auto;
+    flex: 0 1 auto; /* Don't grow, can shrink */
     order: 2; /* Will be overridden by specific classes */
     display: flex;
     flex-direction: column;
-    gap: 1rem; /* Spacing between child elements */
-    overflow-x: hidden; /* Prevent horizontal overflow */
+    gap: 0.5rem; /* Reduced spacing */
+    overflow: hidden !important; /* NO scrolling */
     box-sizing: border-box;
+    min-height: 0; /* Allow shrinking */
   }
 
   /* Battlefield goes first */
@@ -39,45 +42,51 @@
     order: 1;
     width: 100%;
     max-width: 100vw;
-    margin-bottom: 1rem; /* Extra space after battlefield */
-    overflow-x: hidden; /* Prevent horizontal overflow */
+    margin-bottom: 0.5rem; /* Reduced spacing */
+    overflow: hidden !important; /* NO scrolling */
     box-sizing: border-box;
+    flex-shrink: 1; /* Can shrink to fit */
+    min-height: 0; /* Allow shrinking */
   }
 
-  /* Player status sections: Clear spacing and overflow protection */
+  /* Player status sections: Compact */
   .player-status-container {
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
     max-width: 100%;
-    overflow-x: hidden;
+    overflow: hidden !important;
     box-sizing: border-box;
+    flex-shrink: 0; /* Don't shrink player status */
   }
 
-  /* Hand section: Clear spacing and overflow protection */
+  /* Hand section: Only scrollable element (horizontal only) */
   .battle-hand-section {
-    margin-top: 1rem;
-    margin-bottom: 1rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
     max-width: 100%;
-    overflow: hidden; /* Prevent overflow in all directions */
+    overflow: hidden; /* Parent hides, child scrolls */
     box-sizing: border-box;
+    flex-shrink: 0; /* Don't shrink hand */
   }
 
-  /* Controls section: Clear spacing (desktop only) */
+  /* Controls section: Compact (desktop only) */
   .battle-controls-section {
-    margin-top: 1rem;
+    margin-top: 0.5rem;
     max-width: 100%;
     box-sizing: border-box;
   }
 
-  /* Prevent body overflow */
+  /* Prevent body overflow - no scrolling */
   body {
-    overflow-x: hidden !important;
+    overflow: hidden !important; /* NO scrolling */
     max-width: 100vw;
+    max-height: 100vh;
   }
 
   /* Ensure root doesn't overflow */
   #root {
     max-width: 100vw;
-    overflow-x: hidden !important;
+    max-height: 100vh;
+    overflow: hidden !important; /* NO scrolling */
   }
 
   /* Header: Stack elements vertically */
@@ -98,45 +107,52 @@
 /* Very small screens: Further compression */
 @media (max-width: 599px) {
   .battle-view-container {
-    padding: 0.5rem;
-    gap: 0.5rem;
+    padding: 0.25rem;
+    gap: 0.25rem;
     max-height: 100vh;
-    height: 100vh; /* Fixed height to prevent overflow */
-    overflow-x: hidden !important; /* Never allow horizontal scroll */
-    overflow-y: auto; /* Allow vertical scrolling if needed */
-    -webkit-overflow-scrolling: touch;
+    height: 100vh; /* Fixed height - everything must fit */
+    overflow: hidden !important; /* NO scrolling on main container */
     position: relative; /* Establish stacking context */
+    display: flex;
+    flex-direction: column;
   }
 
   .battle-main-content {
-    gap: 1rem; /* Maintain spacing even on small screens */
-    max-width: 100vw; /* Prevent horizontal overflow */
-    overflow-x: hidden !important;
+    gap: 0.5rem; /* Reduced gap to fit more */
+    max-width: 100vw;
+    overflow: hidden !important; /* NO scrolling */
+    flex: 1; /* Take remaining space */
+    min-height: 0; /* Allow flex children to shrink */
   }
 
   .battle-header {
-    padding: 0.75rem;
-    gap: 0.5rem;
-    max-width: 100vw; /* Prevent overflow */
+    padding: 0.5rem;
+    gap: 0.25rem;
+    max-width: 100vw;
+    flex-shrink: 0; /* Don't shrink header */
   }
 
   .battle-side-panel {
-    gap: 0.75rem;
-    max-width: 100vw; /* Prevent overflow */
-    overflow-x: hidden; /* Prevent horizontal scroll */
+    gap: 0.5rem;
+    max-width: 100vw;
+    overflow: hidden !important; /* NO scrolling */
+    min-height: 0; /* Allow shrinking */
   }
 
   .battle-hand-section {
-    margin-top: 0.75rem;
-    margin-bottom: 0.75rem;
-    max-width: 100vw; /* Prevent overflow */
-    overflow-x: hidden; /* Parent container manages overflow */
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+    max-width: 100vw;
+    overflow: hidden; /* Parent hides overflow, child scrolls */
+    flex-shrink: 0; /* Hand section doesn't shrink */
   }
 
-  /* Ensure center panel doesn't overflow */
+  /* Center panel - allow to shrink if needed */
   .battle-center-panel {
     max-width: 100vw;
-    overflow-x: hidden;
+    overflow: hidden !important;
+    min-height: 0; /* Allow shrinking */
+    flex-shrink: 1; /* Can shrink to fit */
   }
 }
 
@@ -287,32 +303,32 @@
 /* ==================== HAND DISPLAY MOBILE CAROUSEL ==================== */
 
 @media (max-width: 899px) {
-  /* Container wrapping - prevent overflow */
+  /* Container wrapping - ONLY scrollable element on mobile */
   .battle-hand-section {
     width: 100%;
-    overflow: hidden; /* Prevent overflow from parent */
+    overflow: hidden; /* Parent hides overflow */
   }
 
-  /* Switch to horizontal scroll carousel */
+  /* Switch to horizontal scroll carousel - ONLY SCROLLABLE ELEMENT */
   .hand-display-container,
   .hand-cards-container {
     display: flex;
     flex-direction: row !important;
-    overflow-x: auto;
-    overflow-y: hidden;
+    overflow-x: auto !important; /* ONLY horizontal scroll allowed */
+    overflow-y: hidden !important; /* NO vertical scroll */
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
-    gap: 0.75rem;
-    padding: 0.75rem;
-    padding-bottom: 1rem; /* Extra padding at bottom */
+    gap: 0.5rem;
+    padding: 0.5rem;
+    padding-bottom: 0.75rem;
     max-height: unset !important;
-    max-width: 100vw; /* Prevent horizontal overflow */
+    max-width: 100vw;
   }
 
   .hand-display-container::-webkit-scrollbar,
   .hand-cards-container::-webkit-scrollbar {
-    display: none;
+    display: none; /* Hide scrollbar */
   }
 
   .hand-card-wrapper {
@@ -550,17 +566,21 @@
     font-weight: 700;
   }
 
-  /* Add padding to bottom of content to prevent overlap */
+  /* Battle container with sticky controls - no scrolling */
   .battle-view-container.has-sticky-controls {
-    padding-bottom: calc(100px + env(safe-area-inset-bottom));
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
     max-height: 100vh;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+    height: 100vh;
+    overflow: hidden !important; /* NO scrolling */
+    display: flex;
+    flex-direction: column;
   }
 
-  /* Ensure main content doesn't go under sticky controls */
+  /* Main content takes remaining space above sticky controls */
   .battle-main-content {
-    padding-bottom: 1rem; /* Extra padding for breathing room */
+    flex: 1;
+    min-height: 0; /* Allow shrinking */
+    overflow: hidden !important; /* NO scrolling */
   }
 }
 
