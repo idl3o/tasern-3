@@ -31,15 +31,15 @@ export const HandDisplay: React.FC<HandDisplayProps> = ({
   playerName = 'You',
 }) => {
   return (
-    <div style={styles.container}>
-      <div style={styles.header}>
-        <span style={styles.title}>✋ {playerName}'s Hand</span>
-        <span style={styles.count}>
+    <div className="hand-display-container" style={styles.container}>
+      <div className="hand-header" style={styles.header}>
+        <span className="hand-title" style={styles.title}>✋ {playerName}'s Hand</span>
+        <span className="hand-count" style={styles.count}>
           {cards.length} card{cards.length !== 1 ? 's' : ''}
         </span>
       </div>
 
-      <div style={styles.cardsContainer}>
+      <div className="hand-cards-container" style={styles.cardsContainer}>
         {cards.length === 0 ? (
           <div style={styles.emptyState}>No cards in hand</div>
         ) : (
@@ -60,7 +60,7 @@ export const HandDisplay: React.FC<HandDisplayProps> = ({
       </div>
 
       {selectedCardId && (
-        <div style={styles.hint}>
+        <div className="hand-hint" style={styles.hint}>
           💡 Click a battlefield position to deploy
         </div>
       )}

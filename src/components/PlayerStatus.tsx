@@ -46,6 +46,7 @@ export const PlayerStatus: React.FC<PlayerStatusProps> = ({
 
   return (
     <div
+      className="player-status-container"
       style={{
         ...styles.container,
         ...(isActive ? styles.containerActive : {}),
@@ -53,7 +54,7 @@ export const PlayerStatus: React.FC<PlayerStatusProps> = ({
       }}
     >
       {/* Header */}
-      <div style={styles.header}>
+      <div className="player-status-header" style={styles.header}>
         <div style={styles.nameSection}>
           <div style={styles.playerName}>{player.name}</div>
           {player.type === 'ai' && player.aiPersonality && (
@@ -76,6 +77,7 @@ export const PlayerStatus: React.FC<PlayerStatusProps> = ({
 
       {/* Castle HP */}
       <div
+        className={`stat-section ${isTargetable ? 'castle-targetable' : ''}`}
         style={{
           ...styles.statSection,
           ...(isTargetable ? styles.castleTargetable : {}),
@@ -174,7 +176,7 @@ export const PlayerStatus: React.FC<PlayerStatusProps> = ({
       )}
 
       {/* Deck/Hand Count */}
-      <div style={styles.footer}>
+      <div className="player-status-footer" style={styles.footer}>
         <div style={styles.footerStat}>
           <span>🃏 Hand: {player.hand.length}</span>
         </div>

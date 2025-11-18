@@ -85,7 +85,7 @@ export const CardDisplay: React.FC<CardDisplayProps> = ({
       : TASERN_COLORS.red;
 
   return (
-    <div className="card-display" style={cardStyle} onClick={onClick}>
+    <div className={`card-display ${isActive ? 'is-active' : ''}`} style={cardStyle} onClick={onClick}>
       {/* Card Header */}
       <div style={styles.header}>
         <div style={styles.name}>{card.name}</div>

@@ -27,6 +27,8 @@ import {
   ARCHMAGUS_NETHYS
 } from './ai/personalities';
 import { TASERN_COLORS, TASERN_TYPOGRAPHY, TASERN_SHADOWS } from './styles/tasernTheme';
+import './styles/mobile-layout.css';
+import './styles/mobile-components.css';
 
 console.log('📱 App component loading...');
 
@@ -351,35 +353,36 @@ export const App: React.FC = () => {
 
   if (!battleState) {
     return (
-      <div style={styles.menuContainer}>
-        <div style={styles.menuCard}>
-          <div style={styles.header}>
+      <div className="menu-container" style={styles.menuContainer}>
+        <div className="menu-card" style={styles.menuCard}>
+          <div className="menu-header" style={styles.header}>
             <div>
-              <h1 style={styles.title}>⚔️ Tasern Siegefront ⚔️</h1>
-              <p style={styles.subtitle}>Tales of Tasern Battle Arena</p>
+              <h1 className="menu-title" style={styles.title}>⚔️ Tasern Siegefront ⚔️</h1>
+              <p className="menu-subtitle" style={styles.subtitle}>Tales of Tasern Battle Arena</p>
             </div>
             <WalletConnect />
           </div>
 
-          <div style={styles.tutorialSection}>
-            <button style={styles.tutorialButton} onClick={() => setShowTutorial(true)}>
+          <div className="tutorial-section" style={styles.tutorialSection}>
+            <button className="tutorial-button" style={styles.tutorialButton} onClick={() => setShowTutorial(true)}>
               📖 How to Play
             </button>
           </div>
 
           {/* Map Selection */}
-          <div style={styles.gridSelectionContainer}>
-            <h2 style={styles.sectionTitle}>Choose Your Battlefield</h2>
+          <div className="grid-selection-container" style={styles.gridSelectionContainer}>
+            <h2 className="section-title" style={styles.sectionTitle}>Choose Your Battlefield</h2>
 
             {/* Complete Map Presets */}
-            <div style={styles.mapPresetContainer}>
-              <h3 style={styles.subsectionTitle}>Themed Maps (Layout + Theme + Weather)</h3>
-              <div style={styles.mapButtonContainer}>
+            <div className="map-preset-container" style={styles.mapPresetContainer}>
+              <h3 className="subsection-title" style={styles.subsectionTitle}>Themed Maps (Layout + Theme + Weather)</h3>
+              <div className="map-button-container" style={styles.mapButtonContainer}>
                 {(Object.keys(COMPLETE_MAP_PRESETS) as CompleteMapPreset[]).map((preset) => {
                   const mapData = COMPLETE_MAP_PRESETS[preset];
                   return (
                     <button
                       key={preset}
+                      className={`map-button ${selectedMapPreset === preset ? 'map-button-selected' : ''}`}
                       style={{
                         ...styles.mapButton,
                         ...(selectedMapPreset === preset ? styles.mapButtonSelected : {}),
@@ -389,8 +392,8 @@ export const App: React.FC = () => {
                         setSelectedGridPreset(mapData.layout);
                       }}
                     >
-                      <div style={styles.mapButtonName}>{mapData.name}</div>
-                      <div style={styles.mapButtonDesc}>{mapData.fullDescription}</div>
+                      <div className="map-button-name" style={styles.mapButtonName}>{mapData.name}</div>
+                      <div className="map-button-desc" style={styles.mapButtonDesc}>{mapData.fullDescription}</div>
                     </button>
                   );
                 })}
@@ -428,13 +431,13 @@ export const App: React.FC = () => {
 
           <div style={styles.divider}></div>
 
-          <div style={styles.personalityGrid}>
-            <h2 style={styles.sectionTitle}>Play vs AI</h2>
+          <div className="personality-grid" style={styles.personalityGrid}>
+            <h2 className="section-title" style={styles.sectionTitle}>Play vs AI</h2>
 
-            <button style={styles.opponentButton} onClick={() => startBattle('stumbleheart')}>
-              <div style={styles.opponentName}>Sir Stumbleheart</div>
-              <div style={styles.opponentTitle}>"The Noble Blunderer"</div>
-              <div style={styles.opponentTraits}>Creative • Low Aggression • Patient</div>
+            <button className="opponent-button" style={styles.opponentButton} onClick={() => startBattle('stumbleheart')}>
+              <div className="opponent-name" style={styles.opponentName}>Sir Stumbleheart</div>
+              <div className="opponent-title" style={styles.opponentTitle}>"The Noble Blunderer"</div>
+              <div className="opponent-traits" style={styles.opponentTraits}>Creative • Low Aggression • Patient</div>
             </button>
 
             <button style={styles.opponentButton} onClick={() => startBattle('swiftblade')}>

@@ -32,6 +32,8 @@ import {
   TASERN_ICONS,
 } from '../styles/tasernTheme';
 import '../styles/responsive.css';
+import '../styles/mobile-layout.css';
+import '../styles/mobile-components.css';
 
 export const BattleView: React.FC = () => {
   const battleState = useBattleStore(selectBattleState);
@@ -152,6 +154,14 @@ export const BattleView: React.FC = () => {
     }
   };
 
+  // Helper: Check if a battlefield position is a valid drop zone
+  const isValidDropZone = (position: Position): boolean => {
+    if (!selectedCard || !activePlayer || !battleState) return false;
+    // Check if position is empty and within bounds
+    const card = battleState.battlefield[position.row]?.[position.col];
+    return card === null;
+  };
+
   const handleCastleAttack = (targetPlayerId: string) => {
     if (!isLocalPlayerTurn() || isProcessing || !selectedBattlefieldCard || !activePlayer) {
       return;
@@ -190,7 +200,7 @@ export const BattleView: React.FC = () => {
   }
 
   return (
-    <div className="battle-view-container" style={styles.container}>
+    <div className="battle-view-container has-sticky-controls" style={styles.container}>
       {/* Header */}
       <header className="battle-header" style={styles.header}>
         <h1 style={styles.title}>⚔️ Tasern Siegefront ⚔️</h1>
@@ -267,6 +277,9 @@ export const BattleView: React.FC = () => {
             playerNames={playerNames}
             onCellClick={handleBattlefieldClick}
             highlightedPositions={selectedBattlefieldCard ? [selectedBattlefieldCard.position] : []}
+            validDropZones={selectedCard ? battleState.battlefield.flatMap((row, rowIndex) =>
+              row.map((cell, colIndex) => ({ row: rowIndex, col: colIndex })).filter(pos => isValidDropZone(pos))
+            ) : []}
           />
 
           {/* Weather Display */}

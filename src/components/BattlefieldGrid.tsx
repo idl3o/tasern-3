@@ -27,6 +27,7 @@ interface BattlefieldGridProps {
   playerNames: Record<string, string>;
   onCellClick?: (position: Position, card: BattleCard | null) => void;
   highlightedPositions?: Position[];
+  validDropZones?: Position[];
 }
 
 export const BattlefieldGrid: React.FC<BattlefieldGridProps> = ({
@@ -37,6 +38,7 @@ export const BattlefieldGrid: React.FC<BattlefieldGridProps> = ({
   playerNames,
   onCellClick,
   highlightedPositions = [],
+  validDropZones = [],
 }) => {
   const themeData = MAP_THEMES[mapTheme];
 
@@ -46,6 +48,10 @@ export const BattlefieldGrid: React.FC<BattlefieldGridProps> = ({
 
   const isBlocked = (row: number, col: number): boolean => {
     return blockedTiles.some((pos) => pos.row === row && pos.col === col);
+  };
+
+  const isValidDropZone = (row: number, col: number): boolean => {
+    return validDropZones.some((pos) => pos.row === row && pos.col === col);
   };
 
   const getZoneLabel = (row: number, totalRows: number): string => {
@@ -82,13 +88,13 @@ export const BattlefieldGrid: React.FC<BattlefieldGridProps> = ({
   const zoneLabelGap = `calc(min(${22 * Math.max(0.5, 1 - (gridConfig.rows - 3) * 0.15)}vh, ${Math.floor(320 * Math.max(0.5, 1 - (gridConfig.rows - 3) * 0.15))}px) + 1rem)`;
 
   return (
-    <div style={{
+    <div className="battlefield-grid" style={{
       ...styles.container,
       background: `linear-gradient(135deg, ${themeData.backgroundColor} 0%, rgba(0, 0, 0, 0.8) 100%)`,
       border: `${TASERN_BORDERS.widthMedium} solid ${themeData.borderColor}`,
     }}>
       {/* Zone Labels */}
-      <div style={{ ...styles.zoneLabels, gap: zoneLabelGap }}>
+      <div className="zone-labels" style={{ ...styles.zoneLabels, gap: zoneLabelGap }}>
         {Array.from({ length: gridConfig.rows }).map((_, row) => (
           <div key={row} style={styles.zoneLabel}>
             {getZoneLabel(row, gridConfig.rows)}
@@ -97,7 +103,7 @@ export const BattlefieldGrid: React.FC<BattlefieldGridProps> = ({
       </div>
 
       {/* Grid Info */}
-      <div style={{
+      <div className="grid-info" style={{
         ...styles.gridInfo,
         color: themeData.accentColor,
       }}>
@@ -112,10 +118,12 @@ export const BattlefieldGrid: React.FC<BattlefieldGridProps> = ({
               const position: Position = { row: rowIndex, col: colIndex };
               const highlighted = isHighlighted(rowIndex, colIndex);
               const blocked = isBlocked(rowIndex, colIndex);
+              const validDrop = isValidDropZone(rowIndex, colIndex);
 
               return (
                 <div
                   key={`${rowIndex}-${colIndex}`}
+                  className={`battlefield-cell ${validDrop ? 'valid-drop-zone' : ''}`}
                   style={{
                     ...styles.cell,
                     ...getCellStyle(),
@@ -159,9 +167,9 @@ export const BattlefieldGrid: React.FC<BattlefieldGridProps> = ({
       </div>
 
       {/* Formation Legend */}
-      <div style={styles.legend}>
-        <div style={styles.legendTitle}>Formations</div>
-        <div style={styles.legendItems}>
+      <div className="legend formation-legend" style={styles.legend}>
+        <div className="legend-title" style={styles.legendTitle}>Formations</div>
+        <div className="legend-items legend-content" style={styles.legendItems}>
           <div style={styles.legendItem}>⚔️ Vanguard: Front row +20% ATK</div>
           <div style={styles.legendItem}>🛡️ Phalanx: Line +30% DEF</div>
           <div style={styles.legendItem}>🏹 Archer: Back row +15% ATK</div>

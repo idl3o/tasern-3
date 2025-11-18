@@ -35,9 +35,9 @@ export const BattleControls: React.FC<BattleControlsProps> = ({
   onSurrender,
 }) => {
   return (
-    <div style={styles.container}>
+    <div className="battle-controls-container" style={styles.container}>
       {/* Turn Info */}
-      <div style={styles.turnInfo}>
+      <div className="turn-info" style={styles.turnInfo}>
         <div style={styles.turnLabel}>Turn {currentTurn}</div>
         <div style={styles.activePlayerName}>
           {activePlayer.name}
@@ -91,9 +91,9 @@ export const BattleControls: React.FC<BattleControlsProps> = ({
       </div>
 
       {/* Battle Log */}
-      <div style={styles.logContainer}>
-        <div style={styles.logTitle}>⚔️ Battle Log</div>
-        <div style={styles.logContent}>
+      <div className="log-container" style={styles.logContainer}>
+        <div className="log-title" style={styles.logTitle}>⚔️ Battle Log</div>
+        <div className="log-content" style={styles.logContent}>
           {battleLog.length === 0 ? (
             <div style={styles.logEmpty}>Battle begins...</div>
           ) : (
