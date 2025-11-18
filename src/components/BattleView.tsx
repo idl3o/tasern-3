@@ -447,13 +447,12 @@ export const BattleView: React.FC = () => {
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    height: '100vh',
-    maxHeight: '100vh',
+    minHeight: '100vh', // Changed from height to minHeight to allow scrolling
     display: 'flex',
     flexDirection: 'column',
     gap: TASERN_SPACING.md,
     padding: TASERN_SPACING.lg,
-    overflow: 'hidden', // Prevent scrolling - everything fits in viewport
+    // Removed overflow: hidden to allow mobile scrolling
   },
   emptyState: {
     minHeight: '100vh',
@@ -541,7 +540,7 @@ const styles: Record<string, React.CSSProperties> = {
     flex: 1,
     alignItems: 'flex-start',
     minHeight: 0, // Allow flex children to shrink below content size
-    overflow: 'hidden', // Prevent internal scrolling
+    // Removed overflow: hidden to allow content to be visible on mobile
   },
   sidePanel: {
     flex: '0 0 400px', // Increased width to accommodate hand
