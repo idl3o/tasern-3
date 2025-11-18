@@ -567,7 +567,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center', // Center battlefield horizontally
-    justifyContent: 'center', // Center battlefield vertically
+    justifyContent: 'flex-start', // Start from top (not centered vertically)
     gap: TASERN_SPACING.lg,
     minHeight: 0, // Allow flex children to shrink
     minWidth: 0, // Allow flex children to shrink horizontally

@@ -164,6 +164,7 @@ button:active,
     display: flex;
     flex-direction: column;
     align-items: center; /* Center battlefield horizontally */
+    justify-content: flex-start; /* Start from top on mobile */
   }
 
   .battle-header {
