@@ -42,6 +42,10 @@
     margin-bottom: 1rem;
     overflow-x: hidden;
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center battlefield horizontally */
+    justify-content: center; /* Center battlefield vertically */
   }
 
   /* Player status sections: Natural size */
@@ -135,6 +139,9 @@
   .battle-center-panel {
     max-width: 100vw;
     overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center battlefield horizontally */
   }
 }
 

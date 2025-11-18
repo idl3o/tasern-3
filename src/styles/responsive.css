@@ -161,6 +161,9 @@ button:active,
   .battle-center-panel {
     width: 100%;
     order: -1; /* Move battlefield to top on mobile */
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center battlefield horizontally */
   }
 
   .battle-header {
