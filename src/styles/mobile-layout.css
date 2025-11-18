@@ -16,6 +16,8 @@
     width: 100%;
     max-width: 100vw;
     gap: 1.5rem; /* Increased gap between sections */
+    overflow-x: hidden !important; /* Never allow horizontal scroll */
+    box-sizing: border-box;
   }
 
   /* Side panels: Remove fixed widths, use full width */
@@ -28,6 +30,8 @@
     display: flex;
     flex-direction: column;
     gap: 1rem; /* Spacing between child elements */
+    overflow-x: hidden; /* Prevent horizontal overflow */
+    box-sizing: border-box;
   }
 
   /* Battlefield goes first */
@@ -36,22 +40,44 @@
     width: 100%;
     max-width: 100vw;
     margin-bottom: 1rem; /* Extra space after battlefield */
+    overflow-x: hidden; /* Prevent horizontal overflow */
+    box-sizing: border-box;
   }
 
-  /* Player status sections: Clear spacing */
+  /* Player status sections: Clear spacing and overflow protection */
   .player-status-container {
     margin-bottom: 1rem;
+    max-width: 100%;
+    overflow-x: hidden;
+    box-sizing: border-box;
   }
 
-  /* Hand section: Clear spacing */
+  /* Hand section: Clear spacing and overflow protection */
   .battle-hand-section {
     margin-top: 1rem;
     margin-bottom: 1rem;
+    max-width: 100%;
+    overflow: hidden; /* Prevent overflow in all directions */
+    box-sizing: border-box;
   }
 
   /* Controls section: Clear spacing (desktop only) */
   .battle-controls-section {
     margin-top: 1rem;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Prevent body overflow */
+  body {
+    overflow-x: hidden !important;
+    max-width: 100vw;
+  }
+
+  /* Ensure root doesn't overflow */
+  #root {
+    max-width: 100vw;
+    overflow-x: hidden !important;
   }
 
   /* Header: Stack elements vertically */
@@ -75,27 +101,42 @@
     padding: 0.5rem;
     gap: 0.5rem;
     max-height: 100vh;
-    overflow-x: hidden;
+    height: 100vh; /* Fixed height to prevent overflow */
+    overflow-x: hidden !important; /* Never allow horizontal scroll */
     overflow-y: auto; /* Allow vertical scrolling if needed */
     -webkit-overflow-scrolling: touch;
+    position: relative; /* Establish stacking context */
   }
 
   .battle-main-content {
     gap: 1rem; /* Maintain spacing even on small screens */
+    max-width: 100vw; /* Prevent horizontal overflow */
+    overflow-x: hidden !important;
   }
 
   .battle-header {
     padding: 0.75rem;
     gap: 0.5rem;
+    max-width: 100vw; /* Prevent overflow */
   }
 
   .battle-side-panel {
     gap: 0.75rem;
+    max-width: 100vw; /* Prevent overflow */
+    overflow-x: hidden; /* Prevent horizontal scroll */
   }
 
   .battle-hand-section {
     margin-top: 0.75rem;
     margin-bottom: 0.75rem;
+    max-width: 100vw; /* Prevent overflow */
+    overflow-x: hidden; /* Parent container manages overflow */
+  }
+
+  /* Ensure center panel doesn't overflow */
+  .battle-center-panel {
+    max-width: 100vw;
+    overflow-x: hidden;
   }
 }
 
@@ -532,7 +573,7 @@
   }
 
   .show-mobile {
-    display: block !important;
+    display: inherit !important; /* Inherit original display type */
   }
 }
 
@@ -544,6 +585,10 @@
 
   .show-mobile {
     display: none !important;
+  }
+
+  .hide-mobile {
+    display: inherit !important; /* Show on desktop with original display type */
   }
 }
 

@@ -39,29 +39,7 @@
   pointer-events: auto;
 }
 
-/* Hand display - horizontal scroll on mobile */
-@media (max-width: 899px) {
-  .hand-display-container {
-    display: flex;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE/Edge */
-    padding: 12px 8px;
-    gap: 12px;
-  }
-
-  .hand-display-container::-webkit-scrollbar {
-    display: none; /* Chrome/Safari */
-  }
-
-  .hand-card-wrapper {
-    scroll-snap-align: center;
-    flex-shrink: 0;
-  }
-}
+/* Hand display styles are now in mobile-layout.css to avoid conflicts */
 
 /* ==================== MOBILE LAYOUT IMPROVEMENTS ==================== */
 
@@ -185,34 +163,7 @@
   background: linear-gradient(to left, rgba(26, 20, 16, 0.8), transparent);
 }
 
-/* ==================== LANDSCAPE MOBILE OPTIMIZATIONS ==================== */
-
-@media (max-width: 899px) and (orientation: landscape) {
-  .battle-view-container {
-    padding: 8px;
-  }
-
-  .battle-header {
-    padding: 8px 12px;
-    font-size: 14px;
-  }
-
-  /* More compact layout in landscape */
-  .battle-main-content {
-    flex-direction: row;
-    gap: 12px;
-  }
-
-  .battle-side-panel {
-    flex: 0 1 280px;
-  }
-
-  /* Smaller cards in landscape to fit more */
-  .card-display {
-    transform: scale(0.9);
-    transform-origin: top center;
-  }
-}
+/* Landscape optimizations are in mobile-layout.css to avoid conflicts */
 
 /* ==================== SAFE AREA INSETS (iPhone notch) ==================== */
 
@@ -257,25 +208,8 @@
 
 /* ==================== MOBILE-SPECIFIC UTILITIES ==================== */
 
-/* Hide on mobile */
-.hide-mobile {
-  display: none !important;
-}
-
-/* Show only on mobile */
-.show-mobile {
-  display: block !important;
-}
-
-@media (min-width: 900px) {
-  .hide-mobile {
-    display: block !important;
-  }
-
-  .show-mobile {
-    display: none !important;
-  }
-}
+/* Mobile-only styles are now in mobile-layout.css and mobile-components.css */
+/* These classes are defined there to avoid conflicts */
 
 /* Compact mode for mobile */
 .compact-mobile {
@@ -368,7 +302,7 @@ body::after {
   padding: 4px 8px;
   font-size: 12px;
   border-radius: 4px;
-  z-index: 99999;
+  z-index: 9999; /* Lower z-index to not conflict with overlays */
   pointer-events: none;
   opacity: 0; /* Hidden by default */
 }
