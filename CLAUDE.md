@@ -15,9 +15,29 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Strategy pattern for player types (Human vs AI)
 
 ### Current Status
-**✅ MILESTONE 3 COMPLETE - Real-Time Multiplayer PVP!** (October 16, 2025)
+**✅ MILESTONE 5 COMPLETE - Grid-Aware AI & Dynamic Board Shapes!** (November 18, 2025)
 
-The game now features working peer-to-peer multiplayer battles:
+The AI now intelligently adapts to all 10 dynamic board shapes:
+- ✅ **Grid-Aware Position Scoring** - AI calculates middle column, home/enemy sides dynamically for any grid size
+- ✅ **HIGH_GROUND Prioritization** - AI actively seeks special tiles for +30% tactical bonus
+- ✅ **Dynamic Castle Attack Logic** - Melee units find center columns on any board (odd/even width support)
+- ✅ **Asymmetric Board Support** - L-shaped, T-shaped, Cross, Diamond layouts fully supported
+- ✅ **Mode-Specific Strategies** - Aggressive pushes forward, Defensive holds home, Adaptive controls center
+- ✅ **Blocked Tile Awareness** - AI respects obstacles and navigates around them
+- ✅ **Variable Grid Sizes** - Works flawlessly on 2x4, 3x3, 3x5, 4x4, 4x5, 5x3, 5x5 battlefields
+
+**✅ MILESTONE 4 COMPLETE - Mobile-First Optimization!** (November 18, 2025)
+
+The game now provides a streamlined touch-optimized experience:
+- ✅ **Compact Player Status** - Ultra-compressed single-line layout (Name | HP | Mana) with mini bars
+- ✅ **Hidden Battle Log** - Battle controls moved to sticky footer, log removed for screen space
+- ✅ **Enlarged Battlefield Cells** - 15-17% size increase for better touch targets (115x155px on mobile)
+- ✅ **Simplified Turn Indicator** - Compact header with horizontal layout, reduced animations
+- ✅ **Enhanced Visual States** - Golden pulsing glow for selected cards, green pulsing for valid drop zones
+- ✅ **Touch Feedback** - Scale animations on tap, battlefield cells respond to touch
+- ✅ **Vertical Scrolling** - Natural element sizing with smooth mobile scrolling
+
+**Previous Milestone - Real-Time Multiplayer PVP:** (October 16, 2025)
 - ✅ **WebRTC P2P Networking** - PeerJS for decentralized multiplayer (no game server needed!)
 - ✅ **Live Board Synchronization** - Card deployments and attacks sync in real-time between browsers
 - ✅ **Wallet-Based Identity** - Wallet addresses as consistent peer IDs
@@ -48,7 +68,7 @@ The game now features working peer-to-peer multiplayer battles:
 - ✅ Battle log showing all actions
 - ✅ Medieval D&D aesthetic with Tasern theme colors
 
-**Next Phase:** Polish multiplayer UX, reconnection handling, spectator mode
+**Next Phase:** Multiplayer UX polish, mobile battle testing, AI personality tuning for board shapes, spectator mode
 
 ### Universe Context
 This game lives in James McGee's Tales of Tasern D&D homebrew universe. The visual style, lore, card naming, and AI personalities all honor this setting. Every design decision should ask: "Does this feel like it belongs in a D&D session?"

@@ -214,10 +214,10 @@
 
   /* Fixed smaller cell sizes instead of viewport units */
   .battlefield-cell {
-    width: 100px !important;
-    height: 140px !important;
-    min-height: 140px;
-    min-width: 100px;
+    width: 115px !important;
+    height: 155px !important;
+    min-height: 155px;
+    min-width: 115px;
   }
 
   /* Zone labels: Smaller and more compact */
@@ -259,10 +259,10 @@
 
   /* Even smaller cells for very small screens */
   .battlefield-cell {
-    width: 90px !important;
-    height: 130px !important;
-    min-height: 130px;
-    min-width: 90px;
+    width: 105px !important;
+    height: 145px !important;
+    min-height: 145px;
+    min-width: 105px;
   }
 
   /* Hide zone labels on very small screens */

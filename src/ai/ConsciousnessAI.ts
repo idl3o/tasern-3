@@ -664,6 +664,7 @@ export class ConsciousnessAI {
   /**
    * Select best deployment positions based on strategy
    * Reduces action space by prioritizing strategic positions
+   * NOW GRID-AWARE: Works with any board size/shape!
    */
   private selectBestPositions(
     positions: Position[],
@@ -673,52 +674,101 @@ export class ConsciousnessAI {
   ): Position[] {
     const playerIds = Object.keys(state.players);
     const playerIndex = playerIds.indexOf(player.id);
+    const gridConfig = state.gridConfig;
+    const middleCol = Math.floor(gridConfig.cols / 2);
 
-    // Score each position based on mode and column-based zones
+    // Determine home and enemy sides (Player 1 = left, Player 2 = right)
+    const homeCols = playerIndex === 0
+      ? Array.from({ length: Math.ceil(gridConfig.cols / 3) }, (_, i) => i) // Left third
+      : Array.from({ length: Math.ceil(gridConfig.cols / 3) }, (_, i) => gridConfig.cols - 1 - i); // Right third
+
+    const enemyCols = playerIndex === 0
+      ? Array.from({ length: Math.ceil(gridConfig.cols / 3) }, (_, i) => gridConfig.cols - 1 - i) // Right third
+      : Array.from({ length: Math.ceil(gridConfig.cols / 3) }, (_, i) => i); // Left third
+
+    // Score each position based on mode and dynamic grid layout
     const scoredPositions = positions.map(pos => {
       let score = 0;
 
-      // Column-based scoring (NEW RULES)
+      // Terrain bonus (special tiles give score based on tactical value!)
+      const terrainAtPos = state.terrainEffects.find(
+        terrain => terrain.position.row === pos.row && terrain.position.col === pos.col
+      );
+      if (terrainAtPos) {
+        // Score terrain based on its bonuses (attack, defense modifiers)
+        const terrainScore = (terrainAtPos.attackMod + terrainAtPos.defenseMod) * 50;
+        if (terrainScore > 0) {
+          score += terrainScore;
+          console.log(`   ${terrainAtPos.icon} ${terrainAtPos.type} at (${pos.row},${pos.col}): +${terrainScore} score (attack: ${terrainAtPos.attackMod}, defense: ${terrainAtPos.defenseMod})`);
+        }
+      }
+
+      // AGGRESSIVE MODE: Push forward to enemy side and center
       if (mode === 'AGGRESSIVE') {
-        if (playerIndex === 0) {
-          // Player 1: Prefer left flank (col 0) and center (col 1)
-          if (pos.col === 0) {
-            score += 20; // Left flank for melee bonus
-          } else if (pos.col === 1) {
-            score += 25; // Center for castle control
-          }
-        } else {
-          // Player 2: Prefer center (col 1) and right flank (col 2)
-          if (pos.col === 2) {
-            score += 20; // Right flank for ranged bonus
-          } else if (pos.col === 1) {
-            score += 25; // Center for castle control
-          }
+        // Center column is always valuable for aggression (castle attacks)
+        if (pos.col === middleCol) {
+          score += 25;
+        }
+
+        // Enemy side columns (pushing into their territory)
+        if (enemyCols.includes(pos.col)) {
+          score += 20;
+        }
+
+        // Forward rows (closer to enemy castle) - depends on who you are
+        const forwardRow = playerIndex === 0
+          ? Math.max(...positions.map(p => p.row)) // Player 1: bottom rows are forward
+          : Math.min(...positions.map(p => p.row)); // Player 2: top rows are forward
+
+        if (pos.row === forwardRow) {
+          score += 15;
         }
       }
 
-      // Defensive mode prefers home flanks
+      // DEFENSIVE MODE: Hold home territory
       if (mode === 'DEFENSIVE') {
-        if (playerIndex === 0) {
-          // Player 1: Prefer left flank (col 0) - home territory
-          if (pos.col === 0) {
-            score += 25;
-          } else if (pos.col === 1) {
-            score += 15; // Center as buffer
-          }
-        } else {
-          // Player 2: Prefer right flank (col 2) - home territory
-          if (pos.col === 2) {
-            score += 25;
-          } else if (pos.col === 1) {
-            score += 15; // Center as buffer
-          }
+        // Home columns (your side of the board)
+        if (homeCols.includes(pos.col)) {
+          score += 25;
+        }
+
+        // Center as buffer zone
+        if (pos.col === middleCol) {
+          score += 15;
+        }
+
+        // Back rows (protecting castle) - depends on who you are
+        const backRow = playerIndex === 0
+          ? Math.min(...positions.map(p => p.row)) // Player 1: top rows are back
+          : Math.max(...positions.map(p => p.row)); // Player 2: bottom rows are back
+
+        if (pos.row === backRow) {
+          score += 15;
         }
       }
 
-      // Center column is always valuable in adaptive mode
-      if (mode === 'ADAPTIVE' && pos.col === 1) {
-        score += 20; // Contested zone
+      // ADAPTIVE MODE: Center control is key
+      if (mode === 'ADAPTIVE') {
+        if (pos.col === middleCol) {
+          score += 20; // Contested zone control
+        }
+
+        // Middle rows (center of battlefield)
+        const middleRow = Math.floor(gridConfig.rows / 2);
+        if (Math.abs(pos.row - middleRow) <= 1) {
+          score += 15;
+        }
+      }
+
+      // DESPERATE MODE: Maximize board presence (spread out)
+      if (mode === 'DESPERATE') {
+        // Prefer positions far from existing friendly cards (spread out)
+        const myCards = state.battlefield.flat().filter(c => c !== null && c.ownerId === player.id);
+        const minDist = Math.min(...myCards.map(card => {
+          if (!card) return 999;
+          return Math.abs(card.position.row - pos.row) + Math.abs(card.position.col - pos.col);
+        }), 0);
+        score += minDist * 5; // Reward distance from friendly units
       }
 
       return { pos, score };
@@ -729,17 +779,6 @@ export class ConsciousnessAI {
     return scoredPositions.map(sp => sp.pos);
   }
 
-  private getEmptyPositions(battlefield: any[][]): Position[] {
-    const positions: Position[] = [];
-    for (let row = 0; row < 3; row++) {
-      for (let col = 0; col < 3; col++) {
-        if (battlefield[row][col] === null) {
-          positions.push({ row, col });
-        }
-      }
-    }
-    return positions;
-  }
 
   /**
    * Check if attacker can attack target based on combat type and range
@@ -765,8 +804,9 @@ export class ConsciousnessAI {
 
   /**
    * Check if attacker can attack enemy castle
-   * Melee: Must be in middle column (col 1) - contested center zone
+   * Melee: Must be in middle column (dynamically calculated) - contested center zone
    * Ranged/Hybrid: Can attack from any column
+   * NOW GRID-AWARE: Works with any board width!
    */
   private canAttackCastle(
     attacker: BattleCard,
@@ -778,9 +818,19 @@ export class ConsciousnessAI {
       return true;
     }
 
-    // Melee cards must be in the middle column (col 1)
+    // Melee cards must be in the middle column (dynamically calculated)
     // This is the contested center where melee units can reach both castles
-    return attacker.position.col === 1;
+    const middleCol = Math.floor(state.gridConfig.cols / 2);
+
+    // For odd-width grids (3, 5, 7), exact middle column
+    // For even-width grids (2, 4, 6), allow either of the two middle columns
+    if (state.gridConfig.cols % 2 === 1) {
+      // Odd width: exact middle only
+      return attacker.position.col === middleCol;
+    } else {
+      // Even width: either of the two middle columns
+      return attacker.position.col === middleCol || attacker.position.col === middleCol - 1;
+    }
   }
 
   onTurnStart(player: Player, state: BattleState): void {
