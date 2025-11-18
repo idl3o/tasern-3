@@ -154,14 +154,6 @@ export const BattleView: React.FC = () => {
     }
   };
 
-  // Helper: Check if a battlefield position is a valid drop zone
-  const isValidDropZone = (position: Position): boolean => {
-    if (!selectedCard || !activePlayer || !battleState) return false;
-    // Check if position is empty and within bounds
-    const card = battleState.battlefield[position.row]?.[position.col];
-    return card === null;
-  };
-
   // Helper: Get all available spaces for deployment (when card is selected)
   const getAvailableSpaces = (): Position[] => {
     if (!battleState || !activePlayer || !isLocalPlayerTurn() || isProcessing) {

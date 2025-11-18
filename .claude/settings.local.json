@@ -36,7 +36,8 @@
       "Bash(vercel secrets:*)",
       "Bash(vercel link:*)",
       "Bash(vercel env:*)",
-      "Bash(vercel --prod:*)"
+      "Bash(vercel --prod:*)",
+      "mcp__ide__getDiagnostics"
     ],
     "deny": [],
     "ask": []
