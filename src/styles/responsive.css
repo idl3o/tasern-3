@@ -42,6 +42,40 @@ button:active,
   transition: transform 0.1s ease;
 }
 
+/* Available spaces highlighting - subtle pulse animation (all screen sizes) */
+.battlefield-cell.available-space:not(.valid-drop-zone) {
+  animation: pulse-available 2.5s ease-in-out infinite;
+  cursor: pointer;
+}
+
+@keyframes pulse-available {
+  0%, 100% {
+    background: rgba(139, 105, 20, 0.12);
+    border-color: rgba(212, 175, 55, 0.3);
+  }
+  50% {
+    background: rgba(139, 105, 20, 0.2);
+    border-color: rgba(212, 175, 55, 0.5);
+  }
+}
+
+/* Valid drop zones (when card selected) take priority over available spaces */
+.battlefield-cell.valid-drop-zone {
+  background: rgba(6, 95, 70, 0.3) !important;
+  border-color: #065F46 !important;
+  box-shadow: 0 0 16px rgba(6, 95, 70, 0.6);
+  animation: pulse-valid 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-valid {
+  0%, 100% {
+    box-shadow: 0 0 16px rgba(6, 95, 70, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 24px rgba(6, 95, 70, 0.8);
+  }
+}
+
 /* Battle View Layout - Responsive Breakpoints */
 .battle-view-container {
   min-height: 100vh;

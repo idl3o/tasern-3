@@ -28,6 +28,7 @@ interface BattlefieldGridProps {
   onCellClick?: (position: Position, card: BattleCard | null) => void;
   highlightedPositions?: Position[];
   validDropZones?: Position[];
+  availableSpaces?: Position[]; // All empty spaces available for deployment
 }
 
 export const BattlefieldGrid: React.FC<BattlefieldGridProps> = ({
@@ -39,6 +40,7 @@ export const BattlefieldGrid: React.FC<BattlefieldGridProps> = ({
   onCellClick,
   highlightedPositions = [],
   validDropZones = [],
+  availableSpaces = [],
 }) => {
   const themeData = MAP_THEMES[mapTheme];
 
@@ -52,6 +54,10 @@ export const BattlefieldGrid: React.FC<BattlefieldGridProps> = ({
 
   const isValidDropZone = (row: number, col: number): boolean => {
     return validDropZones.some((pos) => pos.row === row && pos.col === col);
+  };
+
+  const isAvailableSpace = (row: number, col: number): boolean => {
+    return availableSpaces.some((pos) => pos.row === row && pos.col === col);
   };
 
   const getZoneLabel = (row: number, totalRows: number): string => {
@@ -119,15 +125,17 @@ export const BattlefieldGrid: React.FC<BattlefieldGridProps> = ({
               const highlighted = isHighlighted(rowIndex, colIndex);
               const blocked = isBlocked(rowIndex, colIndex);
               const validDrop = isValidDropZone(rowIndex, colIndex);
+              const available = isAvailableSpace(rowIndex, colIndex);
 
               return (
                 <div
                   key={`${rowIndex}-${colIndex}`}
-                  className={`battlefield-cell ${validDrop ? 'valid-drop-zone' : ''}`}
+                  className={`battlefield-cell ${validDrop ? 'valid-drop-zone' : ''} ${available ? 'available-space' : ''}`}
                   style={{
                     ...styles.cell,
                     ...getCellStyle(),
                     ...(highlighted ? styles.cellHighlighted : {}),
+                    ...(available && !validDrop ? styles.cellAvailable : {}),
                     ...(blocked ? {
                       ...styles.cellBlocked,
                       background: `linear-gradient(135deg, ${themeData.cellColor} 0%, ${themeData.backgroundColor} 100%)`,
@@ -253,6 +261,11 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'rgba(212, 175, 55, 0.3)',
     border: `${TASERN_BORDERS.widthMedium} solid ${TASERN_COLORS.gold}`,
     boxShadow: TASERN_SHADOWS.glowGold,
+  },
+  cellAvailable: {
+    background: 'rgba(139, 105, 20, 0.15)',
+    border: `${TASERN_BORDERS.widthThin} solid rgba(212, 175, 55, 0.4)`,
+    cursor: 'pointer',
   },
   emptySlot: {
     display: 'flex',

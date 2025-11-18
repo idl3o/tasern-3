@@ -452,7 +452,7 @@
     box-shadow: 0 8px 24px rgba(212, 175, 55, 0.6), 0 0 0 3px #D4AF37;
   }
 
-  /* Valid deployment positions: Highlighted */
+  /* Valid deployment positions: Highlighted (when card selected) */
   .battlefield-cell.valid-drop-zone {
     background: rgba(6, 95, 70, 0.3) !important;
     border-color: #065F46 !important;
@@ -466,6 +466,22 @@
     }
     50% {
       box-shadow: 0 0 24px rgba(6, 95, 70, 0.8);
+    }
+  }
+
+  /* Available spaces: Subtle highlighting (during player's turn, no card selected) */
+  .battlefield-cell.available-space {
+    animation: pulse-available 2.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse-available {
+    0%, 100% {
+      background: rgba(139, 105, 20, 0.12);
+      border-color: rgba(212, 175, 55, 0.3);
+    }
+    50% {
+      background: rgba(139, 105, 20, 0.2);
+      border-color: rgba(212, 175, 55, 0.5);
     }
   }
 

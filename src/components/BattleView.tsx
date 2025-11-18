@@ -162,6 +162,69 @@ export const BattleView: React.FC = () => {
     return card === null;
   };
 
+  // Helper: Get all available spaces for deployment (when card is selected)
+  const getAvailableSpaces = (): Position[] => {
+    if (!battleState || !activePlayer || !isLocalPlayerTurn() || isProcessing) {
+      return []; // Don't show if not player's turn or processing
+    }
+
+    // Only show when a card from hand is selected
+    if (!selectedCard) {
+      return []; // No highlighting until card is selected
+    }
+
+    // Check if player can afford the selected card
+    if (activePlayer.mana < selectedCard.manaCost) {
+      return []; // Can't afford this card
+    }
+
+    // Determine deployment zone based on player index
+    const playerIds = Object.keys(battleState.players);
+    const playerIndex = playerIds.indexOf(activePlayer.id);
+    const totalCols = battleState.gridConfig.cols;
+    const middleCol = Math.floor(totalCols / 2);
+
+    const canDeployToColumn = (col: number): boolean => {
+      if (playerIndex === 0) {
+        // Player 1 (left side) can deploy to left half + middle
+        return col <= middleCol;
+      } else {
+        // Player 2 (right side) can deploy to right half + middle
+        return col >= middleCol;
+      }
+    };
+
+    const availablePositions: Position[] = [];
+    battleState.battlefield.forEach((row, rowIndex) => {
+      row.forEach((cell, colIndex) => {
+        const position: Position = { row: rowIndex, col: colIndex };
+
+        // Check if position is empty (not occupied)
+        if (cell !== null) {
+          return;
+        }
+
+        // Check if position is not blocked
+        const isBlocked = battleState.blockedTiles?.some(
+          (blocked) => blocked.row === rowIndex && blocked.col === colIndex
+        );
+        if (isBlocked) {
+          return;
+        }
+
+        // Check deployment zone restrictions
+        if (!canDeployToColumn(colIndex)) {
+          return;
+        }
+
+        // All checks passed - this is a valid deployment space
+        availablePositions.push(position);
+      });
+    });
+
+    return availablePositions;
+  };
+
   const handleCastleAttack = (targetPlayerId: string) => {
     if (!isLocalPlayerTurn() || isProcessing || !selectedBattlefieldCard || !activePlayer) {
       return;
@@ -227,7 +290,7 @@ export const BattleView: React.FC = () => {
       {/* Main Battle Area */}
       <div className="battle-main-content" style={styles.mainContent}>
         {/* Left: Player 1 Status OR Opponent Status + Controls */}
-        <div className="battle-side-panel" style={styles.sidePanel}>
+        <div className="battle-side-panel battle-side-panel-left" style={styles.sidePanel}>
           <PlayerStatus
             player={players[0]}
             isActive={activePlayer?.id === players[0].id}
@@ -242,7 +305,7 @@ export const BattleView: React.FC = () => {
 
           {/* Player 1's Hand - Show if they're the local player */}
           {players[0].id === activePlayer?.id && isLocalPlayerTurn() && (
-            <div style={styles.sidePanelHand}>
+            <div className="battle-hand-section" style={styles.sidePanelHand}>
               <HandDisplay
                 cards={players[0].hand}
                 onCardSelect={handleCardSelect}
@@ -254,7 +317,7 @@ export const BattleView: React.FC = () => {
 
           {/* Controls + Battle Log - Show on opponent's side if player 2 is active */}
           {players[1].id === activePlayer?.id && isLocalPlayerTurn() && (
-            <div style={styles.sidePanelControls}>
+            <div className="battle-controls-section hide-mobile" style={styles.sidePanelControls}>
               <BattleControls
                 activePlayer={activePlayer}
                 isProcessing={isProcessing}
@@ -277,9 +340,8 @@ export const BattleView: React.FC = () => {
             playerNames={playerNames}
             onCellClick={handleBattlefieldClick}
             highlightedPositions={selectedBattlefieldCard ? [selectedBattlefieldCard.position] : []}
-            validDropZones={selectedCard ? battleState.battlefield.flatMap((row, rowIndex) =>
-              row.map((cell, colIndex) => ({ row: rowIndex, col: colIndex })).filter(pos => isValidDropZone(pos))
-            ) : []}
+            validDropZones={[]} // No longer used - using availableSpaces instead
+            availableSpaces={getAvailableSpaces()}
           />
 
           {/* Weather Display */}
@@ -297,7 +359,7 @@ export const BattleView: React.FC = () => {
         </div>
 
         {/* Right: Player 2 Status OR Opponent Status + Controls */}
-        <div className="battle-side-panel" style={styles.sidePanel}>
+        <div className="battle-side-panel battle-side-panel-right" style={styles.sidePanel}>
           <PlayerStatus
             player={players[1]}
             isActive={activePlayer?.id === players[1].id}
@@ -312,7 +374,7 @@ export const BattleView: React.FC = () => {
 
           {/* Player 2's Hand - Show if they're the local player */}
           {players[1].id === activePlayer?.id && isLocalPlayerTurn() && (
-            <div style={styles.sidePanelHand}>
+            <div className="battle-hand-section" style={styles.sidePanelHand}>
               <HandDisplay
                 cards={players[1].hand}
                 onCardSelect={handleCardSelect}
@@ -324,7 +386,7 @@ export const BattleView: React.FC = () => {
 
           {/* Controls + Battle Log - Show on opponent's side if player 1 is active */}
           {players[0].id === activePlayer?.id && isLocalPlayerTurn() && (
-            <div style={styles.sidePanelControls}>
+            <div className="battle-controls-section hide-mobile" style={styles.sidePanelControls}>
               <BattleControls
                 activePlayer={activePlayer}
                 isProcessing={isProcessing}
@@ -337,6 +399,34 @@ export const BattleView: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Mobile Sticky Controls - Only show on mobile when local player's turn */}
+      {isLocalPlayerTurn() && activePlayer && (
+        <div className="mobile-sticky-controls show-mobile">
+          <button
+            style={{
+              ...styles.mobileButton,
+              ...styles.mobileButtonPrimary,
+              ...(isProcessing ? styles.mobileButtonDisabled : {}),
+            }}
+            onClick={handleEndTurn}
+            disabled={isProcessing}
+          >
+            {isProcessing ? '⏳ Processing...' : '⏭️ End Turn'}
+          </button>
+          <button
+            style={{
+              ...styles.mobileButton,
+              ...styles.mobileButtonSecondary,
+              ...(isProcessing ? styles.mobileButtonDisabled : {}),
+            }}
+            onClick={handleSurrender}
+            disabled={isProcessing}
+          >
+            🏳️ Surrender
+          </button>
+        </div>
+      )}
 
       {/* Victory Overlay */}
       {phase === 'victory' && battleState.winner && (
@@ -572,5 +662,36 @@ const styles: Record<string, React.CSSProperties> = {
     letterSpacing: '0.05em',
     transition: 'all 0.3s ease',
     boxShadow: TASERN_SHADOWS.medium,
+  },
+  mobileButton: {
+    fontFamily: TASERN_TYPOGRAPHY.heading,
+    fontSize: '18px',
+    fontWeight: TASERN_TYPOGRAPHY.weightBold,
+    padding: `${TASERN_SPACING.md} ${TASERN_SPACING.xl}`,
+    borderRadius: TASERN_BORDERS.radiusMedium,
+    border: `${TASERN_BORDERS.widthMedium} solid`,
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+    flex: 1,
+    maxWidth: '200px',
+    minHeight: '56px',
+  },
+  mobileButtonPrimary: {
+    background: `linear-gradient(135deg, ${TASERN_COLORS.bronze} 0%, ${TASERN_COLORS.leather} 100%)`,
+    borderColor: TASERN_COLORS.gold,
+    color: TASERN_COLORS.parchment,
+    boxShadow: TASERN_SHADOWS.medium,
+  },
+  mobileButtonSecondary: {
+    background: 'linear-gradient(135deg, rgba(139, 0, 0, 0.8) 0%, rgba(92, 64, 51, 0.8) 100%)',
+    borderColor: TASERN_COLORS.red,
+    color: TASERN_COLORS.parchment,
+    boxShadow: TASERN_SHADOWS.soft,
+  },
+  mobileButtonDisabled: {
+    opacity: 0.5,
+    cursor: 'not-allowed',
   },
 };
