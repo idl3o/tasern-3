@@ -8,15 +8,15 @@
 /* ==================== ULTRA COMPACT PLAYER STATUS FOR MOBILE ==================== */
 
 @media (max-width: 899px) {
-  /* Single-line compact layout: Name | HP 28/30 | Mana 5 */
+  /* Single unified element: Name + HP + Mana in one compact row */
   .player-status-container {
     padding: 0.5rem 0.75rem !important;
     min-width: unset !important;
     width: 48% !important; /* Side by side - each takes ~half width */
     display: flex !important;
-    flex-direction: row !important;
-    align-items: center !important;
-    gap: 0.75rem !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.3rem !important;
     flex-wrap: nowrap !important;
   }
 
@@ -30,12 +30,16 @@
     width: 100% !important;
   }
 
-  /* Header: Compact name only */
+  /* Header: Compact name integrated with stats */
   .player-status-header {
     margin-bottom: 0 !important;
     padding-bottom: 0 !important;
     border-bottom: none !important;
     flex: 0 0 auto !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
   }
 
   /* Hide AI personality title on mobile */
@@ -68,14 +72,24 @@
     max-width: 80px !important;
   }
 
-  /* Stat sections: Horizontal mini bars */
+  /* Stat sections: Compact horizontal layout */
   .stat-section {
-    flex: 1 1 auto !important;
+    flex: 0 0 auto !important;
     margin-bottom: 0 !important;
     display: flex !important;
+    flex-direction: row !important;
     align-items: center !important;
-    justify-content: center !important;
+    justify-content: flex-start !important;
     gap: 0.25rem !important;
+  }
+
+  /* Stats row container - all stats in one line */
+  .player-status-body {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    flex-wrap: nowrap !important;
   }
 
   /* Stat labels: Icon only or tiny text */
@@ -105,10 +119,13 @@
     white-space: nowrap !important;
   }
 
-  /* Active badge: Smaller */
+  /* Active badge: Inline with name, very compact */
   .active-badge {
-    font-size: 0.7rem !important;
-    padding: 2px 6px !important;
+    font-size: 0.6rem !important;
+    padding: 2px 4px !important;
+    margin-left: 0.25rem !important;
+    display: inline-flex !important;
+    align-items: center !important;
   }
 }
 
