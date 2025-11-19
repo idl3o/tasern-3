@@ -56,15 +56,22 @@ export class CardGenerator {
    */
   private getManaTiers(player: Player, count: number): number[] {
     const tiers: number[] = [];
-    const currentMana = player.mana;
-    const maxMana = player.maxMana;
+    const currentMana = player.mana || 10; // Default to 10 if undefined
+    const maxMana = player.maxMana || 10; // Default to 10 if undefined
 
-    // Always include options at different price points
+    // Generate mana tiers based on count
+    // Base tiers (always include these if count allows)
     if (count >= 1) tiers.push(Math.max(1, Math.min(3, currentMana)));        // Low cost (1-3)
     if (count >= 2) tiers.push(Math.max(2, Math.min(5, currentMana)));        // Medium cost (4-5)
     if (count >= 3) tiers.push(Math.max(3, Math.min(currentMana, maxMana))); // Current mana (max affordable)
     if (count >= 4) tiers.push(Math.max(1, Math.floor(currentMana * 0.7)));  // 70% of mana (efficient)
     if (count >= 5) tiers.push(Math.max(2, Math.floor(currentMana * 0.5)));  // 50% of mana (conservative)
+
+    // If more cards needed, generate additional tiers with variety
+    while (tiers.length < count) {
+      const randomTier = Math.max(1, Math.min(Math.floor(Math.random() * 7) + 2, maxMana));
+      tiers.push(randomTier);
+    }
 
     return tiers.slice(0, count);
   }
@@ -208,7 +215,9 @@ export class CardGenerator {
     hp: number;
     speed: number;
   } {
-    const baseStats = manaCost * 2; // Total stat budget
+    // Ensure manaCost is valid (prevent NaN)
+    const validManaCost = Math.max(1, manaCost || 3);
+    const baseStats = validManaCost * 2; // Total stat budget
     const aggression = personality?.aggression || 0.5;
 
     let attack: number;
@@ -220,26 +229,26 @@ export class CardGenerator {
       // High attack, lower HP
       attack = Math.floor(baseStats * (0.6 + aggression * 0.2));
       hp = Math.floor(baseStats * (0.9 - aggression * 0.3));
-      defense = Math.floor(manaCost * 0.5);
-      speed = Math.floor(manaCost * 0.8);
+      defense = Math.floor(validManaCost * 0.5);
+      speed = Math.floor(validManaCost * 0.8);
     } else if (mode === 'DEFENSIVE') {
       // High HP/defense, lower attack
       attack = Math.floor(baseStats * (0.4 + aggression * 0.1));
       hp = Math.floor(baseStats * (1.2 - aggression * 0.2));
-      defense = Math.floor(manaCost * 1.2);
-      speed = Math.floor(manaCost * 0.5);
+      defense = Math.floor(validManaCost * 1.2);
+      speed = Math.floor(validManaCost * 0.5);
     } else if (mode === 'DESPERATE') {
       // Glass cannon - high attack, low HP
       attack = Math.floor(baseStats * (0.8 + aggression * 0.2));
       hp = Math.floor(baseStats * 0.6);
-      defense = Math.floor(manaCost * 0.3);
-      speed = Math.floor(manaCost * 1.0);
+      defense = Math.floor(validManaCost * 0.3);
+      speed = Math.floor(validManaCost * 1.0);
     } else {
       // Balanced
       attack = Math.floor(baseStats * (0.5 + aggression * 0.2));
       hp = Math.floor(baseStats * (1.0 - aggression * 0.2));
-      defense = Math.floor(manaCost * 0.7);
-      speed = Math.floor(manaCost * 0.7);
+      defense = Math.floor(validManaCost * 0.7);
+      speed = Math.floor(validManaCost * 0.7);
     }
 
     // Ensure minimums

@@ -499,7 +499,7 @@ export class BattleEngine {
       }
 
       // Check movement range restrictions
-      if (!this.canMoveToPosition(card, toPosition)) {
+      if (!this.canMoveToPosition(card, toPosition, draft)) {
         console.warn('❌ Target position out of movement range');
         return;
       }
@@ -967,6 +967,14 @@ export class BattleEngine {
     playerId: string,
     state: BattleState
   ): boolean {
+    // Check if position is blocked (e.g., L-shaped, T-shaped maps)
+    const isBlocked = state.blockedTiles.some(
+      blocked => blocked.row === position.row && blocked.col === position.col
+    );
+    if (isBlocked) {
+      return false;
+    }
+
     const playerIds = Object.keys(state.players);
     const playerIndex = playerIds.indexOf(playerId);
     const totalCols = state.gridConfig.cols;
@@ -990,7 +998,15 @@ export class BattleEngine {
    * - Ranged: Can move 1-2 cells
    * - Hybrid: Can move up to 2 cells
    */
-  private static canMoveToPosition(card: BattleCard, toPosition: Position): boolean {
+  private static canMoveToPosition(card: BattleCard, toPosition: Position, state: BattleState): boolean {
+    // Check if position is blocked (e.g., L-shaped, T-shaped maps)
+    const isBlocked = state.blockedTiles.some(
+      blocked => blocked.row === toPosition.row && blocked.col === toPosition.col
+    );
+    if (isBlocked) {
+      return false;
+    }
+
     const fromPos = card.position;
     const rowDiff = Math.abs(toPosition.row - fromPos.row);
     const colDiff = Math.abs(toPosition.col - fromPos.col);
@@ -1045,7 +1061,7 @@ export class BattleEngine {
         const pos: Position = { row, col };
 
         // Check if position is empty and within movement range
-        if (!state.battlefield[row][col] && this.canMoveToPosition(card, pos)) {
+        if (!state.battlefield[row][col] && this.canMoveToPosition(card, pos, state)) {
           positions.push(pos);
         }
       }
