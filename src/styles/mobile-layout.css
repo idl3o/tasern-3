@@ -40,8 +40,12 @@
     box-sizing: border-box;
   }
 
-  /* Side panels: Hidden on mobile (use .hide-mobile class to hide) */
-  /* Old styling removed - desktop panels now properly hidden via .hide-mobile class */
+  /* Side panels: Hidden on mobile (forced) */
+  .battle-side-panel,
+  .battle-side-panel-left,
+  .battle-side-panel-right {
+    display: none !important;
+  }
 
   /* Battlefield goes first */
   .battle-center-panel {
