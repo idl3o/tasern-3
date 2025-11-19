@@ -284,31 +284,7 @@ export const BattleView: React.FC = () => {
         </div>
       </header>
 
-      {/* Mobile: Unified Player Status Header (shown only on mobile) */}
-      <div className="mobile-player-header show-mobile">
-        <PlayerStatus
-          player={players[0]}
-          isActive={activePlayer?.id === players[0].id}
-          isWinner={battleState.winner === players[0].id}
-          onCastleClick={() => handleCastleAttack(players[0].id)}
-          isTargetable={
-            activePlayer?.type === 'human' &&
-            selectedBattlefieldCard !== null &&
-            players[0].id !== activePlayer.id
-          }
-        />
-        <PlayerStatus
-          player={players[1]}
-          isActive={activePlayer?.id === players[1].id}
-          isWinner={battleState.winner === players[1].id}
-          onCastleClick={() => handleCastleAttack(players[1].id)}
-          isTargetable={
-            activePlayer?.type === 'human' &&
-            selectedBattlefieldCard !== null &&
-            players[1].id !== activePlayer.id
-          }
-        />
-      </div>
+      {/* Mobile: Player status moved to bottom - see mobile-hand-section */}
 
       {/* Main Battle Area */}
       <div className="battle-main-content" style={styles.mainContent}>
@@ -423,27 +399,56 @@ export const BattleView: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile: Dedicated Hand Section (shown only on mobile) */}
-      <div className="mobile-hand-section show-mobile">
-        {/* Player 1's Hand - Show if they're the local player */}
-        {players[0].id === activePlayer?.id && isLocalPlayerTurn() && (
-          <HandDisplay
-            cards={players[0].hand}
-            onCardSelect={handleCardSelect}
-            selectedCardId={selectedCard?.id}
-            playerName={players[0].name}
+      {/* Mobile: Bottom Section - Player Status + Hand (shown only on mobile) */}
+      <div className="mobile-bottom-section show-mobile">
+        {/* Player Status Row */}
+        <div className="mobile-player-row">
+          <PlayerStatus
+            player={players[0]}
+            isActive={activePlayer?.id === players[0].id}
+            isWinner={battleState.winner === players[0].id}
+            onCastleClick={() => handleCastleAttack(players[0].id)}
+            isTargetable={
+              activePlayer?.type === 'human' &&
+              selectedBattlefieldCard !== null &&
+              players[0].id !== activePlayer.id
+            }
           />
-        )}
+          <PlayerStatus
+            player={players[1]}
+            isActive={activePlayer?.id === players[1].id}
+            isWinner={battleState.winner === players[1].id}
+            onCastleClick={() => handleCastleAttack(players[1].id)}
+            isTargetable={
+              activePlayer?.type === 'human' &&
+              selectedBattlefieldCard !== null &&
+              players[1].id !== activePlayer.id
+            }
+          />
+        </div>
 
-        {/* Player 2's Hand - Show if they're the local player */}
-        {players[1].id === activePlayer?.id && isLocalPlayerTurn() && (
-          <HandDisplay
-            cards={players[1].hand}
-            onCardSelect={handleCardSelect}
-            selectedCardId={selectedCard?.id}
-            playerName={players[1].name}
-          />
-        )}
+        {/* Hand Display */}
+        <div className="mobile-hand-display">
+          {/* Player 1's Hand - Show if they're the local player */}
+          {players[0].id === activePlayer?.id && isLocalPlayerTurn() && (
+            <HandDisplay
+              cards={players[0].hand}
+              onCardSelect={handleCardSelect}
+              selectedCardId={selectedCard?.id}
+              playerName={players[0].name}
+            />
+          )}
+
+          {/* Player 2's Hand - Show if they're the local player */}
+          {players[1].id === activePlayer?.id && isLocalPlayerTurn() && (
+            <HandDisplay
+              cards={players[1].hand}
+              onCardSelect={handleCardSelect}
+              selectedCardId={selectedCard?.id}
+              playerName={players[1].name}
+            />
+          )}
+        </div>
       </div>
 
       {/* Mobile Sticky Controls - Only show on mobile when local player's turn */}
