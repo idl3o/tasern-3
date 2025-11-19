@@ -34,6 +34,8 @@
   .player-status-header {
     margin-bottom: 0 !important;
     padding-bottom: 0 !important;
+    padding-left: 10px !important;  /* Space for left banner notch */
+    padding-right: 10px !important; /* Space for right banner notch */
     border-bottom: none !important;
     flex: 0 0 auto !important;
     display: flex !important;
@@ -62,14 +64,52 @@
     display: none !important;
   }
 
-  /* Player name: Smaller, no margin */
+  /* Player name: Medieval banner style */
   .player-name {
     font-size: 0.75rem !important;
     margin-bottom: 0 !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
-    max-width: 80px !important;
+    max-width: 100% !important;
+    padding: 0.4rem 0.6rem !important;
+    background: linear-gradient(135deg, rgba(139, 105, 20, 0.9) 0%, rgba(212, 175, 55, 0.8) 100%) !important;
+    border: 2px solid #D4AF37 !important;
+    border-radius: 4px !important;
+    color: #1A1410 !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    text-align: center !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+    position: relative !important;
+  }
+
+  /* Banner notch effect (optional decorative element) */
+  .player-name::before {
+    content: '' !important;
+    position: absolute !important;
+    left: -8px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    width: 0 !important;
+    height: 0 !important;
+    border-top: 8px solid transparent !important;
+    border-bottom: 8px solid transparent !important;
+    border-right: 8px solid #8B6914 !important;
+  }
+
+  .player-name::after {
+    content: '' !important;
+    position: absolute !important;
+    right: -8px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    width: 0 !important;
+    height: 0 !important;
+    border-top: 8px solid transparent !important;
+    border-bottom: 8px solid transparent !important;
+    border-left: 8px solid #8B6914 !important;
   }
 
   /* Stat sections: Compact horizontal layout */
