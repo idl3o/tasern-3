@@ -31,8 +31,13 @@ import {
   TASERN_SPACING,
   TASERN_ICONS,
 } from '../styles/tasernTheme';
+// Allow side-effect CSS imports when no type declarations are available
+// TypeScript may complain about missing module declarations for CSS files
+// @ts-ignore
 import '../styles/responsive.css';
+// @ts-ignore
 import '../styles/mobile-layout.css';
+// @ts-ignore
 import '../styles/mobile-components.css';
 
 export const BattleView: React.FC = () => {
@@ -416,6 +421,29 @@ export const BattleView: React.FC = () => {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Mobile: Dedicated Hand Section (shown only on mobile) */}
+      <div className="mobile-hand-section show-mobile">
+        {/* Player 1's Hand - Show if they're the local player */}
+        {players[0].id === activePlayer?.id && isLocalPlayerTurn() && (
+          <HandDisplay
+            cards={players[0].hand}
+            onCardSelect={handleCardSelect}
+            selectedCardId={selectedCard?.id}
+            playerName={players[0].name}
+          />
+        )}
+
+        {/* Player 2's Hand - Show if they're the local player */}
+        {players[1].id === activePlayer?.id && isLocalPlayerTurn() && (
+          <HandDisplay
+            cards={players[1].hand}
+            onCardSelect={handleCardSelect}
+            selectedCardId={selectedCard?.id}
+            playerName={players[1].name}
+          />
+        )}
       </div>
 
       {/* Mobile Sticky Controls - Only show on mobile when local player's turn */}
