@@ -12,11 +12,22 @@
   .player-status-container {
     padding: 0.5rem 0.75rem !important;
     min-width: unset !important;
+    width: 48% !important; /* Side by side - each takes ~half width */
     display: flex !important;
     flex-direction: row !important;
     align-items: center !important;
     gap: 0.75rem !important;
     flex-wrap: nowrap !important;
+  }
+
+  /* Container holding both player statuses - side by side */
+  .player-status-section,
+  .battle-side-panel {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    gap: 0.5rem !important;
+    width: 100% !important;
   }
 
   /* Header: Compact name only */
@@ -49,9 +60,12 @@
 
   /* Player name: Smaller, no margin */
   .player-name {
-    font-size: 0.9rem !important;
+    font-size: 0.75rem !important;
     margin-bottom: 0 !important;
     white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 80px !important;
   }
 
   /* Stat sections: Horizontal mini bars */
@@ -66,7 +80,7 @@
 
   /* Stat labels: Icon only or tiny text */
   .stat-label {
-    font-size: 0.75rem !important;
+    font-size: 0.65rem !important;
     margin-bottom: 0 !important;
     white-space: nowrap !important;
   }
@@ -80,8 +94,8 @@
   }
 
   .bar-bg {
-    height: 10px !important;
-    flex: 0 0 60px !important;
+    height: 8px !important;
+    flex: 0 0 40px !important;
   }
 
   /* Stat values: Small, no min-width */
