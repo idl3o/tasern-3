@@ -261,31 +261,6 @@ export const BattleView: React.FC = () => {
 
   return (
     <div className="battle-view-container has-sticky-controls" style={styles.container}>
-      {/* Header */}
-      <header className="battle-header" style={styles.header}>
-        <h1 style={styles.title}>⚔️ Tasern Siegefront ⚔️</h1>
-        <div className="battle-header-right" style={styles.headerRight}>
-          <div style={styles.phaseIndicator}>
-            {phase === 'victory' ? '🏆 Victory!' : `⚔️ Turn ${battleState.currentTurn}`}
-          </div>
-          {activePlayer && phase !== 'victory' && (
-            <div style={{
-              ...styles.turnIndicator,
-              // Check if active player is the local player (for multiplayer) or is human type (for local games)
-              ...((isMultiplayer && activePlayer.id === localPlayerId) || (!isMultiplayer && activePlayer.type === 'human')
-                ? styles.turnIndicatorYou
-                : styles.turnIndicatorOpponent)
-            }}>
-              {(isMultiplayer && activePlayer.id === localPlayerId) || (!isMultiplayer && activePlayer.type === 'human')
-                ? '👤 YOUR TURN'
-                : `${activePlayer.type === 'ai' ? '🤖' : '👥'} ${activePlayer.name}'s Turn`}
-            </div>
-          )}
-        </div>
-      </header>
-
-      {/* Mobile: Player status moved to bottom - see mobile-hand-section */}
-
       {/* Main Battle Area */}
       <div className="battle-main-content" style={styles.mainContent}>
         {/* Left: Player 1 Status OR Opponent Status + Controls (hidden on mobile) */}
