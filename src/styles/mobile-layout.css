@@ -9,6 +9,26 @@
 
 /* Remove fixed width constraints on mobile */
 @media (max-width: 899px) {
+  /* Mobile: Unified player status header */
+  .mobile-player-header {
+    width: 100% !important;
+    max-width: 100% !important;
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    gap: 0 !important;
+    padding: 0.5rem !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+    background: linear-gradient(135deg, rgba(26, 20, 16, 0.98) 0%, rgba(41, 32, 25, 0.98) 100%) !important;
+    border-bottom: 3px solid #D4AF37 !important;
+    border-top: 1px solid rgba(212, 175, 55, 0.2) !important;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(212, 175, 55, 0.1) !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 50 !important;
+  }
+
   /* BattleView: Single column layout with optimized order */
   .battle-main-content {
     flex-direction: column;
@@ -20,7 +40,7 @@
     box-sizing: border-box;
   }
 
-  /* Side panels: Single unified status bar */
+  /* Side panels: Hidden on mobile (desktop only) */
   .battle-side-panel {
     width: 100% !important;
     max-width: 100% !important;
@@ -57,8 +77,8 @@
     justify-content: flex-start; /* Start from top on mobile */
   }
 
-  /* Player status sections: Unified bar halves with divider */
-  .player-status-container {
+  /* Player status within mobile header: Unified bar halves with divider */
+  .mobile-player-header .player-status-container {
     width: 50% !important;
     min-width: unset !important;
     max-width: 50% !important;
@@ -75,8 +95,8 @@
     position: relative !important;
   }
 
-  /* Divider between players */
-  .player-status-container:first-child::after {
+  /* Divider between players in mobile header */
+  .mobile-player-header .player-status-container:first-child::after {
     content: '' !important;
     position: absolute !important;
     right: 0 !important;

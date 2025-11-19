@@ -279,10 +279,36 @@ export const BattleView: React.FC = () => {
         </div>
       </header>
 
+      {/* Mobile: Unified Player Status Header (shown only on mobile) */}
+      <div className="mobile-player-header show-mobile">
+        <PlayerStatus
+          player={players[0]}
+          isActive={activePlayer?.id === players[0].id}
+          isWinner={battleState.winner === players[0].id}
+          onCastleClick={() => handleCastleAttack(players[0].id)}
+          isTargetable={
+            activePlayer?.type === 'human' &&
+            selectedBattlefieldCard !== null &&
+            players[0].id !== activePlayer.id
+          }
+        />
+        <PlayerStatus
+          player={players[1]}
+          isActive={activePlayer?.id === players[1].id}
+          isWinner={battleState.winner === players[1].id}
+          onCastleClick={() => handleCastleAttack(players[1].id)}
+          isTargetable={
+            activePlayer?.type === 'human' &&
+            selectedBattlefieldCard !== null &&
+            players[1].id !== activePlayer.id
+          }
+        />
+      </div>
+
       {/* Main Battle Area */}
       <div className="battle-main-content" style={styles.mainContent}>
-        {/* Left: Player 1 Status OR Opponent Status + Controls */}
-        <div className="battle-side-panel battle-side-panel-left" style={styles.sidePanel}>
+        {/* Left: Player 1 Status OR Opponent Status + Controls (hidden on mobile) */}
+        <div className="battle-side-panel battle-side-panel-left hide-mobile" style={styles.sidePanel}>
           <PlayerStatus
             player={players[0]}
             isActive={activePlayer?.id === players[0].id}
@@ -350,8 +376,8 @@ export const BattleView: React.FC = () => {
           )}
         </div>
 
-        {/* Right: Player 2 Status OR Opponent Status + Controls */}
-        <div className="battle-side-panel battle-side-panel-right" style={styles.sidePanel}>
+        {/* Right: Player 2 Status OR Opponent Status + Controls (hidden on mobile) */}
+        <div className="battle-side-panel battle-side-panel-right hide-mobile" style={styles.sidePanel}>
           <PlayerStatus
             player={players[1]}
             isActive={activePlayer?.id === players[1].id}
