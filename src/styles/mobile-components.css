@@ -60,6 +60,7 @@
     margin-bottom: 0 !important;
     display: flex !important;
     align-items: center !important;
+    justify-content: center !important;
     gap: 0.25rem !important;
   }
 
@@ -74,6 +75,8 @@
   .stat-bar {
     flex-direction: row !important;
     gap: 0.25rem !important;
+    justify-content: center !important;
+    align-items: center !important;
   }
 
   .bar-bg {
