@@ -42,14 +42,14 @@
   .player-status-header {
     margin-bottom: 0 !important;
     padding-bottom: 0 !important;
-    padding-left: 8px !important;  /* Space for left banner notch (6px) */
-    padding-right: 8px !important; /* Space for right banner notch (6px) */
+    padding-left: 0 !important;
+    padding-right: 0 !important;
     border-bottom: none !important;
     flex: 0 0 auto !important;
     display: flex !important;
     flex-direction: row !important;
     align-items: center !important;
-    justify-content: space-between !important;
+    justify-content: center !important; /* Center name */
   }
 
   /* Hide AI personality title on mobile */
@@ -72,52 +72,31 @@
     display: none !important;
   }
 
-  /* Player name: Medieval banner style - ultra compact */
+  /* Player name: Inline text with glow - no banner background */
   .player-name {
-    font-size: 0.65rem !important;
+    font-size: 0.75rem !important;
     margin-bottom: 0 !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     max-width: 100% !important;
-    padding: 0.3rem 0.4rem !important;
-    background: linear-gradient(135deg, rgba(139, 105, 20, 0.9) 0%, rgba(212, 175, 55, 0.8) 100%) !important;
-    border: 1.5px solid #D4AF37 !important;
-    border-radius: 3px !important;
-    color: #1A1410 !important;
+    padding: 0.2rem 0 !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    color: #D4AF37 !important;
     font-weight: 700 !important;
     text-transform: uppercase !important;
-    letter-spacing: 0.03em !important;
+    letter-spacing: 0.05em !important;
     text-align: center !important;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+    text-shadow: 0 0 8px rgba(212, 175, 55, 0.6), 0 1px 2px rgba(0, 0, 0, 0.8) !important;
     position: relative !important;
   }
 
-  /* Banner notch effect - smaller */
-  .player-name::before {
-    content: '' !important;
-    position: absolute !important;
-    left: -6px !important;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
-    width: 0 !important;
-    height: 0 !important;
-    border-top: 6px solid transparent !important;
-    border-bottom: 6px solid transparent !important;
-    border-right: 6px solid #8B6914 !important;
-  }
-
+  /* Remove banner notches for unified bar */
+  .player-name::before,
   .player-name::after {
-    content: '' !important;
-    position: absolute !important;
-    right: -6px !important;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
-    width: 0 !important;
-    height: 0 !important;
-    border-top: 6px solid transparent !important;
-    border-bottom: 6px solid transparent !important;
-    border-left: 6px solid #8B6914 !important;
+    display: none !important;
   }
 
   /* Stat sections: Ultra compact horizontal layout */

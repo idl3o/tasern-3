@@ -20,7 +20,7 @@
     box-sizing: border-box;
   }
 
-  /* Side panels: Compact sticky header with players side-by-side */
+  /* Side panels: Single unified status bar */
   .battle-side-panel {
     width: 100% !important;
     max-width: 100% !important;
@@ -30,12 +30,14 @@
     display: flex !important;
     flex-direction: row !important; /* Side by side */
     justify-content: space-between !important;
-    gap: 0.5rem !important;
+    gap: 0 !important; /* No gap - unified element */
     padding: 0.5rem !important;
     overflow-x: hidden !important;
     box-sizing: border-box !important;
-    background: rgba(26, 20, 16, 0.95) !important;
-    border-bottom: 2px solid rgba(212, 175, 55, 0.3) !important;
+    background: linear-gradient(135deg, rgba(26, 20, 16, 0.98) 0%, rgba(41, 32, 25, 0.98) 100%) !important;
+    border-bottom: 3px solid #D4AF37 !important;
+    border-top: 1px solid rgba(212, 175, 55, 0.2) !important;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(212, 175, 55, 0.1) !important;
     position: sticky !important;
     top: 0 !important;
     z-index: 50 !important;
@@ -55,21 +57,39 @@
     justify-content: flex-start; /* Start from top on mobile */
   }
 
-  /* Player status sections: Compact 48% width for side-by-side */
+  /* Player status sections: Unified bar halves with divider */
   .player-status-container {
-    width: 48% !important;
+    width: 50% !important;
     min-width: unset !important;
-    max-width: 48% !important;
+    max-width: 50% !important;
     margin-bottom: 0 !important;
-    padding: 0.4rem 0.5rem !important;
+    padding: 0.3rem 0.5rem !important;
     overflow-x: hidden !important;
     box-sizing: border-box !important;
-    background: rgba(139, 105, 20, 0.2) !important;
-    border: 1px solid rgba(212, 175, 55, 0.3) !important;
-    border-radius: 4px !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
     display: flex !important;
     flex-direction: column !important;
-    gap: 0.25rem !important;
+    gap: 0.2rem !important;
+    position: relative !important;
+  }
+
+  /* Divider between players */
+  .player-status-container:first-child::after {
+    content: '' !important;
+    position: absolute !important;
+    right: 0 !important;
+    top: 10% !important;
+    bottom: 10% !important;
+    width: 2px !important;
+    background: linear-gradient(to bottom,
+      transparent 0%,
+      rgba(212, 175, 55, 0.6) 20%,
+      rgba(212, 175, 55, 0.8) 50%,
+      rgba(212, 175, 55, 0.6) 80%,
+      transparent 100%) !important;
+    box-shadow: 0 0 8px rgba(212, 175, 55, 0.4) !important;
   }
 
   /* Hand section: Natural size, horizontal scroll only */
