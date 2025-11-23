@@ -304,7 +304,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'center',
     padding: TASERN_SPACING.sm,
-    background: TASERN_GRADIENTS.goldShine,
+    background: TASERN_GRADIENTS.goldGradient,
     border: `${TASERN_BORDERS.widthThick} solid ${TASERN_COLORS.gold}`,
     borderRadius: '50%',
     width: '70px',
