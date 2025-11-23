@@ -232,11 +232,11 @@ const styles: Record<string, React.CSSProperties> = {
   container: {
     display: 'flex',
     flexDirection: 'column',
-    height: '100vh',
+    minHeight: '100vh',
     background: `linear-gradient(135deg, ${TASERN_COLORS.leather} 0%, rgba(26, 20, 16, 0.95) 100%)`,
     color: TASERN_COLORS.parchment,
     fontFamily: TASERN_TYPOGRAPHY.body,
-    overflow: 'hidden',
+    overflow: 'auto',
   },
   emptyState: {
     flex: 1,
@@ -321,8 +321,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: TASERN_TYPOGRAPHY.bodyMedium,
   },
   battlefieldContainer: {
-    flex: 1,
-    overflow: 'auto',
     padding: TASERN_SPACING.md,
     display: 'flex',
     alignItems: 'center',
