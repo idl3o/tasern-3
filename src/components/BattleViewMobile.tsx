@@ -135,7 +135,7 @@ export const BattleViewMobile: React.FC<BattleViewMobileProps> = ({
       {activePlayer && isLocalPlayerTurn() && activePlayer.hand.length > 0 && (
         <div style={styles.handContainer}>
           <div style={styles.handTitle}>
-            ✋ Your Hand ({activePlayer.hand.length})
+            ✋ Your Hand ({activePlayer.hand.length}) | 💎 {activePlayer.mana}/{activePlayer.maxMana} Mana
           </div>
           <div style={styles.handScroll}>
             {activePlayer.hand.map((card) => (
