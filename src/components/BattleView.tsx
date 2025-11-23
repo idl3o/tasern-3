@@ -21,10 +21,11 @@ import { BattlefieldGrid } from './BattlefieldGrid';
 import { PlayerStatus } from './PlayerStatus';
 import { BattleControls } from './BattleControls';
 import { HandDisplay } from './HandDisplay';
-import { DebugPanel } from './DebugPanel';
+import { CardDisplay } from './CardDisplay';
 import type { Card, Position } from '../types/core';
 import {
   TASERN_COLORS,
+  TASERN_GRADIENTS,
   TASERN_TYPOGRAPHY,
   TASERN_SHADOWS,
   TASERN_BORDERS,
@@ -53,6 +54,7 @@ export const BattleView: React.FC = () => {
   // Human player interaction state
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
   const [selectedBattlefieldCard, setSelectedBattlefieldCard] = useState<{ position: Position; cardId: string } | null>(null);
+  const [inspectedCard, setInspectedCard] = useState<any | null>(null); // Card being inspected (right-click)
 
   if (!battleState) {
     return (
@@ -159,6 +161,11 @@ export const BattleView: React.FC = () => {
     }
   };
 
+  // Handle right-click on battlefield card to inspect it
+  const handleCardInspect = (card: any) => {
+    setInspectedCard(card);
+  };
+
   // Helper: Get all available spaces for deployment (when card is selected)
   const getAvailableSpaces = (): Position[] => {
     if (!battleState || !activePlayer || !isLocalPlayerTurn() || isProcessing) {
@@ -261,25 +268,73 @@ export const BattleView: React.FC = () => {
 
   return (
     <div className="battle-view-container has-sticky-controls" style={styles.container}>
+      {/* Mobile: Simplified Header - Castle Health + Turn Indicator (shown only on mobile) */}
+      <div className="mobile-header show-mobile" style={styles.mobileHeader}>
+        {/* Castle Health Row */}
+        <div style={styles.mobileCastleRow}>
+          {/* Player 1 Castle */}
+          <div
+            style={{
+              ...styles.mobileCastle,
+              ...(activePlayer?.id === players[0].id ? styles.mobileCastleActive : {}),
+              ...(selectedBattlefieldCard && players[0].id !== activePlayer?.id ? styles.mobileCastleTargetable : {}),
+            }}
+            onClick={() => handleCastleAttack(players[0].id)}
+          >
+            <div style={styles.mobileCastleName}>{players[0].name}</div>
+            <div style={styles.mobileCastleHP}>
+              🏰 {players[0].castleHp}/{players[0].maxCastleHp}
+            </div>
+          </div>
+
+          {/* Turn Indicator */}
+          <div style={styles.mobileTurnWheel}>
+            <div style={styles.mobileTurnNumber}>T{battleState.currentTurn}</div>
+            {activePlayer && (
+              <div style={styles.mobileTurnPlayer}>
+                {activePlayer.type === 'ai' ? '🤖' : '👤'}
+              </div>
+            )}
+          </div>
+
+          {/* Player 2 Castle */}
+          <div
+            style={{
+              ...styles.mobileCastle,
+              ...(activePlayer?.id === players[1].id ? styles.mobileCastleActive : {}),
+              ...(selectedBattlefieldCard && players[1].id !== activePlayer?.id ? styles.mobileCastleTargetable : {}),
+            }}
+            onClick={() => handleCastleAttack(players[1].id)}
+          >
+            <div style={styles.mobileCastleName}>{players[1].name}</div>
+            <div style={styles.mobileCastleHP}>
+              🏰 {players[1].castleHp}/{players[1].maxCastleHp}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Main Battle Area */}
       <div className="battle-main-content" style={styles.mainContent}>
         {/* Left: Player 1 Status OR Opponent Status + Controls (hidden on mobile) */}
         <div className="battle-side-panel battle-side-panel-left hide-mobile" style={styles.sidePanel}>
-          <PlayerStatus
-            player={players[0]}
-            isActive={activePlayer?.id === players[0].id}
-            isWinner={battleState.winner === players[0].id}
-            onCastleClick={() => handleCastleAttack(players[0].id)}
-            isTargetable={
-              activePlayer?.type === 'human' &&
-              selectedBattlefieldCard !== null &&
-              players[0].id !== activePlayer.id
-            }
-          />
+          <div style={styles.sidePanelPlayerStatus}>
+            <PlayerStatus
+              player={players[0]}
+              isActive={activePlayer?.id === players[0].id}
+              isWinner={battleState.winner === players[0].id}
+              onCastleClick={() => handleCastleAttack(players[0].id)}
+              isTargetable={
+                activePlayer?.type === 'human' &&
+                selectedBattlefieldCard !== null &&
+                players[0].id !== activePlayer.id
+              }
+            />
+          </div>
 
           {/* Player 1's Hand - Show if they're the local player */}
           {players[0].id === activePlayer?.id && isLocalPlayerTurn() && (
-            <div className="battle-hand-section" style={styles.sidePanelHand}>
+            <div className="battle-hand-section" style={{...styles.sidePanelHand, ...styles.sidePanelHandDisplay}}>
               <HandDisplay
                 cards={players[0].hand}
                 onCardSelect={handleCardSelect}
@@ -291,7 +346,7 @@ export const BattleView: React.FC = () => {
 
           {/* Controls + Battle Log - Show on opponent's side if player 2 is active */}
           {players[1].id === activePlayer?.id && isLocalPlayerTurn() && (
-            <div className="battle-controls-section hide-mobile" style={styles.sidePanelControls}>
+            <div className="battle-controls-section hide-mobile" style={{...styles.sidePanelControls, ...styles.sidePanelBattleControls}}>
               <BattleControls
                 activePlayer={activePlayer}
                 isProcessing={isProcessing}
@@ -313,6 +368,7 @@ export const BattleView: React.FC = () => {
             blockedTiles={battleState.blockedTiles}
             playerNames={playerNames}
             onCellClick={handleBattlefieldClick}
+            onCardInspect={handleCardInspect}
             highlightedPositions={selectedBattlefieldCard ? [selectedBattlefieldCard.position] : []}
             validDropZones={[]} // No longer used - using availableSpaces instead
             availableSpaces={getAvailableSpaces()}
@@ -334,21 +390,23 @@ export const BattleView: React.FC = () => {
 
         {/* Right: Player 2 Status OR Opponent Status + Controls (hidden on mobile) */}
         <div className="battle-side-panel battle-side-panel-right hide-mobile" style={styles.sidePanel}>
-          <PlayerStatus
-            player={players[1]}
-            isActive={activePlayer?.id === players[1].id}
-            isWinner={battleState.winner === players[1].id}
-            onCastleClick={() => handleCastleAttack(players[1].id)}
-            isTargetable={
-              activePlayer?.type === 'human' &&
-              selectedBattlefieldCard !== null &&
-              players[1].id !== activePlayer.id
-            }
-          />
+          <div style={styles.sidePanelPlayerStatus}>
+            <PlayerStatus
+              player={players[1]}
+              isActive={activePlayer?.id === players[1].id}
+              isWinner={battleState.winner === players[1].id}
+              onCastleClick={() => handleCastleAttack(players[1].id)}
+              isTargetable={
+                activePlayer?.type === 'human' &&
+                selectedBattlefieldCard !== null &&
+                players[1].id !== activePlayer.id
+              }
+            />
+          </div>
 
           {/* Player 2's Hand - Show if they're the local player */}
           {players[1].id === activePlayer?.id && isLocalPlayerTurn() && (
-            <div className="battle-hand-section" style={styles.sidePanelHand}>
+            <div className="battle-hand-section" style={{...styles.sidePanelHand, ...styles.sidePanelHandDisplay}}>
               <HandDisplay
                 cards={players[1].hand}
                 onCardSelect={handleCardSelect}
@@ -360,7 +418,7 @@ export const BattleView: React.FC = () => {
 
           {/* Controls + Battle Log - Show on opponent's side if player 1 is active */}
           {players[0].id === activePlayer?.id && isLocalPlayerTurn() && (
-            <div className="battle-controls-section hide-mobile" style={styles.sidePanelControls}>
+            <div className="battle-controls-section hide-mobile" style={{...styles.sidePanelControls, ...styles.sidePanelBattleControls}}>
               <BattleControls
                 activePlayer={activePlayer}
                 isProcessing={isProcessing}
@@ -374,56 +432,19 @@ export const BattleView: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile: Bottom Section - Player Status + Hand (shown only on mobile) */}
+      {/* Mobile: Simplified Bottom Section - Just Hand (shown only on mobile) */}
       <div className="mobile-bottom-section show-mobile">
-        {/* Player Status Row */}
-        <div className="mobile-player-row">
-          <PlayerStatus
-            player={players[0]}
-            isActive={activePlayer?.id === players[0].id}
-            isWinner={battleState.winner === players[0].id}
-            onCastleClick={() => handleCastleAttack(players[0].id)}
-            isTargetable={
-              activePlayer?.type === 'human' &&
-              selectedBattlefieldCard !== null &&
-              players[0].id !== activePlayer.id
-            }
-          />
-          <PlayerStatus
-            player={players[1]}
-            isActive={activePlayer?.id === players[1].id}
-            isWinner={battleState.winner === players[1].id}
-            onCastleClick={() => handleCastleAttack(players[1].id)}
-            isTargetable={
-              activePlayer?.type === 'human' &&
-              selectedBattlefieldCard !== null &&
-              players[1].id !== activePlayer.id
-            }
-          />
-        </div>
-
-        {/* Hand Display */}
-        <div className="mobile-hand-display">
-          {/* Player 1's Hand - Show if they're the local player */}
-          {players[0].id === activePlayer?.id && isLocalPlayerTurn() && (
+        {/* Hand Display - Only show for local player's turn */}
+        {isLocalPlayerTurn() && activePlayer && (
+          <div className="mobile-hand-display">
             <HandDisplay
-              cards={players[0].hand}
+              cards={activePlayer.hand}
               onCardSelect={handleCardSelect}
               selectedCardId={selectedCard?.id}
-              playerName={players[0].name}
+              playerName={activePlayer.name}
             />
-          )}
-
-          {/* Player 2's Hand - Show if they're the local player */}
-          {players[1].id === activePlayer?.id && isLocalPlayerTurn() && (
-            <HandDisplay
-              cards={players[1].hand}
-              onCardSelect={handleCardSelect}
-              selectedCardId={selectedCard?.id}
-              playerName={players[1].name}
-            />
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Mobile Sticky Controls - Only show on mobile when local player's turn */}
@@ -473,20 +494,50 @@ export const BattleView: React.FC = () => {
         </div>
       )}
 
-      {/* Debug Panel */}
-      <DebugPanel />
+      {/* Card Inspection Modal */}
+      {inspectedCard && (
+        <div
+          style={styles.inspectionOverlay}
+          onClick={() => setInspectedCard(null)}
+        >
+          <div
+            style={styles.inspectionCard}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={styles.inspectionHeader}>
+              <h3 style={styles.inspectionTitle}>Card Details</h3>
+              <button
+                style={styles.inspectionCloseButton}
+                onClick={() => setInspectedCard(null)}
+              >
+                ✕
+              </button>
+            </div>
+            <div style={styles.inspectionCardDisplay}>
+              {/* Import CardDisplay at the top of the file */}
+              <CardDisplay
+                card={inspectedCard}
+                isOnBattlefield={false}
+                ownerName={playerNames[inspectedCard.ownerId]}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    minHeight: '100vh', // Changed from height to minHeight to allow scrolling
+    height: '100vh', // Fixed viewport height - fit everything on screen
+    maxHeight: '100vh', // Prevent overflow
     display: 'flex',
     flexDirection: 'column',
     gap: TASERN_SPACING.md,
-    padding: TASERN_SPACING.lg,
-    // Removed overflow: hidden to allow mobile scrolling
+    padding: TASERN_SPACING.md, // Reduced padding for desktop
+    overflow: 'hidden', // No scroll on desktop
+    boxSizing: 'border-box',
   },
   emptyState: {
     minHeight: '100vh',
@@ -570,22 +621,56 @@ const styles: Record<string, React.CSSProperties> = {
   },
   mainContent: {
     display: 'flex',
-    gap: TASERN_SPACING.xl,
+    gap: TASERN_SPACING.md,
     flex: 1,
-    alignItems: 'flex-start',
+    alignItems: 'stretch',
     minHeight: 0, // Allow flex children to shrink below content size
-    // Removed overflow: hidden to allow content to be visible on mobile
+    maxHeight: '100%', // Don't overflow container
+    overflow: 'hidden', // Hide overflow on desktop
   },
   sidePanel: {
-    flex: '0 0 400px', // Increased width to accommodate hand
+    flex: '0 1 320px', // Flexible width, smaller base width
+    minWidth: '280px', // Minimum viable width
+    maxWidth: '350px', // Cap maximum width
     maxHeight: '100%', // Don't overflow viewport
-    overflow: 'auto', // Allow scrolling if needed
+    overflow: 'visible', // No scrollbar on the panel itself
     display: 'flex',
     flexDirection: 'column',
-    gap: TASERN_SPACING.md,
+    gap: 0, // No gap - unified panel
+    background: TASERN_GRADIENTS.cardBackground,
+    border: `${TASERN_BORDERS.widthMedium} solid ${TASERN_COLORS.gold}`,
+    borderRadius: TASERN_BORDERS.radiusMedium,
+    padding: TASERN_SPACING.md,
+    boxShadow: TASERN_SHADOWS.medium,
   },
   sidePanelHand: {
     // HandDisplay has its own styling, this just provides spacing
+    marginTop: TASERN_SPACING.md,
+  },
+  // Styles for components inside the unified sidebar panel
+  sidePanelPlayerStatus: {
+    background: 'transparent',
+    border: 'none',
+    borderRadius: 0,
+    boxShadow: 'none',
+    padding: 0,
+    paddingBottom: TASERN_SPACING.sm,
+    marginBottom: 0,
+  },
+  sidePanelHandDisplay: {
+    background: 'transparent',
+    border: 'none',
+    borderRadius: 0,
+    boxShadow: 'none',
+    padding: 0,
+  },
+  sidePanelBattleControls: {
+    background: 'transparent',
+    border: 'none',
+    borderRadius: 0,
+    boxShadow: 'none',
+    padding: 0,
+    paddingTop: 0,
     marginTop: TASERN_SPACING.md,
   },
   sidePanelControls: {
@@ -600,10 +685,12 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center', // Center battlefield horizontally
-    justifyContent: 'flex-start', // Start from top (not centered vertically)
-    gap: TASERN_SPACING.lg,
+    justifyContent: 'center', // Center vertically for better desktop layout
+    gap: TASERN_SPACING.sm,
     minHeight: 0, // Allow flex children to shrink
     minWidth: 0, // Allow flex children to shrink horizontally
+    maxHeight: '100%', // Don't overflow
+    overflow: 'hidden', // Hide overflow
   },
   weatherDisplay: {
     display: 'flex',
@@ -720,5 +807,134 @@ const styles: Record<string, React.CSSProperties> = {
   mobileButtonDisabled: {
     opacity: 0.5,
     cursor: 'not-allowed',
+  },
+  // Mobile Header Styles
+  mobileHeader: {
+    display: 'none', // Hidden by default, shown via CSS media query
+    background: `linear-gradient(135deg, ${TASERN_COLORS.leather} 0%, rgba(26, 20, 16, 0.95) 100%)`,
+    borderBottom: `${TASERN_BORDERS.widthMedium} solid ${TASERN_COLORS.gold}`,
+    padding: TASERN_SPACING.md,
+    boxShadow: TASERN_SHADOWS.medium,
+  },
+  mobileCastleRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: TASERN_SPACING.md,
+  },
+  mobileCastle: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: TASERN_SPACING.xs,
+    padding: TASERN_SPACING.sm,
+    background: 'rgba(26, 20, 16, 0.7)',
+    border: `${TASERN_BORDERS.widthThin} solid ${TASERN_COLORS.bronze}`,
+    borderRadius: TASERN_BORDERS.radiusSmall,
+    transition: 'all 0.3s ease',
+  },
+  mobileCastleActive: {
+    borderColor: TASERN_COLORS.gold,
+    boxShadow: `0 0 12px ${TASERN_COLORS.gold}`,
+  },
+  mobileCastleTargetable: {
+    cursor: 'pointer',
+    borderColor: TASERN_COLORS.red,
+    background: 'rgba(139, 0, 0, 0.3)',
+    boxShadow: `0 0 12px ${TASERN_COLORS.red}`,
+  },
+  mobileCastleName: {
+    fontFamily: TASERN_TYPOGRAPHY.heading,
+    fontSize: TASERN_TYPOGRAPHY.bodySmall,
+    color: TASERN_COLORS.gold,
+    fontWeight: TASERN_TYPOGRAPHY.weightBold,
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+    textAlign: 'center',
+  },
+  mobileCastleHP: {
+    fontFamily: TASERN_TYPOGRAPHY.heading,
+    fontSize: TASERN_TYPOGRAPHY.bodyLarge,
+    color: TASERN_COLORS.parchment,
+    fontWeight: TASERN_TYPOGRAPHY.weightBold,
+  },
+  mobileTurnWheel: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '80px',
+    height: '80px',
+    background: `linear-gradient(135deg, ${TASERN_COLORS.bronze} 0%, ${TASERN_COLORS.leather} 100%)`,
+    border: `${TASERN_BORDERS.widthThick} solid ${TASERN_COLORS.gold}`,
+    borderRadius: '50%',
+    boxShadow: TASERN_SHADOWS.glowGold,
+  },
+  mobileTurnNumber: {
+    fontFamily: TASERN_TYPOGRAPHY.heading,
+    fontSize: TASERN_TYPOGRAPHY.headingLarge,
+    color: TASERN_COLORS.gold,
+    fontWeight: TASERN_TYPOGRAPHY.weightBold,
+    lineHeight: 1,
+  },
+  mobileTurnPlayer: {
+    fontSize: '1.2rem',
+    marginTop: TASERN_SPACING.xs,
+  },
+  inspectionOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'rgba(0, 0, 0, 0.85)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+    backdropFilter: 'blur(4px)',
+  },
+  inspectionCard: {
+    background: TASERN_GRADIENTS.cardBackground,
+    border: `${TASERN_BORDERS.widthThick} solid ${TASERN_COLORS.gold}`,
+    borderRadius: TASERN_BORDERS.radiusLarge,
+    padding: TASERN_SPACING.xl,
+    maxWidth: '90vw',
+    maxHeight: '90vh',
+    overflow: 'auto',
+    boxShadow: `${TASERN_SHADOWS.glowGold}, ${TASERN_SHADOWS.strong}`,
+  },
+  inspectionHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: TASERN_SPACING.lg,
+    paddingBottom: TASERN_SPACING.md,
+    borderBottom: `${TASERN_BORDERS.widthThin} solid ${TASERN_COLORS.bronze}`,
+  },
+  inspectionTitle: {
+    fontFamily: TASERN_TYPOGRAPHY.heading,
+    fontSize: TASERN_TYPOGRAPHY.headingLarge,
+    color: TASERN_COLORS.gold,
+    textTransform: 'uppercase',
+    letterSpacing: '0.1em',
+    margin: 0,
+  },
+  inspectionCloseButton: {
+    background: 'rgba(139, 0, 0, 0.5)',
+    border: `${TASERN_BORDERS.widthThin} solid ${TASERN_COLORS.red}`,
+    borderRadius: TASERN_BORDERS.radiusSmall,
+    color: TASERN_COLORS.parchment,
+    fontSize: TASERN_TYPOGRAPHY.headingMedium,
+    fontWeight: TASERN_TYPOGRAPHY.weightBold,
+    padding: `${TASERN_SPACING.xs} ${TASERN_SPACING.md}`,
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+  },
+  inspectionCardDisplay: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 };

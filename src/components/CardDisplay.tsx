@@ -28,6 +28,7 @@ interface CardDisplayProps {
   isActive?: boolean;
   isTargetable?: boolean;
   onClick?: () => void;
+  onInspect?: () => void; // Right-click to inspect full card
   ownerName?: string;
   imageUrl?: string; // NFT artwork URL
 }
@@ -38,6 +39,7 @@ export const CardDisplay: React.FC<CardDisplayProps> = ({
   isActive = false,
   isTargetable = false,
   onClick,
+  onInspect,
   ownerName,
   imageUrl,
 }) => {
@@ -65,11 +67,20 @@ export const CardDisplay: React.FC<CardDisplayProps> = ({
   const rarityColor = getRarityColor(card.rarity);
   const rarityGlow = getRarityGlow(card.rarity);
 
+  // Determine team color for battlefield cards
+  const isPlayerCard = ownerName?.includes('YOU') || ownerName?.toLowerCase().includes('you');
+  const teamBorderColor = isPlayerCard ? '#3B82F6' : '#DC2626'; // Blue for player, Red for opponent
+  const teamGlow = isPlayerCard
+    ? '0 0 12px rgba(59, 130, 246, 0.6)'
+    : '0 0 12px rgba(220, 38, 38, 0.6)';
+
   const cardStyle: React.CSSProperties = {
     ...styles.card,
-    borderColor: rarityColor,
+    borderColor: isOnBattlefield ? teamBorderColor : rarityColor,
     boxShadow: isActive
       ? `${rarityGlow}, ${TASERN_SHADOWS.strong}`
+      : isOnBattlefield
+      ? `${teamGlow}, ${TASERN_SHADOWS.medium}`
       : `${rarityGlow}, ${TASERN_SHADOWS.medium}`,
     transform: isActive ? 'translateY(-4px) scale(1.02)' : 'none',
     cursor: onClick ? 'pointer' : 'default',
@@ -84,8 +95,21 @@ export const CardDisplay: React.FC<CardDisplayProps> = ({
       ? TASERN_COLORS.gold
       : TASERN_COLORS.red;
 
+  // Handle right-click to inspect card
+  const handleContextMenu = (e: React.MouseEvent) => {
+    if (onInspect && isOnBattlefield) {
+      e.preventDefault(); // Prevent default context menu
+      onInspect();
+    }
+  };
+
   return (
-    <div className={`card-display ${isActive ? 'is-active' : ''}`} style={cardStyle} onClick={onClick}>
+    <div
+      className={`card-display ${isActive ? 'is-active' : ''} ${isOnBattlefield ? 'battlefield-card' : ''}`}
+      style={cardStyle}
+      onClick={onClick}
+      onContextMenu={handleContextMenu}
+    >
       {/* Card Header */}
       <div style={styles.header}>
         <div style={styles.name}>{card.name}</div>
@@ -94,8 +118,8 @@ export const CardDisplay: React.FC<CardDisplayProps> = ({
         </div>
       </div>
 
-      {/* Card Art - Shows NFT image if available */}
-      <div style={styles.artContainer}>
+      {/* Card Art - Hidden on battlefield by default, shown on hover */}
+      <div className={`card-art-container ${isOnBattlefield ? 'battlefield-art' : ''}`} style={styles.artContainer}>
         {processedImageUrl && !imageError ? (
           <>
             {/* Actual NFT Image */}
@@ -131,48 +155,37 @@ export const CardDisplay: React.FC<CardDisplayProps> = ({
             </span>
           </div>
         )}
-        {/* Combat Type Badge */}
-        <div style={styles.combatTypeBadge}>
-          {card.combatType === 'melee' && '🗡️'}
-          {card.combatType === 'ranged' && '🏹'}
-          {card.combatType === 'hybrid' && '⚔️'}
-        </div>
-        {battleCard && battleCard.statusEffects.length > 0 && (
-          <div style={styles.statusBadges}>
-            {battleCard.statusEffects.map((effect, idx) => (
-              <span key={idx} style={styles.statusBadge}>
-                {effect.type === 'buff' && '↑'}
-                {effect.type === 'debuff' && '↓'}
-                {effect.type === 'stun' && '⚡'}
-                {effect.type === 'poison' && '☠️'}
-              </span>
-            ))}
-          </div>
-        )}
+      </div>
+
+      {/* Combat Type Badge - Hidden on battlefield by default, shown on hover */}
+      <div className={`card-combat-badge ${isOnBattlefield ? 'battlefield-badge' : ''}`} style={styles.combatTypeBadge}>
+        {card.combatType === 'melee' && '🗡️'}
+        {card.combatType === 'ranged' && '🏹'}
+        {card.combatType === 'hybrid' && '⚔️'}
       </div>
 
       {/* Stats Row */}
-      <div style={styles.statsRow}>
+      <div className="card-stats-row" style={styles.statsRow}>
         <div style={styles.stat}>
           <span style={styles.statIcon}>{TASERN_ICONS.attack}</span>
-          <span style={styles.statValue}>{card.attack}</span>
+          <span className="card-stat-value" style={styles.statValue}>{card.attack}</span>
         </div>
         <div style={styles.stat}>
           <span style={styles.statIcon}>{TASERN_ICONS.defense}</span>
-          <span style={styles.statValue}>{card.defense}</span>
+          <span className="card-stat-value" style={styles.statValue}>{card.defense}</span>
         </div>
         <div style={styles.stat}>
           <span style={styles.statIcon}>{TASERN_ICONS.speed}</span>
-          <span style={styles.statValue}>{card.speed}</span>
+          <span className="card-stat-value" style={styles.statValue}>{card.speed}</span>
         </div>
       </div>
 
       {/* HP Bar */}
-      <div style={styles.hpContainer}>
-        <div style={styles.hpLabel}>
+      <div className="card-hp-container" style={styles.hpContainer}>
+        <div className="card-hp-label" style={styles.hpLabel}>
           {TASERN_ICONS.hp} {card.hp} / {card.maxHp}
         </div>
-        <div style={styles.hpBarBg}>
+        <div className="card-hp-bar-bg" style={styles.hpBarBg}>
           <div
             style={{
               ...styles.hpBarFill,

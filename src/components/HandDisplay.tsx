@@ -72,14 +72,15 @@ const styles: Record<string, React.CSSProperties> = {
   container: {
     display: 'flex',
     flexDirection: 'column',
-    gap: TASERN_SPACING.md,
-    padding: TASERN_SPACING.lg,
+    gap: TASERN_SPACING.sm,
+    padding: TASERN_SPACING.md,
     background: 'linear-gradient(135deg, rgba(139, 105, 20, 0.2) 0%, rgba(26, 20, 16, 0.9) 100%)',
     border: `${TASERN_BORDERS.widthMedium} solid ${TASERN_COLORS.bronze}`,
     borderRadius: TASERN_BORDERS.radiusMedium,
     boxShadow: TASERN_SHADOWS.medium,
     maxHeight: '100%', // Don't overflow parent
     overflow: 'hidden', // Container doesn't scroll, only cardsContainer does
+    flex: '1 1 auto', // Allow to grow and shrink
   },
   header: {
     display: 'flex',
@@ -105,12 +106,12 @@ const styles: Record<string, React.CSSProperties> = {
   cardsContainer: {
     display: 'flex',
     flexDirection: 'column', // Vertical stack
-    gap: TASERN_SPACING.md,
+    gap: TASERN_SPACING.sm,
     overflowY: 'auto', // Vertical scroll
     overflowX: 'hidden',
     padding: TASERN_SPACING.sm,
-    maxHeight: '600px', // Allow scrolling if many cards
-    minHeight: '200px',
+    maxHeight: '400px', // Reduced from 600px to fit better
+    minHeight: '150px',
   },
   cardWrapper: {
     width: '100%', // Full width of container

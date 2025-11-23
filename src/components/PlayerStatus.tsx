@@ -193,12 +193,13 @@ const styles: Record<string, React.CSSProperties> = {
     background: TASERN_GRADIENTS.cardBackground,
     border: `${TASERN_BORDERS.widthMedium} solid ${TASERN_COLORS.bronze}`,
     borderRadius: TASERN_BORDERS.radiusMedium,
-    padding: TASERN_SPACING.lg,
+    padding: TASERN_SPACING.md,
     fontFamily: TASERN_TYPOGRAPHY.body,
     color: TASERN_COLORS.parchment,
-    minWidth: '300px',
+    minWidth: '260px', // Reduced from 300px
     transition: 'all 0.3s ease',
     boxShadow: TASERN_SHADOWS.medium,
+    flex: '0 0 auto', // Don't grow, don't shrink beyond min-width
   },
   containerActive: {
     borderColor: TASERN_COLORS.gold,

@@ -123,15 +123,16 @@ const styles: Record<string, React.CSSProperties> = {
   container: {
     display: 'flex',
     flexDirection: 'column',
-    gap: TASERN_SPACING.md,
-    padding: TASERN_SPACING.lg,
+    gap: TASERN_SPACING.sm,
+    padding: TASERN_SPACING.md,
     background: 'linear-gradient(135deg, rgba(139, 105, 20, 0.2) 0%, rgba(26, 20, 16, 0.9) 100%)',
     border: `${TASERN_BORDERS.widthMedium} solid ${TASERN_COLORS.bronze}`,
     borderRadius: TASERN_BORDERS.radiusMedium,
     fontFamily: TASERN_TYPOGRAPHY.body,
     color: TASERN_COLORS.parchment,
-    minWidth: '400px',
+    minWidth: '260px', // Reduced from 400px
     boxShadow: TASERN_SHADOWS.medium,
+    flex: '1 1 auto', // Allow to grow and shrink
   },
   turnInfo: {
     display: 'flex',
@@ -240,7 +241,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: TASERN_SPACING.xs,
-    maxHeight: '300px',
+    maxHeight: '180px', // Reduced from 300px to fit better
     overflowY: 'auto',
     padding: TASERN_SPACING.sm,
     background: 'rgba(0, 0, 0, 0.5)',

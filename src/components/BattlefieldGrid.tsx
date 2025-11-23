@@ -11,6 +11,7 @@ import React from 'react';
 import type { Battlefield, Position, BattleCard, GridConfig, MapTheme } from '../types/core';
 import { MAP_THEMES } from '../types/core';
 import { CardDisplay } from './CardDisplay';
+import { FormationCalculator } from '../core/FormationCalculator';
 import {
   TASERN_COLORS,
   TASERN_TYPOGRAPHY,
@@ -26,6 +27,7 @@ interface BattlefieldGridProps {
   blockedTiles: Position[];
   playerNames: Record<string, string>;
   onCellClick?: (position: Position, card: BattleCard | null) => void;
+  onCardInspect?: (card: BattleCard) => void;
   highlightedPositions?: Position[];
   validDropZones?: Position[];
   availableSpaces?: Position[]; // All empty spaces available for deployment
@@ -38,11 +40,53 @@ export const BattlefieldGrid: React.FC<BattlefieldGridProps> = ({
   blockedTiles,
   playerNames,
   onCellClick,
+  onCardInspect,
   highlightedPositions = [],
   validDropZones = [],
   availableSpaces = [],
 }) => {
   const themeData = MAP_THEMES[mapTheme];
+
+  // Get active formations for each player
+  const getActiveFormations = () => {
+    const allCards = battlefield.flat().filter((c) => c !== null) as BattleCard[];
+    const playerFormations: Record<string, string> = {};
+
+    // Group cards by owner
+    const cardsByOwner: Record<string, BattleCard[]> = {};
+    allCards.forEach((card) => {
+      if (!cardsByOwner[card.ownerId]) {
+        cardsByOwner[card.ownerId] = [];
+      }
+      cardsByOwner[card.ownerId].push(card);
+    });
+
+    // Calculate formation for each player (just need one card per player)
+    Object.keys(cardsByOwner).forEach((ownerId) => {
+      const cards = cardsByOwner[ownerId];
+      if (cards.length > 0) {
+        const formation = FormationCalculator.calculateFormationBonus(cards[0], battlefield);
+        playerFormations[ownerId] = formation.type;
+      }
+    });
+
+    return playerFormations;
+  };
+
+  const activeFormations = getActiveFormations();
+
+  // Get formation display info
+  const getFormationDisplay = (type: string) => {
+    const displays: Record<string, { icon: string; name: string; bonus: string }> = {
+      VANGUARD: { icon: '⚔️', name: 'Vanguard', bonus: '+20% ATK' },
+      PHALANX: { icon: '🛡️', name: 'Phalanx', bonus: '+30% DEF' },
+      ARCHER_LINE: { icon: '🏹', name: 'Archer', bonus: '+15% ATK' },
+      FLANKING: { icon: '🦅', name: 'Flanking', bonus: '+15% SPD' },
+      SIEGE: { icon: '🏰', name: 'Siege', bonus: '+25% ATK' },
+      SKIRMISH: { icon: '⚡', name: 'Skirmish', bonus: '+5% SPD' },
+    };
+    return displays[type] || displays.SKIRMISH;
+  };
 
   const isHighlighted = (row: number, col: number): boolean => {
     return highlightedPositions.some((pos) => pos.row === row && pos.col === col);
@@ -74,24 +118,24 @@ export const BattlefieldGrid: React.FC<BattlefieldGridProps> = ({
 
   // Calculate dynamic cell sizes based on grid dimensions
   const getCellStyle = (): React.CSSProperties => {
-    // Adjust cell size based on grid dimensions
-    // Smaller cells for larger grids
+    // Adjust cell size based on grid dimensions to fit available space
     const baseCellWidth = 220;
-    const baseCellHeight = 320;
+    const baseCellHeight = 280;
 
-    const widthScale = Math.max(0.5, 1 - (gridConfig.cols - 3) * 0.15);
-    const heightScale = Math.max(0.5, 1 - (gridConfig.rows - 3) * 0.15);
+    // More aggressive scaling for larger grids
+    const widthScale = Math.max(0.4, 1 - (gridConfig.cols - 3) * 0.2);
+    const heightScale = Math.max(0.4, 1 - (gridConfig.rows - 3) * 0.2);
 
     const cellWidth = Math.floor(baseCellWidth * widthScale);
     const cellHeight = Math.floor(baseCellHeight * heightScale);
 
     return {
-      width: `min(${15 * widthScale}vw, ${cellWidth}px)`,
-      height: `min(${22 * heightScale}vh, ${cellHeight}px)`,
+      width: `min(${14 * widthScale}vw, ${cellWidth}px)`,
+      height: `min(${18 * heightScale}vh, ${cellHeight}px)`,
     };
   };
 
-  const zoneLabelGap = `calc(min(${22 * Math.max(0.5, 1 - (gridConfig.rows - 3) * 0.15)}vh, ${Math.floor(320 * Math.max(0.5, 1 - (gridConfig.rows - 3) * 0.15))}px) + 1rem)`;
+  const zoneLabelGap = `calc(min(${16 * Math.max(0.5, 1 - (gridConfig.rows - 3) * 0.15)}vh, ${Math.floor(240 * Math.max(0.5, 1 - (gridConfig.rows - 3) * 0.15))}px) + 0.75rem)`;
 
   return (
     <div className="battlefield-grid" style={{
@@ -99,8 +143,8 @@ export const BattlefieldGrid: React.FC<BattlefieldGridProps> = ({
       background: `linear-gradient(135deg, ${themeData.backgroundColor} 0%, rgba(0, 0, 0, 0.8) 100%)`,
       border: `${TASERN_BORDERS.widthMedium} solid ${themeData.borderColor}`,
     }}>
-      {/* Zone Labels */}
-      <div className="zone-labels" style={{ ...styles.zoneLabels, gap: zoneLabelGap }}>
+      {/* Zone Labels - Hidden per user request */}
+      <div className="zone-labels" style={{ ...styles.zoneLabels, gap: zoneLabelGap, display: 'none' }}>
         {Array.from({ length: gridConfig.rows }).map((_, row) => (
           <div key={row} style={styles.zoneLabel}>
             {getZoneLabel(row, gridConfig.rows)}
@@ -115,6 +159,24 @@ export const BattlefieldGrid: React.FC<BattlefieldGridProps> = ({
       }}>
         {themeData.icon} {gridConfig.name} {themeData.icon}
       </div>
+
+      {/* Active Formations Indicator */}
+      {Object.keys(activeFormations).length > 0 && (
+        <div style={styles.formationsIndicator}>
+          {Object.entries(activeFormations).map(([ownerId, formationType]) => {
+            const display = getFormationDisplay(formationType);
+            const playerName = playerNames[ownerId] || 'Unknown';
+            return (
+              <div key={ownerId} style={styles.formationBadge}>
+                <span style={styles.formationIcon}>{display.icon}</span>
+                <span style={styles.formationText}>
+                  {playerName}: {display.name} {display.bonus}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Battlefield Grid */}
       <div style={styles.grid}>
@@ -158,6 +220,7 @@ export const BattlefieldGrid: React.FC<BattlefieldGridProps> = ({
                       card={card}
                       isOnBattlefield={true}
                       ownerName={playerNames[card.ownerId]}
+                      onInspect={() => onCardInspect?.(card)}
                     />
                   ) : (
                     <div style={styles.emptySlot}>
@@ -174,17 +237,8 @@ export const BattlefieldGrid: React.FC<BattlefieldGridProps> = ({
         ))}
       </div>
 
-      {/* Formation Legend */}
-      <div className="legend formation-legend" style={styles.legend}>
-        <div className="legend-title" style={styles.legendTitle}>Formations</div>
-        <div className="legend-items legend-content" style={styles.legendItems}>
-          <div style={styles.legendItem}>⚔️ Vanguard: Front row +20% ATK</div>
-          <div style={styles.legendItem}>🛡️ Phalanx: Line +30% DEF</div>
-          <div style={styles.legendItem}>🏹 Archer: Back row +15% ATK</div>
-          <div style={styles.legendItem}>🦅 Flanking: Sides +15% SPD</div>
-          <div style={styles.legendItem}>🏰 Siege: Enemy zone +25% ATK</div>
-        </div>
-      </div>
+      {/* Formation Legend - Hidden to save space */}
+      {/* TODO: Replace with compact active formation indicator */}
     </div>
   );
 };
@@ -194,10 +248,15 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: TASERN_SPACING.md,
-    padding: TASERN_SPACING.lg,
+    padding: TASERN_SPACING.md,
     background: 'rgba(0, 0, 0, 0.3)',
     borderRadius: TASERN_BORDERS.radiusLarge,
     border: `${TASERN_BORDERS.widthMedium} solid ${TASERN_COLORS.stone}`,
+    maxWidth: '100%',
+    maxHeight: '100%',
+    overflow: 'auto',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   gridInfo: {
     fontFamily: TASERN_TYPOGRAPHY.heading,
@@ -208,6 +267,31 @@ const styles: Record<string, React.CSSProperties> = {
     letterSpacing: '0.1em',
     marginBottom: TASERN_SPACING.sm,
     textShadow: TASERN_SHADOWS.textGold,
+  },
+  formationsIndicator: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: TASERN_SPACING.xs,
+    marginBottom: TASERN_SPACING.sm,
+    alignItems: 'center',
+  },
+  formationBadge: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: TASERN_SPACING.xs,
+    padding: TASERN_SPACING.xs,
+    background: 'rgba(139, 105, 20, 0.3)',
+    border: `${TASERN_BORDERS.widthThin} solid ${TASERN_COLORS.bronze}`,
+    borderRadius: TASERN_BORDERS.radiusSmall,
+    fontSize: TASERN_TYPOGRAPHY.bodySmall,
+  },
+  formationIcon: {
+    fontSize: TASERN_TYPOGRAPHY.bodyMedium,
+  },
+  formationText: {
+    fontFamily: TASERN_TYPOGRAPHY.body,
+    color: TASERN_COLORS.parchment,
+    fontSize: TASERN_TYPOGRAPHY.bodySmall,
   },
   zoneLabels: {
     display: 'flex',
@@ -233,8 +317,8 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: TASERN_SPACING.md,
-    // Responsive margin for zone labels
-    marginLeft: 'clamp(40px, 4vw, 60px)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   row: {
     display: 'flex',
