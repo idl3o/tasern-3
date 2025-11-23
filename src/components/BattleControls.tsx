@@ -132,7 +132,9 @@ const styles: Record<string, React.CSSProperties> = {
     color: TASERN_COLORS.parchment,
     minWidth: '260px', // Reduced from 400px
     boxShadow: TASERN_SHADOWS.medium,
-    flex: '1 1 auto', // Allow to grow and shrink
+    height: '100%', // Fill parent height
+    minHeight: 0, // Allow flexbox to work properly
+    flex: 1, // Grow to fill available space
   },
   turnInfo: {
     display: 'flex',
@@ -227,6 +229,8 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     marginTop: TASERN_SPACING.sm,
+    flex: 1, // Grow to fill available vertical space
+    minHeight: 0, // Allow flexbox to shrink below content size
   },
   logTitle: {
     fontFamily: TASERN_TYPOGRAPHY.heading,
@@ -241,7 +245,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: TASERN_SPACING.xs,
-    maxHeight: '180px', // Reduced from 300px to fit better
+    flex: 1, // Grow to fill available space
     overflowY: 'auto',
     padding: TASERN_SPACING.sm,
     background: 'rgba(0, 0, 0, 0.5)',

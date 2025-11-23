@@ -646,6 +646,10 @@ const styles: Record<string, React.CSSProperties> = {
   sidePanelHand: {
     // HandDisplay has its own styling, this just provides spacing
     marginTop: TASERN_SPACING.md,
+    flex: 1, // Grow to fill available vertical space
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: 0, // Allow flexbox to shrink below content size
   },
   // Styles for components inside the unified sidebar panel
   sidePanelPlayerStatus: {
@@ -676,9 +680,11 @@ const styles: Record<string, React.CSSProperties> = {
   sidePanelControls: {
     // BattleControls has its own styling, this just provides spacing
     marginTop: TASERN_SPACING.md,
+    flex: 1, // Grow to fill available vertical space
     display: 'flex',
     flexDirection: 'column',
     gap: TASERN_SPACING.sm,
+    minHeight: 0, // Allow flexbox to shrink below content size
   },
   centerPanel: {
     flex: 1,
