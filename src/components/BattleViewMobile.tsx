@@ -417,7 +417,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: TASERN_SPACING.lg,
   },
   inspectionCard: {
-    background: TASERN_GRADIENTS.parchment,
+    background: TASERN_GRADIENTS.parchmentTexture,
     border: `${TASERN_BORDERS.widthThick} solid ${TASERN_COLORS.gold}`,
     borderRadius: TASERN_BORDERS.radiusLarge,
     padding: TASERN_SPACING.lg,
@@ -457,7 +457,7 @@ const styles: Record<string, React.CSSProperties> = {
     zIndex: 2000,
   },
   victoryCard: {
-    background: TASERN_GRADIENTS.parchment,
+    background: TASERN_GRADIENTS.parchmentTexture,
     border: `${TASERN_BORDERS.widthThick} solid ${TASERN_COLORS.gold}`,
     borderRadius: TASERN_BORDERS.radiusLarge,
     padding: TASERN_SPACING['2xl'],
