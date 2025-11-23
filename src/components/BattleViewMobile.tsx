@@ -216,11 +216,17 @@ export const BattleViewMobile: React.FC<BattleViewMobileProps> = ({
       {battleState.winner && (
         <div style={styles.victoryOverlay}>
           <div style={styles.victoryCard}>
-            <h1 style={styles.victoryTitle}>Victory!</h1>
+            <h1 style={styles.victoryTitle}>🏆 Victory!</h1>
             <p style={styles.victoryWinner}>
               {battleState.players[battleState.winner]?.name} wins!
             </p>
             <p style={styles.victoryTurn}>Turn {battleState.currentTurn}</p>
+            <button
+              style={styles.victoryButton}
+              onClick={() => window.location.reload()}
+            >
+              ⚔️ Return to Main Menu
+            </button>
           </div>
         </div>
       )}
@@ -483,5 +489,22 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: TASERN_TYPOGRAPHY.headingMedium,
     color: TASERN_COLORS.leather,
     opacity: 0.8,
+    marginBottom: TASERN_SPACING.lg,
+  },
+  victoryButton: {
+    fontFamily: TASERN_TYPOGRAPHY.heading,
+    fontSize: TASERN_TYPOGRAPHY.bodyLarge,
+    fontWeight: TASERN_TYPOGRAPHY.weightBold,
+    padding: `${TASERN_SPACING.md} ${TASERN_SPACING.xl}`,
+    borderRadius: TASERN_BORDERS.radiusMedium,
+    border: `${TASERN_BORDERS.widthMedium} solid ${TASERN_COLORS.gold}`,
+    background: `linear-gradient(135deg, ${TASERN_COLORS.bronze} 0%, ${TASERN_COLORS.leather} 100%)`,
+    color: TASERN_COLORS.parchment,
+    cursor: 'pointer',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+    boxShadow: TASERN_SHADOWS.medium,
+    minHeight: '56px',
+    minWidth: '200px',
   },
 };
