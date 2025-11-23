@@ -37,7 +37,10 @@
       "Bash(vercel link:*)",
       "Bash(vercel env:*)",
       "Bash(vercel --prod:*)",
-      "mcp__ide__getDiagnostics"
+      "mcp__ide__getDiagnostics",
+      "Bash(del \"C:\\Users\\Sam\\Documents\\coding projs\\tasern 3\\src\\components\\BattleView.new.tsx\" 2)",
+      "Bash(nul)",
+      "Bash(test:*)"
     ],
     "deny": [],
     "ask": []
