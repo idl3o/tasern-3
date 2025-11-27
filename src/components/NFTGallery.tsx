@@ -31,7 +31,7 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ onClose, onSelectCard })
   const [scanLogs, setScanLogs] = useState<string[]>([]);
   const [lastScanTime, setLastScanTime] = useState<number | null>(null);
   const [rescanCooldown, setRescanCooldown] = useState<number>(0);
-  const [showOnlyWithLP, setShowOnlyWithLP] = useState<boolean>(false);
+  const [showOnlyWithLP, setShowOnlyWithLP] = useState<boolean>(true); // Default to LP Only for large wallets
 
   // Cooldown timer countdown
   useEffect(() => {
@@ -334,7 +334,7 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ onClose, onSelectCard })
         {isConnected && !isScanning && enhancedNFTs.length > 0 && (
           <div style={styles.bonusSection}>
             <span style={styles.bonusText}>
-              💎 {enhancedNFTs.filter(n => n.impactAssets.totalValue > 0).length} NFT{enhancedNFTs.filter(n => n.impactAssets.totalValue > 0).length !== 1 ? 's' : ''} with LP enhancements
+              💎 {enhancedNFTs.filter(n => n.impactAssets.lpBalance > 0).length} NFT{enhancedNFTs.filter(n => n.impactAssets.lpBalance > 0).length !== 1 ? 's' : ''} with LP enhancements
             </span>
             <button
               style={{
@@ -367,7 +367,7 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ onClose, onSelectCard })
               const enhancedNFT = enhancedNFTs[index];
 
               // Filter: Skip cards without LP if filter is active
-              if (showOnlyWithLP && (!enhancedNFT || enhancedNFT.impactAssets.totalValue === 0)) {
+              if (showOnlyWithLP && (!enhancedNFT || enhancedNFT.impactAssets.lpBalance <= 0)) {
                 return null;
               }
 
