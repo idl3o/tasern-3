@@ -6,8 +6,11 @@
 
 import React from 'react';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { useDisconnect } from 'wagmi';
 
 export const WalletConnect: React.FC = () => {
+  const { disconnect } = useDisconnect();
+
   return (
     <ConnectButton.Custom>
       {({
@@ -20,6 +23,17 @@ export const WalletConnect: React.FC = () => {
       }) => {
         const ready = mounted;
         const connected = ready && account && chain;
+
+        // Handle connect button click - clear any stale connection first
+        const handleConnectClick = async () => {
+          // Disconnect any stale/cached connection before showing modal
+          // This ensures fresh wallet selection instead of auto-reconnecting
+          disconnect();
+          // Small delay to let disconnect complete before opening modal
+          setTimeout(() => {
+            openConnectModal();
+          }, 100);
+        };
 
         return (
           <div
@@ -35,7 +49,7 @@ export const WalletConnect: React.FC = () => {
             {(() => {
               if (!connected) {
                 return (
-                  <button onClick={openConnectModal} style={styles.connectButton}>
+                  <button onClick={handleConnectClick} style={styles.connectButton}>
                     <span style={styles.buttonText}>⚔️ Connect Wallet</span>
                   </button>
                 );

@@ -329,7 +329,7 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ onClose, onSelectCard })
               const enhancedNFT = enhancedNFTs[index];
 
               // Filter: Skip cards without LP if filter is active
-              if (showOnlyWithLP && enhancedNFT?.impactAssets.totalValue === 0) {
+              if (showOnlyWithLP && (!enhancedNFT || enhancedNFT.impactAssets.totalValue === 0)) {
                 return null;
               }
 
@@ -349,7 +349,7 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ onClose, onSelectCard })
                   <div style={styles.nftBadge}>NFT</div>
 
                   {/* LP Enhancement Badge */}
-                  {enhancedNFT.enhancementLevel > 0 && (
+                  {enhancedNFT && enhancedNFT.enhancementLevel > 0 && (
                     <div style={styles.lpBadge} title={`LP Holdings: ${enhancedNFT.impactAssets.lpBalance.toFixed(4)} LP\nStat Multiplier: ${enhancedNFT.statMultipliers.attack.toFixed(2)}x\nAdd more LP to increase stats!`}>
                       {'⭐'.repeat(enhancedNFT.enhancementLevel)} {enhancedNFT.impactAssets.lpBalance.toFixed(4)} LP
                     </div>
