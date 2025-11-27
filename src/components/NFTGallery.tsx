@@ -43,31 +43,39 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ onClose, onSelectCard })
     }
   }, [rescanCooldown]);
 
-  // Scan for NFTs when wallet connects (only if not already scanned)
-  useEffect(() => {
-    if (isConnected && account) {
-      // Check if we already have NFT cards for this wallet in the store
-      const existingCards = useNFTCardsStore.getState().getNFTCards(account);
+  // Track previous account to detect genuine changes
+  const [previousAccount, setPreviousAccount] = useState<string | undefined>(undefined);
 
-      if (existingCards.length === 0) {
-        // No cached cards - scan wallet
-        scanWallet(account);
-      } else {
-        // Use cached cards
-        console.log(`📦 Using ${existingCards.length} cached NFT cards for ${account.slice(0, 6)}...${account.slice(-4)}`);
-        setCards(existingCards);
-        // Note: We don't have enhancedNFTs cached, but cards are enough for display
-      }
-    } else {
-      setEnhancedNFTs([]);
-      setCards([]);
-      setScanProgress(null);
-      setScanLogs([]);
-      if (account) {
-        setNFTCards(account, []); // Clear this wallet's cards on disconnect
+  // Load cached cards or trigger scan when wallet connects
+  // Only runs on genuine account changes, not re-renders
+  useEffect(() => {
+    // Only act if account actually changed
+    if (account !== previousAccount) {
+      setPreviousAccount(account);
+
+      if (isConnected && account) {
+        // Check if we already have NFT cards for this wallet in the store
+        const existingCards = useNFTCardsStore.getState().getNFTCards(account);
+
+        if (existingCards.length === 0) {
+          // No cached cards - scan wallet
+          console.log(`🔍 NFTGallery: Starting scan for ${account.slice(0, 6)}...${account.slice(-4)}`);
+          scanWallet(account);
+        } else {
+          // Use cached cards
+          console.log(`📦 NFTGallery: Using ${existingCards.length} cached NFT cards for ${account.slice(0, 6)}...${account.slice(-4)}`);
+          setCards(existingCards);
+        }
+      } else if (!account && previousAccount) {
+        // Wallet disconnected - clear local state only (don't clear store)
+        console.log('🔌 NFTGallery: Wallet disconnected, clearing local state');
+        setEnhancedNFTs([]);
+        setCards([]);
+        setScanProgress(null);
+        setScanLogs([]);
       }
     }
-  }, [isConnected, account, setNFTCards]);
+  }, [isConnected, account, previousAccount]);
 
   const quickRefresh = async (walletAddress: string) => {
     if (enhancedNFTs.length === 0) {

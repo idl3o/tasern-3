@@ -6,10 +6,22 @@
 
 import React from 'react';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { useDisconnect } from 'wagmi';
+import { useDisconnect, useAccount } from 'wagmi';
+import { useNFTCardsStore } from '../state/nftCardsStore';
 
 export const WalletConnect: React.FC = () => {
   const { disconnect } = useDisconnect();
+  const { address } = useAccount();
+  const { clearNFTCards } = useNFTCardsStore();
+
+  // Handle full disconnect - clears wallet connection AND NFT cache
+  const handleFullDisconnect = () => {
+    if (address) {
+      console.log('🧹 Clearing NFT cache for wallet:', address.slice(0, 6) + '...');
+      clearNFTCards(address);
+    }
+    disconnect();
+  };
 
   return (
     <ConnectButton.Custom>
@@ -70,6 +82,9 @@ export const WalletConnect: React.FC = () => {
                       {account.displayName}
                     </span>
                   </button>
+                  <button onClick={handleFullDisconnect} style={styles.disconnectButton} title="Disconnect wallet">
+                    ✕
+                  </button>
                 </div>
               );
             })()}
@@ -120,6 +135,17 @@ const styles: Record<string, React.CSSProperties> = {
     border: '2px solid #1E40AF',
     borderRadius: '8px',
     padding: '8px 16px',
+    fontSize: '14px',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    fontFamily: "'Crimson Text', serif",
+  },
+  disconnectButton: {
+    backgroundColor: '#8B0000', // Dark red
+    color: '#F4E4C1',
+    border: '2px solid #5C0000',
+    borderRadius: '8px',
+    padding: '8px 12px',
     fontSize: '14px',
     cursor: 'pointer',
     transition: 'all 0.2s',

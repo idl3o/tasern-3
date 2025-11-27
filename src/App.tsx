@@ -59,26 +59,40 @@ export const App: React.FC = () => {
   const [showNFTGallery, setShowNFTGallery] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
   const [showMultiplayerLobby, setShowMultiplayerLobby] = useState(false);
-  const [scannedWallets, setScannedWallets] = useState<Set<string>>(new Set());
   const [selectedGridPreset, setSelectedGridPreset] = useState<GridPreset>('CLASSIC_3X3');
   const [selectedMapPreset, setSelectedMapPreset] = useState<CompleteMapPreset | null>(null);
 
-  // Auto-scan NFTs when wallet connects (only once per wallet address)
-  useEffect(() => {
-    if (walletAddress && !scannedWallets.has(walletAddress)) {
-      // Check if we already have NFTs in store for this wallet
-      const existingCards = getNFTCards(walletAddress);
+  // Track previous wallet to detect genuine new connections vs re-renders
+  const [previousWallet, setPreviousWallet] = useState<string | undefined>(undefined);
 
-      if (existingCards.length === 0) {
-        console.log('🔍 New wallet connected - triggering auto-scan for', `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`);
-        setScannedWallets(prev => new Set(prev).add(walletAddress));
-        setShowNFTGallery(true);
-      } else {
-        console.log('📦 Wallet already has', existingCards.length, 'cached NFT cards - skipping auto-scan');
-        setScannedWallets(prev => new Set(prev).add(walletAddress));
+  // Auto-scan NFTs ONLY on genuine new wallet connection (not re-renders or returning from battle)
+  useEffect(() => {
+    // Only trigger if wallet actually changed (not just a re-render)
+    if (walletAddress !== previousWallet) {
+      setPreviousWallet(walletAddress);
+
+      // Only auto-open NFT Gallery if:
+      // 1. There's a wallet connected
+      // 2. It's a NEW connection (previousWallet was undefined/different)
+      // 3. We don't already have cached NFT cards for this wallet
+      if (walletAddress && !previousWallet) {
+        const existingCards = getNFTCards(walletAddress);
+
+        if (existingCards.length === 0) {
+          console.log('🔍 New wallet connected - triggering auto-scan for', `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`);
+          setShowNFTGallery(true);
+        } else {
+          console.log('📦 Wallet already has', existingCards.length, 'cached NFT cards - skipping auto-scan');
+        }
+      }
+
+      // If wallet disconnected, close NFT gallery if open
+      if (!walletAddress && previousWallet) {
+        console.log('🔌 Wallet disconnected');
+        setShowNFTGallery(false);
       }
     }
-  }, [walletAddress, scannedWallets, getNFTCards]);
+  }, [walletAddress, previousWallet, getNFTCards]);
 
   const startBattle = (opponentName: string, humanPlayer: boolean = true, humanVsHuman: boolean = false) => {
     let opponent;
