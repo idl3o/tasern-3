@@ -384,9 +384,21 @@ export class UniversalImpactScanner {
       const alchemyUrl = `https://polygon-mainnet.g.alchemy.com/nft/v3/${alchemyApiKey}/getNFTsForOwner?owner=${walletAddress}&withMetadata=true&pageSize=100`;
 
       const response = await fetch(alchemyUrl);
-      const data = await response.json();
 
-      if (data.ownedNfts && data.ownedNfts.length > 0) {
+      if (!response.ok) {
+        log(`Alchemy API HTTP error: ${response.status} ${response.statusText}`, 'error');
+        return [];
+      }
+
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        log(`Failed to parse Alchemy API response: ${parseError}`, 'error');
+        return [];
+      }
+
+      if (data?.ownedNfts && Array.isArray(data.ownedNfts) && data.ownedNfts.length > 0) {
         log(`Loaded ${data.ownedNfts.length} total NFTs from Alchemy API`, 'info');
 
         // Filter to only Tasern Universe NFTs using hybrid verification

@@ -67,26 +67,41 @@ export class TransactionScanner {
       const stored = localStorage.getItem(this.CACHE_STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
+        if (!parsed || typeof parsed !== 'object') {
+          console.warn('Invalid cache format in localStorage, skipping');
+          return;
+        }
+
         const now = Date.now();
         let loadedCount = 0;
         let expiredCount = 0;
 
         // Restore cache entries, filtering out expired ones
         Object.entries(parsed).forEach(([key, value]: [string, any]) => {
-          const age = now - value.timestamp;
-          if (age < this.ENHANCEMENT_CACHE_TTL) {
-            // Restore BigInt values
-            const data = {
-              totalValue: BigInt(value.data.totalValue),
-              associations: value.data.associations.map((a: any) => ({
-                ...a,
-                value: BigInt(a.value)
-              }))
-            };
-            this.enhancementCache.set(key, { data, timestamp: value.timestamp });
-            loadedCount++;
-          } else {
-            expiredCount++;
+          try {
+            // Validate cache entry structure
+            if (!value?.data?.totalValue || !value?.timestamp || !Array.isArray(value?.data?.associations)) {
+              console.warn(`Skipping malformed cache entry: ${key}`);
+              return;
+            }
+
+            const age = now - value.timestamp;
+            if (age < this.ENHANCEMENT_CACHE_TTL) {
+              // Restore BigInt values with defensive parsing
+              const data = {
+                totalValue: BigInt(value.data.totalValue || '0'),
+                associations: value.data.associations.map((a: any) => ({
+                  ...a,
+                  value: BigInt(a?.value || '0')
+                }))
+              };
+              this.enhancementCache.set(key, { data, timestamp: value.timestamp });
+              loadedCount++;
+            } else {
+              expiredCount++;
+            }
+          } catch (entryError) {
+            console.warn(`Failed to restore cache entry ${key}:`, entryError);
           }
         });
 
@@ -96,6 +111,12 @@ export class TransactionScanner {
       }
     } catch (error) {
       console.warn('Failed to load enhancement cache from localStorage:', error);
+      // Clear corrupted cache
+      try {
+        localStorage.removeItem(this.CACHE_STORAGE_KEY);
+      } catch (e) {
+        // Ignore localStorage errors
+      }
     }
   }
 
@@ -157,18 +178,29 @@ export class TransactionScanner {
         })
       });
 
-      const data = await response.json();
+      if (!response.ok) {
+        console.error(`Alchemy API HTTP error: ${response.status} ${response.statusText}`);
+        return [];
+      }
 
-      if (data.error) {
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        console.error('Failed to parse Alchemy API response:', parseError);
+        return [];
+      }
+
+      if (data?.error) {
         console.error('Alchemy API error:', data.error);
         return [];
       }
 
-      const tokenBalances: TokenBalance[] = data.result.tokenBalances || [];
+      const tokenBalances: TokenBalance[] = data?.result?.tokenBalances || [];
 
       // Filter out zero balances and errors
       const nonZeroBalances = tokenBalances.filter(
-        tb => tb.tokenBalance && tb.tokenBalance !== '0x0' && !tb.error
+        tb => tb?.tokenBalance && tb.tokenBalance !== '0x0' && !tb.error
       );
 
       console.log(`Found ${nonZeroBalances.length} non-zero token balances for ${address}`);

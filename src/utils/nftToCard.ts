@@ -258,9 +258,9 @@ export function getPlayableNFTCards(nfts: TasernNFT[], lpBonus: number = 0): Car
 export function enhancedNFTToCard(enhancedNFT: EnhancedNFTData): Card {
   // Convert enhanced NFT to standard NFT format
   const standardNFT: TasernNFT = {
-    contract: enhancedNFT.contractAddress,
-    tokenId: enhancedNFT.tokenId,
-    name: enhancedNFT.name,
+    contract: enhancedNFT.contractAddress || '',
+    tokenId: enhancedNFT.tokenId || '0',
+    name: enhancedNFT.name || 'Unknown NFT',
     description: enhancedNFT.description,
     image: enhancedNFT.image,
     attributes: []
@@ -268,7 +268,9 @@ export function enhancedNFTToCard(enhancedNFT: EnhancedNFTData): Card {
 
   // Calculate LP bonus percentage from stat multipliers
   // multiplier = 1 + (bonus%), so bonus% = (multiplier - 1) * 100
-  const lpBonusPercentage = (enhancedNFT.statMultipliers.attack - 1) * 100;
+  // Defensive: ensure statMultipliers exists and has valid attack value
+  const attackMultiplier = enhancedNFT.statMultipliers?.attack ?? 1;
+  const lpBonusPercentage = (attackMultiplier - 1) * 100;
 
   // Convert to card with LP enhancement
   const card = nftToCard(standardNFT, lpBonusPercentage);

@@ -138,7 +138,15 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ onClose, onSelectCard })
   };
 
   const scanWallet = async (walletAddress: string) => {
+    // Validate wallet address before scanning
+    if (!walletAddress || typeof walletAddress !== 'string' || !walletAddress.startsWith('0x')) {
+      console.error('Invalid wallet address provided to scanWallet');
+      setScanLogs(prev => [...prev, `❌ Invalid wallet address`]);
+      return;
+    }
+
     setIsScanning(true);
+    setGlobalScanning(true);
     setScanProgress(null);
     setScanLogs([]);
 
@@ -166,19 +174,36 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ onClose, onSelectCard })
         onLog
       );
 
+      // Validate response
+      if (!Array.isArray(enhancedData)) {
+        console.error('Invalid scan response - expected array');
+        setScanLogs(prev => [...prev, `❌ Invalid scan response`]);
+        setEnhancedNFTs([]);
+        setCards([]);
+        return;
+      }
+
       console.log(`✅ Advanced scan complete! Found ${enhancedData.length} NFTs`);
 
       setEnhancedNFTs(enhancedData);
 
-      // Convert enhanced NFTs to playable cards
-      const playableCards = enhancedNFTsToCards(enhancedData);
+      // Convert enhanced NFTs to playable cards (with error handling)
+      let playableCards: Card[] = [];
+      try {
+        playableCards = enhancedNFTsToCards(enhancedData);
+      } catch (conversionError) {
+        console.error('Error converting NFTs to cards:', conversionError);
+        setScanLogs(prev => [...prev, `⚠️ Some cards failed to convert`]);
+        // Continue with empty cards rather than crashing
+      }
+
       setCards(playableCards);
 
       // Save to global store for deck selection (wallet-specific)
       setNFTCards(walletAddress, playableCards);
       console.log(`💾 Saved ${playableCards.length} NFT cards for wallet ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`);
 
-      const lpEnhancedCount = enhancedData.filter(nft => nft.impactAssets.totalValue > 0).length;
+      const lpEnhancedCount = enhancedData.filter(nft => nft?.impactAssets?.totalValue > 0).length;
       console.log(`💎 ${lpEnhancedCount} NFTs have LP enhancements`);
 
       // Set last scan time and start cooldown (30 seconds)
@@ -186,9 +211,14 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ onClose, onSelectCard })
       setRescanCooldown(30);
     } catch (error) {
       console.error('Error scanning wallet:', error);
-      setScanLogs(prev => [...prev, `❌ Scan failed: ${error}`]);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      setScanLogs(prev => [...prev, `❌ Scan failed: ${errorMessage}`]);
+      // Ensure we don't leave stale data
+      setEnhancedNFTs([]);
+      setCards([]);
     } finally {
       setIsScanning(false);
+      setGlobalScanning(false);
     }
   };
 
@@ -356,8 +386,8 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ onClose, onSelectCard })
                   />
                   <div style={styles.nftBadge}>NFT</div>
 
-                  {/* LP Enhancement Badge */}
-                  {enhancedNFT && enhancedNFT.enhancementLevel > 0 && (
+                  {/* LP Enhancement Badge - only show if actual LP holdings exist */}
+                  {enhancedNFT && enhancedNFT.impactAssets.lpBalance > 0 && (
                     <div style={styles.lpBadge} title={`LP Holdings: ${enhancedNFT.impactAssets.lpBalance.toFixed(4)} LP\nStat Multiplier: ${enhancedNFT.statMultipliers.attack.toFixed(2)}x\nAdd more LP to increase stats!`}>
                       {'⭐'.repeat(enhancedNFT.enhancementLevel)} {enhancedNFT.impactAssets.lpBalance.toFixed(4)} LP
                     </div>
