@@ -12,9 +12,12 @@ import { WalletConnect } from './components/WalletConnect';
 import { NFTGallery } from './components/NFTGallery';
 import { Tutorial } from './components/Tutorial';
 import { MultiplayerLobby } from './components/MultiplayerLobby';
+import { CampaignMenu } from './components/CampaignMenu';
+import { CampaignBattleResult } from './components/CampaignBattleResult';
 import { useBattleStore } from './state/battleStore';
 import { useNFTCardsStore } from './state/nftCardsStore';
 import { useMultiplayerStore } from './state/multiplayerStore';
+import { useCampaignStore } from './state/campaignStore';
 import { PlayerFactory } from './core/PlayerFactory';
 import { HumanStrategy } from './strategies/HumanStrategy';
 import type { Card, Player, AIPersonality, GridPreset, CompleteMapPreset } from './types/core';
@@ -26,6 +29,7 @@ import {
   GROK_THE_UNPREDICTABLE,
   ARCHMAGUS_NETHYS
 } from './ai/personalities';
+import { getCampaignBattle } from './data/campaignData';
 import { TASERN_COLORS, TASERN_TYPOGRAPHY, TASERN_SHADOWS } from './styles/tasernTheme';
 import './styles/mobile-layout.css';
 import './styles/mobile-components.css';
@@ -34,9 +38,17 @@ console.log('📱 App component loading...');
 
 export const App: React.FC = () => {
   console.log('🎮 App component rendering...');
-  const { battleState, initializeBattle, initializeMultiplayerBattle, processAITurn } = useBattleStore();
+  const { battleState, initializeBattle, initializeMultiplayerBattle, processAITurn, resetBattle } = useBattleStore();
   const { getNFTCards } = useNFTCardsStore();
   const { service: multiplayerService } = useMultiplayerStore();
+  const {
+    activeCampaignId,
+    currentBattleId,
+    progress,
+    recordBattleResult,
+    setCurrentBattle,
+    getCurrentBattle,
+  } = useCampaignStore();
   const { address: walletAddress } = useAccount();
 
   // Get NFT cards for currently connected wallet
@@ -59,8 +71,18 @@ export const App: React.FC = () => {
   const [showNFTGallery, setShowNFTGallery] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
   const [showMultiplayerLobby, setShowMultiplayerLobby] = useState(false);
+  const [showCampaignMenu, setShowCampaignMenu] = useState(false);
   const [selectedGridPreset, setSelectedGridPreset] = useState<GridPreset>('CLASSIC_3X3');
   const [selectedMapPreset, setSelectedMapPreset] = useState<CompleteMapPreset | null>(null);
+
+  // Campaign battle result state
+  const [campaignBattleResult, setCampaignBattleResult] = useState<{
+    victory: boolean;
+    turns: number;
+    playerCastleHp: number;
+    opponentCastleHp: number;
+    opponentName: string;
+  } | null>(null);
 
   // Track previous wallet to detect genuine new connections vs re-renders
   const [previousWallet, setPreviousWallet] = useState<string | undefined>(undefined);
@@ -315,6 +337,95 @@ export const App: React.FC = () => {
     return undefined;
   }, [battleState, processAITurn]);
 
+  // Detect campaign battle victory/defeat
+  useEffect(() => {
+    if (battleState?.phase === 'victory' && currentBattleId && activeCampaignId) {
+      console.log('🏰 Campaign battle ended! Recording result...');
+
+      // Find player and opponent
+      const playerIds = Object.keys(battleState.players);
+      const humanPlayer = playerIds.map(id => battleState.players[id]).find(p => p.type === 'human');
+      const aiPlayer = playerIds.map(id => battleState.players[id]).find(p => p.type === 'ai');
+
+      if (humanPlayer && aiPlayer) {
+        const playerWon = battleState.winner === humanPlayer.id;
+
+        // Record result in campaign store
+        recordBattleResult({
+          battleId: currentBattleId,
+          victory: playerWon,
+          turns: battleState.currentTurn,
+          playerCastleHp: humanPlayer.castleHp,
+          opponentCastleHp: aiPlayer.castleHp,
+        });
+
+        // Show result modal
+        setCampaignBattleResult({
+          victory: playerWon,
+          turns: battleState.currentTurn,
+          playerCastleHp: humanPlayer.castleHp,
+          opponentCastleHp: aiPlayer.castleHp,
+          opponentName: aiPlayer.name,
+        });
+      }
+    }
+  }, [battleState?.phase, battleState?.winner, currentBattleId, activeCampaignId, recordBattleResult, battleState]);
+
+  // Handle starting a campaign battle
+  const startCampaignBattle = (opponentKey: string, battleId: string) => {
+    console.log(`🏰 Starting campaign battle: ${battleId} vs ${opponentKey}`);
+    setShowCampaignMenu(false);
+    startBattle(opponentKey, true);
+  };
+
+  // Handle campaign result modal actions
+  const handleCampaignContinue = () => {
+    setCampaignBattleResult(null);
+    resetBattle();
+    // Get next battle and start it
+    const nextBattle = getCurrentBattle();
+    if (nextBattle) {
+      startCampaignBattle(nextBattle.opponentKey, nextBattle.id);
+    } else {
+      setShowCampaignMenu(true);
+    }
+  };
+
+  const handleCampaignRetry = () => {
+    setCampaignBattleResult(null);
+    resetBattle();
+    // Retry current battle
+    if (currentBattleId && activeCampaignId && progress) {
+      const battle = getCampaignBattle(activeCampaignId, progress.currentBattleIndex);
+      if (battle) {
+        startCampaignBattle(battle.opponentKey, battle.id);
+      }
+    }
+  };
+
+  const handleCampaignBackToMenu = () => {
+    setCampaignBattleResult(null);
+    setCurrentBattle(null);
+    resetBattle();
+    setShowCampaignMenu(true);
+  };
+
+  // Show Campaign Battle Result modal (highest priority when showing)
+  if (campaignBattleResult) {
+    return (
+      <CampaignBattleResult
+        victory={campaignBattleResult.victory}
+        turns={campaignBattleResult.turns}
+        playerCastleHp={campaignBattleResult.playerCastleHp}
+        opponentCastleHp={campaignBattleResult.opponentCastleHp}
+        opponentName={campaignBattleResult.opponentName}
+        onContinue={handleCampaignContinue}
+        onRetry={handleCampaignRetry}
+        onBackToMenu={handleCampaignBackToMenu}
+      />
+    );
+  }
+
   // Show Tutorial modal
   if (showTutorial) {
     return <Tutorial onClose={() => setShowTutorial(false)} />;
@@ -323,6 +434,16 @@ export const App: React.FC = () => {
   // Show Multiplayer Lobby
   if (showMultiplayerLobby) {
     return <MultiplayerLobby onBattleReady={handleMultiplayerBattleReady} onClose={() => setShowMultiplayerLobby(false)} />;
+  }
+
+  // Show Campaign Menu
+  if (showCampaignMenu) {
+    return (
+      <CampaignMenu
+        onStartBattle={startCampaignBattle}
+        onBack={() => setShowCampaignMenu(false)}
+      />
+    );
   }
 
   // Show NFT Gallery modal
@@ -482,6 +603,18 @@ export const App: React.FC = () => {
           <div style={styles.divider}></div>
 
           <div style={styles.personalityGrid}>
+            <h2 style={styles.sectionTitle}>Campaign Mode</h2>
+
+            <button style={styles.campaignButton} onClick={() => setShowCampaignMenu(true)}>
+              <div style={styles.opponentName}>The Siege of Tasern</div>
+              <div style={styles.opponentTitle}>"Journey across the realm"</div>
+              <div style={styles.opponentTraits}>5 Battles • Progressive Difficulty • Save Progress</div>
+            </button>
+          </div>
+
+          <div style={styles.divider}></div>
+
+          <div style={styles.personalityGrid}>
             <h2 style={styles.sectionTitle}>NFT Cards</h2>
 
             <button style={styles.opponentButton} onClick={() => setShowNFTGallery(true)}>
@@ -599,6 +732,18 @@ const styles: Record<string, React.CSSProperties> = {
     color: TASERN_COLORS.parchment,
     fontFamily: TASERN_TYPOGRAPHY.body,
     textAlign: 'left',
+  },
+  campaignButton: {
+    background: 'linear-gradient(135deg, rgba(139, 105, 20, 0.4) 0%, rgba(26, 20, 16, 0.9) 100%)',
+    border: `3px solid ${TASERN_COLORS.gold}`,
+    borderRadius: '10px',
+    padding: '1.5rem',
+    cursor: 'pointer',
+    transition: 'all 0.3s',
+    color: TASERN_COLORS.parchment,
+    fontFamily: TASERN_TYPOGRAPHY.body,
+    textAlign: 'left',
+    boxShadow: TASERN_SHADOWS.glowGold,
   },
   opponentName: {
     fontFamily: TASERN_TYPOGRAPHY.heading,
