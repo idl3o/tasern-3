@@ -29,6 +29,12 @@ export const IMPACT_ASSETS = {
     decimals: 18,
     description: 'Regenerative finance asset on Polygon'
   },
+  PR24: {
+    address: '0xd84415c956f44b2300a2e56c5b898401913e9a29',
+    symbol: 'PR24',
+    decimals: 18,
+    description: 'PR24 regenerative finance token on Polygon'
+  },
   LP_TOKEN: {
     address: '0x520a3b3faca7ddc8dc8cd3380c8475b67f3c7b8d',
     symbol: 'UNI-V2',
@@ -46,6 +52,7 @@ export const IMPACT_ASSETS = {
 export interface ImpactAssetHoldings {
   dddBalance: number;
   axlRegenBalance: number;
+  pr24Balance: number;  // PR24 token balance
   lpBalance: number;
   lpRegenPr24Balance: number;  // axlREGEN/PR24 LP token balance
   totalValue: number;
@@ -168,6 +175,7 @@ export class UniversalImpactScanner {
                   impactAssets: {
                     dddBalance: baseEnhancedNFT.impactAssets.dddBalance / balance,
                     axlRegenBalance: baseEnhancedNFT.impactAssets.axlRegenBalance / balance,
+                    pr24Balance: baseEnhancedNFT.impactAssets.pr24Balance / balance,
                     lpBalance: baseEnhancedNFT.impactAssets.lpBalance / balance,
                     lpRegenPr24Balance: baseEnhancedNFT.impactAssets.lpRegenPr24Balance / balance,
                     totalValue: baseEnhancedNFT.impactAssets.totalValue / balance,
@@ -283,6 +291,7 @@ export class UniversalImpactScanner {
                 impactAssets: {
                   dddBalance: freshData.impactAssets.dddBalance / balance,
                   axlRegenBalance: freshData.impactAssets.axlRegenBalance / balance,
+                  pr24Balance: freshData.impactAssets.pr24Balance / balance,
                   lpBalance: freshData.impactAssets.lpBalance / balance,
                   lpRegenPr24Balance: freshData.impactAssets.lpRegenPr24Balance / balance,
                   totalValue: freshData.impactAssets.totalValue / balance,
@@ -459,12 +468,13 @@ export class UniversalImpactScanner {
       // Check each impact asset
       holdings.dddBalance = await this.getTokenBalance(contractAddress, IMPACT_ASSETS.DDD.address);
       holdings.axlRegenBalance = await this.getTokenBalance(contractAddress, IMPACT_ASSETS.axlREGEN.address);
+      holdings.pr24Balance = await this.getTokenBalance(contractAddress, IMPACT_ASSETS.PR24.address);
       holdings.lpBalance = await this.getTokenBalance(contractAddress, IMPACT_ASSETS.LP_TOKEN.address);
       holdings.lpRegenPr24Balance = await this.getTokenBalance(contractAddress, IMPACT_ASSETS.LP_REGEN_PR24.address);
 
       // LP tokens worth 10x, both LP types contribute equally
       const totalLpValue = (holdings.lpBalance + holdings.lpRegenPr24Balance) * 10;
-      holdings.totalValue = holdings.dddBalance + holdings.axlRegenBalance + totalLpValue;
+      holdings.totalValue = holdings.dddBalance + holdings.axlRegenBalance + holdings.pr24Balance + totalLpValue;
       holdings.discoveryMethod = holdings.totalValue > 0 ? 'direct' : 'none';
 
     } catch (error) {
@@ -489,12 +499,13 @@ export class UniversalImpactScanner {
         // Check implementation for impact assets
         holdings.dddBalance = await this.getTokenBalance(implementation, IMPACT_ASSETS.DDD.address);
         holdings.axlRegenBalance = await this.getTokenBalance(implementation, IMPACT_ASSETS.axlREGEN.address);
+        holdings.pr24Balance = await this.getTokenBalance(implementation, IMPACT_ASSETS.PR24.address);
         holdings.lpBalance = await this.getTokenBalance(implementation, IMPACT_ASSETS.LP_TOKEN.address);
         holdings.lpRegenPr24Balance = await this.getTokenBalance(implementation, IMPACT_ASSETS.LP_REGEN_PR24.address);
 
         // LP tokens worth 10x, both LP types contribute equally
         const totalLpValue = (holdings.lpBalance + holdings.lpRegenPr24Balance) * 10;
-        holdings.totalValue = holdings.dddBalance + holdings.axlRegenBalance + totalLpValue;
+        holdings.totalValue = holdings.dddBalance + holdings.axlRegenBalance + holdings.pr24Balance + totalLpValue;
         holdings.discoveryMethod = holdings.totalValue > 0 ? 'implementation' : 'proxy';
       }
 
@@ -541,6 +552,10 @@ export class UniversalImpactScanner {
           const axlRegenBalance = await this.getTokenBalance(contractAddress, IMPACT_ASSETS.axlREGEN.address);
           holdings.axlRegenBalance += axlRegenBalance;
 
+          // Check for PR24
+          const pr24Balance = await this.getTokenBalance(contractAddress, IMPACT_ASSETS.PR24.address);
+          holdings.pr24Balance += pr24Balance;
+
           // Check for LP tokens (original DDD/axlREGEN LP)
           const lpBalance = await this.getTokenBalance(contractAddress, IMPACT_ASSETS.LP_TOKEN.address);
           holdings.lpBalance += lpBalance;
@@ -549,14 +564,14 @@ export class UniversalImpactScanner {
           const lpRegenPr24Balance = await this.getTokenBalance(contractAddress, IMPACT_ASSETS.LP_REGEN_PR24.address);
           holdings.lpRegenPr24Balance += lpRegenPr24Balance;
 
-          if (dddBalance > 0 || axlRegenBalance > 0 || lpBalance > 0 || lpRegenPr24Balance > 0) {
-            log(`✅ Found assets at ${contractAddress}: DDD=${dddBalance.toFixed(4)}, axlREGEN=${axlRegenBalance.toFixed(4)}, LP=${lpBalance.toFixed(4)}, LP2=${lpRegenPr24Balance.toFixed(4)}`, 'success');
+          if (dddBalance > 0 || axlRegenBalance > 0 || pr24Balance > 0 || lpBalance > 0 || lpRegenPr24Balance > 0) {
+            log(`✅ Found assets at ${contractAddress}: DDD=${dddBalance.toFixed(4)}, axlREGEN=${axlRegenBalance.toFixed(4)}, PR24=${pr24Balance.toFixed(4)}, LP=${lpBalance.toFixed(4)}, LP2=${lpRegenPr24Balance.toFixed(4)}`, 'success');
           }
         }
 
         // LP tokens worth 10x, both LP types contribute equally
         const totalLpValue = (holdings.lpBalance + holdings.lpRegenPr24Balance) * 10;
-        holdings.totalValue = holdings.dddBalance + holdings.axlRegenBalance + totalLpValue;
+        holdings.totalValue = holdings.dddBalance + holdings.axlRegenBalance + holdings.pr24Balance + totalLpValue;
         holdings.discoveryMethod = holdings.totalValue > 0 ? 'direct' : 'none';
       }
 
@@ -676,6 +691,7 @@ export class UniversalImpactScanner {
     return {
       dddBalance: 0,
       axlRegenBalance: 0,
+      pr24Balance: 0,
       lpBalance: 0,
       lpRegenPr24Balance: 0,
       totalValue: 0,
@@ -707,12 +723,13 @@ export class UniversalImpactScanner {
     const combined = this.createEmptyHoldings();
     combined.dddBalance = direct.dddBalance + proxy.dddBalance;
     combined.axlRegenBalance = direct.axlRegenBalance + proxy.axlRegenBalance;
+    combined.pr24Balance = direct.pr24Balance + proxy.pr24Balance;
     combined.lpBalance = direct.lpBalance + proxy.lpBalance;
     combined.lpRegenPr24Balance = direct.lpRegenPr24Balance + proxy.lpRegenPr24Balance;
 
     // LP tokens worth 10x, both LP types contribute equally
     const totalLpValue = (combined.lpBalance + combined.lpRegenPr24Balance) * 10;
-    combined.totalValue = combined.dddBalance + combined.axlRegenBalance + totalLpValue;
+    combined.totalValue = combined.dddBalance + combined.axlRegenBalance + combined.pr24Balance + totalLpValue;
 
     if (proxy.implementationAddress) {
       combined.implementationAddress = proxy.implementationAddress;
@@ -736,6 +753,7 @@ export class UniversalImpactScanner {
     for (const holdings of holdingsArray) {
       combined.dddBalance += holdings.dddBalance;
       combined.axlRegenBalance += holdings.axlRegenBalance;
+      combined.pr24Balance += holdings.pr24Balance;
       combined.lpBalance += holdings.lpBalance;
       combined.lpRegenPr24Balance += holdings.lpRegenPr24Balance;
 
@@ -752,7 +770,7 @@ export class UniversalImpactScanner {
 
     // LP tokens worth 10x, both LP types contribute equally
     const totalLpValue = (combined.lpBalance + combined.lpRegenPr24Balance) * 10;
-    combined.totalValue = combined.dddBalance + combined.axlRegenBalance + totalLpValue;
+    combined.totalValue = combined.dddBalance + combined.axlRegenBalance + combined.pr24Balance + totalLpValue;
 
     return combined;
   }
