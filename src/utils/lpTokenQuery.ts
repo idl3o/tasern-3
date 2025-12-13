@@ -110,4 +110,5 @@ export async function scanWalletForLPBonus(
  */
 export const KNOWN_LP_CONTRACTS = [
   '0x520a3b3faca7ddc8dc8cd3380c8475b67f3c7b8d', // DDD/axlREGEN LP on Polygon
+  '0x078da5c405c9766863b0030e3134117a087b2da6', // axlREGEN/PR24 LP on Polygon
 ];

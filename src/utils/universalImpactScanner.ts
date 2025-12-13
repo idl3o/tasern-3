@@ -34,6 +34,12 @@ export const IMPACT_ASSETS = {
     symbol: 'UNI-V2',
     decimals: 18,
     description: 'DDD/axlREGEN Uniswap V2 LP token'
+  },
+  LP_REGEN_PR24: {
+    address: '0x078da5c405c9766863b0030e3134117a087b2da6',
+    symbol: 'axlREGEN/PR24',
+    decimals: 18,
+    description: 'axlREGEN/PR24 LP token for enhanced stat boosts'
   }
 } as const;
 
@@ -41,6 +47,7 @@ export interface ImpactAssetHoldings {
   dddBalance: number;
   axlRegenBalance: number;
   lpBalance: number;
+  lpRegenPr24Balance: number;  // axlREGEN/PR24 LP token balance
   totalValue: number;
   discoveryMethod: 'direct' | 'proxy' | 'implementation' | 'none';
   implementationAddress?: string;
@@ -162,6 +169,7 @@ export class UniversalImpactScanner {
                     dddBalance: baseEnhancedNFT.impactAssets.dddBalance / balance,
                     axlRegenBalance: baseEnhancedNFT.impactAssets.axlRegenBalance / balance,
                     lpBalance: baseEnhancedNFT.impactAssets.lpBalance / balance,
+                    lpRegenPr24Balance: baseEnhancedNFT.impactAssets.lpRegenPr24Balance / balance,
                     totalValue: baseEnhancedNFT.impactAssets.totalValue / balance,
                     discoveryMethod: baseEnhancedNFT.impactAssets.discoveryMethod,
                     implementationAddress: baseEnhancedNFT.impactAssets.implementationAddress
@@ -276,6 +284,7 @@ export class UniversalImpactScanner {
                   dddBalance: freshData.impactAssets.dddBalance / balance,
                   axlRegenBalance: freshData.impactAssets.axlRegenBalance / balance,
                   lpBalance: freshData.impactAssets.lpBalance / balance,
+                  lpRegenPr24Balance: freshData.impactAssets.lpRegenPr24Balance / balance,
                   totalValue: freshData.impactAssets.totalValue / balance,
                   discoveryMethod: freshData.impactAssets.discoveryMethod,
                   implementationAddress: freshData.impactAssets.implementationAddress
@@ -284,6 +293,7 @@ export class UniversalImpactScanner {
                 statMultipliers: this.calculateStatMultipliers({
                   ...freshData.impactAssets,
                   lpBalance: freshData.impactAssets.lpBalance / balance,
+                  lpRegenPr24Balance: freshData.impactAssets.lpRegenPr24Balance / balance,
                   totalValue: freshData.impactAssets.totalValue / balance
                 })
               };
@@ -450,8 +460,11 @@ export class UniversalImpactScanner {
       holdings.dddBalance = await this.getTokenBalance(contractAddress, IMPACT_ASSETS.DDD.address);
       holdings.axlRegenBalance = await this.getTokenBalance(contractAddress, IMPACT_ASSETS.axlREGEN.address);
       holdings.lpBalance = await this.getTokenBalance(contractAddress, IMPACT_ASSETS.LP_TOKEN.address);
+      holdings.lpRegenPr24Balance = await this.getTokenBalance(contractAddress, IMPACT_ASSETS.LP_REGEN_PR24.address);
 
-      holdings.totalValue = holdings.dddBalance + holdings.axlRegenBalance + (holdings.lpBalance * 10); // LP tokens worth 10x
+      // LP tokens worth 10x, both LP types contribute equally
+      const totalLpValue = (holdings.lpBalance + holdings.lpRegenPr24Balance) * 10;
+      holdings.totalValue = holdings.dddBalance + holdings.axlRegenBalance + totalLpValue;
       holdings.discoveryMethod = holdings.totalValue > 0 ? 'direct' : 'none';
 
     } catch (error) {
@@ -477,8 +490,11 @@ export class UniversalImpactScanner {
         holdings.dddBalance = await this.getTokenBalance(implementation, IMPACT_ASSETS.DDD.address);
         holdings.axlRegenBalance = await this.getTokenBalance(implementation, IMPACT_ASSETS.axlREGEN.address);
         holdings.lpBalance = await this.getTokenBalance(implementation, IMPACT_ASSETS.LP_TOKEN.address);
+        holdings.lpRegenPr24Balance = await this.getTokenBalance(implementation, IMPACT_ASSETS.LP_REGEN_PR24.address);
 
-        holdings.totalValue = holdings.dddBalance + holdings.axlRegenBalance + (holdings.lpBalance * 10);
+        // LP tokens worth 10x, both LP types contribute equally
+        const totalLpValue = (holdings.lpBalance + holdings.lpRegenPr24Balance) * 10;
+        holdings.totalValue = holdings.dddBalance + holdings.axlRegenBalance + totalLpValue;
         holdings.discoveryMethod = holdings.totalValue > 0 ? 'implementation' : 'proxy';
       }
 
@@ -525,16 +541,22 @@ export class UniversalImpactScanner {
           const axlRegenBalance = await this.getTokenBalance(contractAddress, IMPACT_ASSETS.axlREGEN.address);
           holdings.axlRegenBalance += axlRegenBalance;
 
-          // Check for LP tokens
+          // Check for LP tokens (original DDD/axlREGEN LP)
           const lpBalance = await this.getTokenBalance(contractAddress, IMPACT_ASSETS.LP_TOKEN.address);
           holdings.lpBalance += lpBalance;
 
-          if (dddBalance > 0 || axlRegenBalance > 0 || lpBalance > 0) {
-            log(`✅ Found assets at ${contractAddress}: DDD=${dddBalance.toFixed(4)}, axlREGEN=${axlRegenBalance.toFixed(4)}, LP=${lpBalance.toFixed(4)}`, 'success');
+          // Check for LP tokens (axlREGEN/PR24 LP)
+          const lpRegenPr24Balance = await this.getTokenBalance(contractAddress, IMPACT_ASSETS.LP_REGEN_PR24.address);
+          holdings.lpRegenPr24Balance += lpRegenPr24Balance;
+
+          if (dddBalance > 0 || axlRegenBalance > 0 || lpBalance > 0 || lpRegenPr24Balance > 0) {
+            log(`✅ Found assets at ${contractAddress}: DDD=${dddBalance.toFixed(4)}, axlREGEN=${axlRegenBalance.toFixed(4)}, LP=${lpBalance.toFixed(4)}, LP2=${lpRegenPr24Balance.toFixed(4)}`, 'success');
           }
         }
 
-        holdings.totalValue = holdings.dddBalance + holdings.axlRegenBalance + (holdings.lpBalance * 10);
+        // LP tokens worth 10x, both LP types contribute equally
+        const totalLpValue = (holdings.lpBalance + holdings.lpRegenPr24Balance) * 10;
+        holdings.totalValue = holdings.dddBalance + holdings.axlRegenBalance + totalLpValue;
         holdings.discoveryMethod = holdings.totalValue > 0 ? 'direct' : 'none';
       }
 
@@ -655,6 +677,7 @@ export class UniversalImpactScanner {
       dddBalance: 0,
       axlRegenBalance: 0,
       lpBalance: 0,
+      lpRegenPr24Balance: 0,
       totalValue: 0,
       discoveryMethod: 'none'
     };
@@ -685,7 +708,11 @@ export class UniversalImpactScanner {
     combined.dddBalance = direct.dddBalance + proxy.dddBalance;
     combined.axlRegenBalance = direct.axlRegenBalance + proxy.axlRegenBalance;
     combined.lpBalance = direct.lpBalance + proxy.lpBalance;
-    combined.totalValue = combined.dddBalance + combined.axlRegenBalance + (combined.lpBalance * 10);
+    combined.lpRegenPr24Balance = direct.lpRegenPr24Balance + proxy.lpRegenPr24Balance;
+
+    // LP tokens worth 10x, both LP types contribute equally
+    const totalLpValue = (combined.lpBalance + combined.lpRegenPr24Balance) * 10;
+    combined.totalValue = combined.dddBalance + combined.axlRegenBalance + totalLpValue;
 
     if (proxy.implementationAddress) {
       combined.implementationAddress = proxy.implementationAddress;
@@ -710,6 +737,7 @@ export class UniversalImpactScanner {
       combined.dddBalance += holdings.dddBalance;
       combined.axlRegenBalance += holdings.axlRegenBalance;
       combined.lpBalance += holdings.lpBalance;
+      combined.lpRegenPr24Balance += holdings.lpRegenPr24Balance;
 
       // Preserve implementation address if found
       if (holdings.implementationAddress && !combined.implementationAddress) {
@@ -722,7 +750,9 @@ export class UniversalImpactScanner {
       }
     }
 
-    combined.totalValue = combined.dddBalance + combined.axlRegenBalance + (combined.lpBalance * 10);
+    // LP tokens worth 10x, both LP types contribute equally
+    const totalLpValue = (combined.lpBalance + combined.lpRegenPr24Balance) * 10;
+    combined.totalValue = combined.dddBalance + combined.axlRegenBalance + totalLpValue;
 
     return combined;
   }
@@ -738,7 +768,9 @@ export class UniversalImpactScanner {
 
   private calculateStatMultipliers(holdings: ImpactAssetHoldings): { attack: number; health: number; defense: number } {
     // Revolutionary formula: Each 0.01 LP = +5% to all stats
-    const lpBonus = holdings.lpBalance * 100; // Convert to percentage points
+    // Both LP tokens (DDD/axlREGEN and axlREGEN/PR24) stack additively
+    const totalLpBalance = holdings.lpBalance + holdings.lpRegenPr24Balance;
+    const lpBonus = totalLpBalance * 100; // Convert to percentage points
     const bonusPercentage = lpBonus * 5; // 5% per 0.01 LP
 
     const multiplier = 1 + (bonusPercentage / 100);
