@@ -14,6 +14,7 @@ import { Tutorial } from './components/Tutorial';
 import { MultiplayerLobby } from './components/MultiplayerLobby';
 import { CampaignMenu } from './components/CampaignMenu';
 import { CampaignBattleResult } from './components/CampaignBattleResult';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { useBattleStore } from './state/battleStore';
 import { useNFTCardsStore } from './state/nftCardsStore';
 import { useMultiplayerStore } from './state/multiplayerStore';
@@ -413,36 +414,48 @@ export const App: React.FC = () => {
   // Show Campaign Battle Result modal (highest priority when showing)
   if (campaignBattleResult) {
     return (
-      <CampaignBattleResult
-        victory={campaignBattleResult.victory}
-        turns={campaignBattleResult.turns}
-        playerCastleHp={campaignBattleResult.playerCastleHp}
-        opponentCastleHp={campaignBattleResult.opponentCastleHp}
-        opponentName={campaignBattleResult.opponentName}
-        onContinue={handleCampaignContinue}
-        onRetry={handleCampaignRetry}
-        onBackToMenu={handleCampaignBackToMenu}
-      />
+      <ErrorBoundary componentName="Campaign Result" onRetry={() => setCampaignBattleResult(null)}>
+        <CampaignBattleResult
+          victory={campaignBattleResult.victory}
+          turns={campaignBattleResult.turns}
+          playerCastleHp={campaignBattleResult.playerCastleHp}
+          opponentCastleHp={campaignBattleResult.opponentCastleHp}
+          opponentName={campaignBattleResult.opponentName}
+          onContinue={handleCampaignContinue}
+          onRetry={handleCampaignRetry}
+          onBackToMenu={handleCampaignBackToMenu}
+        />
+      </ErrorBoundary>
     );
   }
 
   // Show Tutorial modal
   if (showTutorial) {
-    return <Tutorial onClose={() => setShowTutorial(false)} />;
+    return (
+      <ErrorBoundary componentName="Tutorial" onRetry={() => setShowTutorial(false)}>
+        <Tutorial onClose={() => setShowTutorial(false)} />
+      </ErrorBoundary>
+    );
   }
 
   // Show Multiplayer Lobby
   if (showMultiplayerLobby) {
-    return <MultiplayerLobby onBattleReady={handleMultiplayerBattleReady} onClose={() => setShowMultiplayerLobby(false)} />;
+    return (
+      <ErrorBoundary componentName="Multiplayer Lobby" onRetry={() => setShowMultiplayerLobby(false)}>
+        <MultiplayerLobby onBattleReady={handleMultiplayerBattleReady} onClose={() => setShowMultiplayerLobby(false)} />
+      </ErrorBoundary>
+    );
   }
 
   // Show Campaign Menu
   if (showCampaignMenu) {
     return (
-      <CampaignMenu
-        onStartBattle={startCampaignBattle}
-        onBack={() => setShowCampaignMenu(false)}
-      />
+      <ErrorBoundary componentName="Campaign Menu" onRetry={() => setShowCampaignMenu(false)}>
+        <CampaignMenu
+          onStartBattle={startCampaignBattle}
+          onBack={() => setShowCampaignMenu(false)}
+        />
+      </ErrorBoundary>
     );
   }
 
@@ -463,10 +476,12 @@ export const App: React.FC = () => {
           </div>
         </div>
         {/* NFT Gallery Overlay */}
-        <NFTGallery onClose={() => {
-          console.log('✅ NFT Gallery closed');
-          setShowNFTGallery(false);
-        }} />
+        <ErrorBoundary componentName="NFT Gallery" onRetry={() => setShowNFTGallery(false)}>
+          <NFTGallery onClose={() => {
+            console.log('✅ NFT Gallery closed');
+            setShowNFTGallery(false);
+          }} />
+        </ErrorBoundary>
       </>
     );
   }
@@ -474,15 +489,17 @@ export const App: React.FC = () => {
   // Show deck selection if human player needs to choose cards
   if (deckSelectionState) {
     return (
-      <DeckSelection
-        availableCards={deckSelectionState.availableCards}
-        onConfirmSelection={handleDeckSelectionComplete}
-        playerName={deckSelectionState.isPlayer2 ? 'Player 2' : (deckSelectionState.opponent === null ? 'Player 1' : 'You')}
-        onClose={() => {
-          console.log('❌ Deck selection cancelled - returning to menu');
-          setDeckSelectionState(null);
-        }}
-      />
+      <ErrorBoundary componentName="Deck Selection" onRetry={() => setDeckSelectionState(null)}>
+        <DeckSelection
+          availableCards={deckSelectionState.availableCards}
+          onConfirmSelection={handleDeckSelectionComplete}
+          playerName={deckSelectionState.isPlayer2 ? 'Player 2' : (deckSelectionState.opponent === null ? 'Player 1' : 'You')}
+          onClose={() => {
+            console.log('❌ Deck selection cancelled - returning to menu');
+            setDeckSelectionState(null);
+          }}
+        />
+      </ErrorBoundary>
     );
   }
 
@@ -663,7 +680,11 @@ export const App: React.FC = () => {
     );
   }
 
-  return <BattleView />;
+  return (
+    <ErrorBoundary componentName="Battle" onRetry={() => resetBattle()}>
+      <BattleView />
+    </ErrorBoundary>
+  );
 };
 
 // Medieval D&D Tasern styling

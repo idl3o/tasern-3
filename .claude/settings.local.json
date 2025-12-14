@@ -40,7 +40,9 @@
       "mcp__ide__getDiagnostics",
       "Bash(del \"C:\\Users\\Sam\\Documents\\coding projs\\tasern 3\\src\\components\\BattleView.new.tsx\" 2)",
       "Bash(nul)",
-      "Bash(test:*)"
+      "Bash(test:*)",
+      "Bash(wc:*)",
+      "Bash(if not exist \"C:\\Users\\Sam\\Documents\\coding projs\\tasern 3\\src\\hooks\" mkdir \"C:\\Users\\Sam\\Documents\\coding projs\\tasern 3\\src\\hooks\")"
     ],
     "deny": [],
     "ask": []
