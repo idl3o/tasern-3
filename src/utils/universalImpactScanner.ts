@@ -14,6 +14,8 @@
 import { createPublicClient, http } from 'viem';
 import { polygon } from 'viem/chains';
 import { TransactionScanner } from './transactionScanner';
+import { resilientFetch } from './resilientFetch';
+import { getCurrentEndpoint, failoverToNextEndpoint, POLYGON_RPC_ENDPOINTS } from './rpcClient';
 
 // Impact asset configuration
 export const IMPACT_ASSETS = {
@@ -99,8 +101,8 @@ export class UniversalImpactScanner {
   private transactionScanner: TransactionScanner;
 
   constructor(rpcUrl?: string) {
-    const alchemyApiKey = process.env.REACT_APP_ALCHEMY_API_KEY || 'demo';
-    const url = rpcUrl || `https://polygon-mainnet.g.alchemy.com/v2/${alchemyApiKey}`;
+    // Use resilient RPC endpoint with automatic failover
+    const url = rpcUrl || getCurrentEndpoint();
 
     this.provider = createPublicClient({
       chain: polygon,
@@ -108,6 +110,22 @@ export class UniversalImpactScanner {
     });
 
     this.transactionScanner = new TransactionScanner();
+  }
+
+  /**
+   * Recreate provider with next fallback RPC endpoint
+   */
+  private recreateProviderWithFallback(): boolean {
+    const nextEndpoint = failoverToNextEndpoint();
+    if (!nextEndpoint) {
+      return false;
+    }
+
+    this.provider = createPublicClient({
+      chain: polygon,
+      transport: http(nextEndpoint)
+    });
+    return true;
   }
 
   /**
@@ -398,24 +416,24 @@ export class UniversalImpactScanner {
       // Import Tasern verification utilities
       const { isTasernNFT, TASERN_HUB_ADDRESS } = await import('./nftScanner');
 
-      // Try Alchemy API first
+      // Try Alchemy API with resilient fetch (automatic retry + backoff)
       const alchemyApiKey = process.env.REACT_APP_ALCHEMY_API_KEY || 'demo';
       const alchemyUrl = `https://polygon-mainnet.g.alchemy.com/nft/v3/${alchemyApiKey}/getNFTsForOwner?owner=${walletAddress}&withMetadata=true&pageSize=100`;
 
-      const response = await fetch(alchemyUrl);
+      const result = await resilientFetch<{ ownedNfts?: any[] }>(alchemyUrl, {
+        maxRetries: 3,
+        timeout: 30000,
+        onRetry: (attempt, error, delay) => {
+          log(`Alchemy API retry ${attempt}: ${error.message}, waiting ${delay}ms`, 'warning');
+        }
+      });
 
-      if (!response.ok) {
-        log(`Alchemy API HTTP error: ${response.status} ${response.statusText}`, 'error');
+      if (result.error) {
+        log(`Alchemy API error after ${result.retries} retries: ${result.error.message}`, 'error');
         return [];
       }
 
-      let data;
-      try {
-        data = await response.json();
-      } catch (parseError) {
-        log(`Failed to parse Alchemy API response: ${parseError}`, 'error');
-        return [];
-      }
+      const data = result.data;
 
       if (data?.ownedNfts && Array.isArray(data.ownedNfts) && data.ownedNfts.length > 0) {
         log(`Loaded ${data.ownedNfts.length} total NFTs from Alchemy API`, 'info');

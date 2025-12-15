@@ -19,6 +19,9 @@ import { useBattleStore } from './state/battleStore';
 import { useNFTCardsStore } from './state/nftCardsStore';
 import { useMultiplayerStore } from './state/multiplayerStore';
 import { useCampaignStore } from './state/campaignStore';
+import { useLoyaltyStore } from './state/loyaltyStore';
+import { useAllocationStore } from './state/allocationStore';
+import { LPAllocationScreen } from './components/LPAllocationScreen';
 import { PlayerFactory } from './core/PlayerFactory';
 import { HumanStrategy } from './strategies/HumanStrategy';
 import type { Card, Player, AIPersonality, GridPreset, CompleteMapPreset } from './types/core';
@@ -40,7 +43,7 @@ console.log('📱 App component loading...');
 export const App: React.FC = () => {
   console.log('🎮 App component rendering...');
   const { battleState, initializeBattle, initializeMultiplayerBattle, processAITurn, resetBattle } = useBattleStore();
-  const { getNFTCards } = useNFTCardsStore();
+  const { getNFTCards, getPortfolioCards } = useNFTCardsStore();
   const { service: multiplayerService } = useMultiplayerStore();
   const {
     activeCampaignId,
@@ -52,11 +55,11 @@ export const App: React.FC = () => {
   } = useCampaignStore();
   const { address: walletAddress } = useAccount();
 
-  // Get NFT cards for currently connected wallet
-  const nftCards = getNFTCards(walletAddress);
+  // Get ALL NFT cards from portfolio (aggregated across linked wallets)
+  const portfolioCards = getPortfolioCards();
 
   console.log('🎯 battleState:', battleState ? 'exists' : 'null');
-  console.log('🎴 Available NFT cards for current wallet:', nftCards.length);
+  console.log('🎴 Available portfolio cards:', portfolioCards.length);
   if (walletAddress) {
     console.log('💳 Wallet connected:', `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`);
   }
@@ -75,6 +78,17 @@ export const App: React.FC = () => {
   const [showCampaignMenu, setShowCampaignMenu] = useState(false);
   const [selectedGridPreset, setSelectedGridPreset] = useState<GridPreset>('CLASSIC_3X3');
   const [selectedMapPreset, setSelectedMapPreset] = useState<CompleteMapPreset | null>(null);
+
+  // LP Allocation phase state
+  const [allocationPhase, setAllocationPhase] = useState<{
+    selectedCards: Card[];
+    opponent: AIPersonality | null;
+    totalLPAvailable: number;
+  } | null>(null);
+
+  // Loyalty store for getting LP balance
+  const { getLoyaltyData, getLoyaltyMultiplier } = useLoyaltyStore();
+  const { clearAllocation } = useAllocationStore();
 
   // Campaign battle result state
   const [campaignBattleResult, setCampaignBattleResult] = useState<{
@@ -161,7 +175,7 @@ export const App: React.FC = () => {
         winner: null,
         battleLog: [],
         aiMemories: {},
-      }, nftCards);
+      }, portfolioCards);
 
       setDeckSelectionState({ availableCards, opponent: null, humanPlayer: true, isPlayer2: false });
     } else if (humanPlayer) {
@@ -186,7 +200,7 @@ export const App: React.FC = () => {
         winner: null,
         battleLog: [],
         aiMemories: {},
-      }, nftCards);
+      }, portfolioCards);
 
       setDeckSelectionState({ availableCards, opponent, humanPlayer, isPlayer2: false });
     } else {
@@ -224,7 +238,7 @@ export const App: React.FC = () => {
           winner: null,
           battleLog: [],
           aiMemories: {},
-        }, nftCards);
+        }, portfolioCards);
 
         setDeckSelectionState({
           availableCards,
@@ -252,23 +266,86 @@ export const App: React.FC = () => {
         initializeBattle(player1, player2, battleConfig);
       }
     } else {
-      // Human vs AI
-      const player1 = PlayerFactory.createHuman('You');
-      player1.hand = selectedCards.slice(0, 5);
-      player1.deck = selectedCards.slice(5);
+      // Human vs AI - check if we should show allocation screen
+      const loyaltyData = walletAddress ? getLoyaltyData(walletAddress) : null;
+      const totalLPAvailable = loyaltyData?.lastKnownLPBalance || 0;
 
-      console.log(`📚 Player deck created: ${player1.hand.length} in hand, ${player1.deck.length} in deck`);
+      if (totalLPAvailable > 0) {
+        // Player has LP - show allocation screen
+        console.log(`⚡ LP available: ${totalLPAvailable.toFixed(4)} - showing allocation screen`);
+        setDeckSelectionState(null);
+        setAllocationPhase({
+          selectedCards,
+          opponent: deckSelectionState.opponent,
+          totalLPAvailable,
+        });
+      } else {
+        // No LP - skip allocation, start battle directly
+        console.log(`⏭️ No LP available - skipping allocation`);
+        const loyaltyBonus = walletAddress ? getLoyaltyMultiplier(walletAddress) : 0;
+        const player1 = PlayerFactory.createHuman('You', { loyaltyBonus });
+        player1.hand = selectedCards.slice(0, 5);
+        player1.deck = selectedCards.slice(5);
 
-      const player2 = PlayerFactory.createAI(
-        deckSelectionState.opponent.name,
-        deckSelectionState.opponent
-      );
+        console.log(`📚 Player deck created: ${player1.hand.length} in hand, ${player1.deck.length} in deck`);
 
-      setDeckSelectionState(null);
-      // Use selected map preset (string key) if available, otherwise use grid config object
-      const battleConfig = selectedMapPreset || GRID_PRESETS[selectedGridPreset];
-      initializeBattle(player1, player2, battleConfig);
+        const player2 = PlayerFactory.createAI(
+          deckSelectionState.opponent.name,
+          deckSelectionState.opponent
+        );
+
+        setDeckSelectionState(null);
+        const battleConfig = selectedMapPreset || GRID_PRESETS[selectedGridPreset];
+        initializeBattle(player1, player2, battleConfig);
+      }
     }
+  };
+
+  // Handle LP allocation confirmation
+  const handleAllocationConfirm = (allocations: Map<string, number>) => {
+    if (!allocationPhase) return;
+
+    console.log(`✅ Allocation confirmed: ${allocations.size} cards boosted`);
+
+    const loyaltyBonus = walletAddress ? getLoyaltyMultiplier(walletAddress) : 0;
+    const player1 = PlayerFactory.createHuman('You', { loyaltyBonus });
+    player1.hand = allocationPhase.selectedCards.slice(0, 5);
+    player1.deck = allocationPhase.selectedCards.slice(5);
+
+    // Store allocations in player for use during battle
+    // The allocation bonuses are passed via action.allocationBonus when deploying
+    (player1 as any).cardAllocations = allocations;
+
+    const player2 = PlayerFactory.createAI(
+      allocationPhase.opponent!.name,
+      allocationPhase.opponent!
+    );
+
+    setAllocationPhase(null);
+    const battleConfig = selectedMapPreset || GRID_PRESETS[selectedGridPreset];
+    initializeBattle(player1, player2, battleConfig);
+  };
+
+  // Handle LP allocation skip
+  const handleAllocationSkip = () => {
+    if (!allocationPhase) return;
+
+    console.log(`⏭️ Allocation skipped`);
+    clearAllocation(); // Clear any partial allocations
+
+    const loyaltyBonus = walletAddress ? getLoyaltyMultiplier(walletAddress) : 0;
+    const player1 = PlayerFactory.createHuman('You', { loyaltyBonus });
+    player1.hand = allocationPhase.selectedCards.slice(0, 5);
+    player1.deck = allocationPhase.selectedCards.slice(5);
+
+    const player2 = PlayerFactory.createAI(
+      allocationPhase.opponent!.name,
+      allocationPhase.opponent!
+    );
+
+    setAllocationPhase(null);
+    const battleConfig = selectedMapPreset || GRID_PRESETS[selectedGridPreset];
+    initializeBattle(player1, player2, battleConfig);
   };
 
   // Handle multiplayer battle ready (both players selected decks)
@@ -483,6 +560,22 @@ export const App: React.FC = () => {
           }} />
         </ErrorBoundary>
       </>
+    );
+  }
+
+  // Show LP Allocation screen after deck selection (if player has LP)
+  if (allocationPhase && walletAddress) {
+    return (
+      <ErrorBoundary componentName="LP Allocation" onRetry={() => setAllocationPhase(null)}>
+        <LPAllocationScreen
+          playerId="player-1"
+          walletAddress={walletAddress}
+          totalLPAvailable={allocationPhase.totalLPAvailable}
+          handCards={allocationPhase.selectedCards.slice(0, 5)}
+          onConfirm={handleAllocationConfirm}
+          onSkip={handleAllocationSkip}
+        />
+      </ErrorBoundary>
     );
   }
 

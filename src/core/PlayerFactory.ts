@@ -22,6 +22,7 @@ export class PlayerFactory {
     castleHp?: number;
     maxMana?: number;
     lpBonus?: number;
+    loyaltyBonus?: number;
   }): Player {
     const id = `human-${playerIdCounter++}`;
 
@@ -37,6 +38,7 @@ export class PlayerFactory {
       deck: [],
       strategy: new HumanStrategy(),
       lpBonus: options?.lpBonus ?? 0,
+      loyaltyBonus: options?.loyaltyBonus ?? 0,
     };
   }
 
@@ -108,6 +110,7 @@ export class PlayerFactory {
       castleHp?: number;
       maxMana?: number;
       lpBonus?: number;
+      loyaltyBonus?: number;
     }
   ): Player {
     const id = `remote-${playerIdCounter++}`;
@@ -124,6 +127,7 @@ export class PlayerFactory {
       deck: [],
       strategy: new RemotePlayerStrategy(multiplayerService),
       lpBonus: options?.lpBonus ?? 0,
+      loyaltyBonus: options?.loyaltyBonus ?? 0,
     };
   }
 

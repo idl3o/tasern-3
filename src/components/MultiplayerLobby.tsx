@@ -39,7 +39,7 @@ interface MultiplayerLobbyProps {
 
 export const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onBattleReady, onClose }) => {
   const { address, isConnected } = useAccount();
-  const { getNFTCards } = useNFTCardsStore();
+  const { getPortfolioCards } = useNFTCardsStore();
 
   const [playerName, setPlayerName] = useState('');
   const [inviteCodeInput, setInviteCodeInput] = useState('');
@@ -133,13 +133,13 @@ export const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onBattleRead
   };
 
   /**
-   * Generate full deck: NFT cards + 15 AI-generated cards
+   * Generate full deck: Portfolio NFT cards + 15 AI-generated cards
    * Matches the pattern from HumanStrategy.generateInitialDeck
    */
-  const generateFullDeck = (walletAddress: string): Card[] => {
-    const nftCards = getNFTCards(walletAddress);
+  const generateFullDeck = (): Card[] => {
+    const portfolioCards = getPortfolioCards();
 
-    console.log(`🎴 Generating multiplayer deck: ${nftCards.length} NFT cards + 15 generated cards`);
+    console.log(`🎴 Generating multiplayer deck: ${portfolioCards.length} portfolio NFT cards + 15 generated cards`);
 
     // Create a minimal battle state for card generation
     const dummyState: BattleState = {
@@ -183,8 +183,8 @@ export const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onBattleRead
       15
     );
 
-    const fullDeck = [...nftCards, ...generatedCards];
-    console.log(`✅ Deck ready: ${nftCards.length} NFT + ${generatedCards.length} generated = ${fullDeck.length} total cards`);
+    const fullDeck = [...portfolioCards, ...generatedCards];
+    console.log(`✅ Deck ready: ${portfolioCards.length} portfolio NFT + ${generatedCards.length} generated = ${fullDeck.length} total cards`);
 
     return fullDeck;
   };
@@ -248,7 +248,7 @@ export const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onBattleRead
 
   // Deck selection (after connection established)
   if (showDeckSelection || phase === 'deckSelection') {
-    const fullDeck = generateFullDeck(address!);
+    const fullDeck = generateFullDeck();
     return (
       <DeckSelection
         availableCards={fullDeck}
@@ -280,8 +280,8 @@ export const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onBattleRead
 
   // Connected, need to select deck
   if (phase === 'connected' && !localDeck) {
-    const nftCards = getNFTCards(address);
-    const totalCards = nftCards.length + 15; // NFT cards + 15 generated
+    const portfolioCards = getPortfolioCards();
+    const totalCards = portfolioCards.length + 15; // Portfolio NFT cards + 15 generated
     return (
       <div style={styles.overlay}>
         <div style={styles.container}>

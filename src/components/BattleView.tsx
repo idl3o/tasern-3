@@ -19,6 +19,7 @@ import {
   selectLocalPlayerId,
   selectIsMultiplayer,
 } from '../state/battleStore';
+import { useAllocationStore } from '../state/allocationStore';
 import { BattleViewDesktop } from './BattleViewDesktop';
 import { BattleViewMobile } from './BattleViewMobile';
 import type { Card, Position } from '../types/core';
@@ -35,6 +36,9 @@ export const BattleView: React.FC = () => {
   const localPlayerId = useBattleStore(selectLocalPlayerId);
   const isMultiplayer = useBattleStore(selectIsMultiplayer);
   const { endTurn, executeAction } = useBattleStore();
+
+  // ===== ALLOCATION STORE (for LP tactical bonuses) =====
+  const { getAllocationBonus } = useAllocationStore();
 
   // ===== LOCAL UI STATE =====
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
@@ -109,12 +113,16 @@ export const BattleView: React.FC = () => {
 
     // Case 1: Deploying a card from hand
     if (selectedCard && card === null) {
+      // Get allocation bonus for this card (from LP allocation screen)
+      const allocationBonus = getAllocationBonus(selectedCard.id);
+
       executeAction({
         type: 'DEPLOY_CARD',
         playerId: activePlayer!.id,
         cardId: selectedCard.id,
         position,
         generatedCard: isMultiplayer ? selectedCard : undefined,
+        allocationBonus: allocationBonus > 0 ? allocationBonus : undefined,
       });
       setSelectedCard(null);
       return;

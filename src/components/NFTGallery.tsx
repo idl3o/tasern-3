@@ -3,15 +3,21 @@
  *
  * Display Tasern Universe NFTs as playable cards
  * Wallet-gated: connect wallet → scan NFTs → show as cards
+ * Supports multi-wallet portfolio aggregation
  */
 
 import React, { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { WalletConnect } from './WalletConnect';
 import { CardDisplay } from './CardDisplay';
+import { ManagePortfolio } from './ManagePortfolio';
 import { enhancedNFTsToCards } from '../utils/nftToCard';
 import { UniversalImpactScanner, type EnhancedNFTData, type ScanProgress } from '../utils/universalImpactScanner';
+import { scanPortfolio, quickRefreshPortfolio, type PortfolioNFTData, type PortfolioScanProgress } from '../utils/portfolioScanner';
 import { useNFTCardsStore } from '../state/nftCardsStore';
+import { useWalletPortfolioStore } from '../state/walletPortfolioStore';
+import { useLoyaltyStore } from '../state/loyaltyStore';
+import { getTierForLevel, type LPTier } from '../utils/lpTiers';
 import type { Card } from '../types/core';
 import { TASERN_COLORS, TASERN_TYPOGRAPHY, TASERN_SHADOWS } from '../styles/tasernTheme';
 
@@ -23,15 +29,25 @@ interface NFTGalleryProps {
 export const NFTGallery: React.FC<NFTGalleryProps> = ({ onClose, onSelectCard }) => {
   const { address: account, isConnected } = useAccount();
   const { setNFTCards, setIsScanning: setGlobalScanning } = useNFTCardsStore();
-  const [enhancedNFTs, setEnhancedNFTs] = useState<EnhancedNFTData[]>([]);
+  const {
+    setPrimaryAddress,
+    linkedAddresses,
+    aggregateNFTs: shouldAggregate
+  } = useWalletPortfolioStore();
+
+  const { updateLoyaltySnapshot } = useLoyaltyStore();
+
+  const [portfolioNFTs, setPortfolioNFTs] = useState<PortfolioNFTData[]>([]);
   const [cards, setCards] = useState<Card[]>([]);
   const [isScanning, setIsScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState<ScanProgress | null>(null);
+  const [portfolioProgress, setPortfolioProgress] = useState<PortfolioScanProgress | null>(null);
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
   const [scanLogs, setScanLogs] = useState<string[]>([]);
   const [lastScanTime, setLastScanTime] = useState<number | null>(null);
   const [rescanCooldown, setRescanCooldown] = useState<number>(0);
-  const [showOnlyWithLP, setShowOnlyWithLP] = useState<boolean>(true); // Default to LP Only for large wallets
+  const [showOnlyWithLP, setShowOnlyWithLP] = useState<boolean>(true);
+  const [showManagePortfolio, setShowManagePortfolio] = useState(false);
 
   // Cooldown timer countdown
   useEffect(() => {
@@ -46,87 +62,99 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ onClose, onSelectCard })
   // Track previous account to detect genuine changes
   const [previousAccount, setPreviousAccount] = useState<string | undefined>(undefined);
 
-  // Load cached cards or trigger scan when wallet connects
-  // Only runs on genuine account changes, not re-renders
+  // Auto-remember accounts and trigger scan when wallet connects
   useEffect(() => {
-    // Only act if account actually changed
     if (account !== previousAccount) {
       setPreviousAccount(account);
 
       if (isConnected && account) {
-        // Check if we already have NFT cards for this wallet in the store
+        // Register this address in portfolio (auto-remember pattern)
+        setPrimaryAddress(account);
+        console.log(`📋 Portfolio: Registered ${account.slice(0, 6)}... as primary`);
+
+        // Check for cached cards
         const existingCards = useNFTCardsStore.getState().getNFTCards(account);
 
         if (existingCards.length === 0) {
-          // No cached cards - scan wallet
-          console.log(`🔍 NFTGallery: Starting scan for ${account.slice(0, 6)}...${account.slice(-4)}`);
-          scanWallet(account);
+          // No cached cards - scan portfolio
+          console.log(`🔍 NFTGallery: Starting portfolio scan...`);
+          scanAllPortfolio();
         } else {
-          // Use cached cards
-          console.log(`📦 NFTGallery: Using ${existingCards.length} cached NFT cards for ${account.slice(0, 6)}...${account.slice(-4)}`);
+          // Use cached cards for now
+          console.log(`📦 NFTGallery: Using ${existingCards.length} cached NFT cards`);
           setCards(existingCards);
         }
       } else if (!account && previousAccount) {
-        // Wallet disconnected - clear local state only (don't clear store)
+        // Wallet disconnected - clear local state only
         console.log('🔌 NFTGallery: Wallet disconnected, clearing local state');
-        setEnhancedNFTs([]);
+        setPortfolioNFTs([]);
         setCards([]);
         setScanProgress(null);
+        setPortfolioProgress(null);
         setScanLogs([]);
       }
     }
   }, [isConnected, account, previousAccount]);
 
-  const quickRefresh = async (walletAddress: string) => {
-    if (enhancedNFTs.length === 0) {
+  // Quick refresh LP balances for portfolio
+  const quickRefreshAll = async () => {
+    if (portfolioNFTs.length === 0) {
       console.warn('No NFTs to refresh - run full scan first');
       return;
     }
 
     setIsScanning(true);
     setScanProgress(null);
+    setPortfolioProgress(null);
     setScanLogs([]);
 
     try {
-      console.log(`⚡ Quick refresh: Updating LP balances for ${enhancedNFTs.length} cards...`);
+      console.log(`⚡ Quick refresh: Updating LP balances for ${portfolioNFTs.length} cards...`);
 
-      // Initialize scanner
-      const scanner = new UniversalImpactScanner();
-
-      // Progress callback
-      const onProgress = (progress: ScanProgress) => {
-        setScanProgress(progress);
+      const onProgress = (progress: PortfolioScanProgress) => {
+        setPortfolioProgress(progress);
+        if (progress.nftProgress) {
+          setScanProgress(progress.nftProgress);
+        }
       };
 
-      // Log callback
       const onLog = (message: string, type: 'info' | 'success' | 'warning' | 'error') => {
         const emoji = type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️';
         setScanLogs(prev => [...prev, `${emoji} ${message}`]);
       };
 
-      // Quick refresh LP balances only
-      const refreshedData = await scanner.quickRefreshLPBalances(
-        walletAddress,
-        enhancedNFTs,
-        onProgress,
-        onLog
-      );
+      const refreshedData = await quickRefreshPortfolio(portfolioNFTs, onProgress, onLog);
 
       console.log(`✅ Quick refresh complete! Updated ${refreshedData.length} cards`);
+      setPortfolioNFTs(refreshedData);
 
-      setEnhancedNFTs(refreshedData);
-
-      // Convert to cards
+      // Convert to cards (include owner info for badges)
       const playableCards = enhancedNFTsToCards(refreshedData);
       setCards(playableCards);
 
-      // Update store
-      setNFTCards(walletAddress, playableCards);
+      // Save ALL wallets' cards to store (grouped by owner address)
+      const nftsByOwner = new Map<string, PortfolioNFTData[]>();
+      for (const nft of refreshedData) {
+        const owner = nft.ownerAddress.toLowerCase();
+        if (!nftsByOwner.has(owner)) {
+          nftsByOwner.set(owner, []);
+        }
+        nftsByOwner.get(owner)!.push(nft);
+      }
 
-      const lpEnhancedCount = refreshedData.filter(nft => nft.impactAssets.totalValue > 0).length;
-      console.log(`💎 ${lpEnhancedCount} NFTs have LP enhancements`);
+      for (const [ownerAddress, ownerNFTs] of nftsByOwner) {
+        setNFTCards(ownerAddress, enhancedNFTsToCards(ownerNFTs));
+      }
 
-      // Set last scan time and start cooldown (15 seconds for quick refresh)
+      // Update loyalty tracking for primary wallet
+      if (account) {
+        const totalLPBalance = refreshedData
+          .filter(nft => nft.ownerAddress.toLowerCase() === account.toLowerCase())
+          .reduce((sum, nft) => sum + (nft.impactAssets?.lpBalance || 0), 0);
+        updateLoyaltySnapshot(account, totalLPBalance);
+        console.log(`⭐ Loyalty updated: ${totalLPBalance.toFixed(4)} LP for ${account.slice(0, 6)}...`);
+      }
+
       setLastScanTime(Date.now());
       setRescanCooldown(15);
     } catch (error) {
@@ -137,84 +165,92 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ onClose, onSelectCard })
     }
   };
 
-  const scanWallet = async (walletAddress: string) => {
-    // Validate wallet address before scanning
-    if (!walletAddress || typeof walletAddress !== 'string' || !walletAddress.startsWith('0x')) {
-      console.error('Invalid wallet address provided to scanWallet');
-      setScanLogs(prev => [...prev, `❌ Invalid wallet address`]);
-      return;
-    }
-
+  // Scan all addresses in portfolio
+  const scanAllPortfolio = async () => {
     setIsScanning(true);
     setGlobalScanning(true);
     setScanProgress(null);
+    setPortfolioProgress(null);
     setScanLogs([]);
 
     try {
-      console.log(`🔍 Starting advanced impact asset scan for ${walletAddress}...`);
+      const addressCount = linkedAddresses.length || 1;
+      console.log(`🔍 Starting portfolio scan for ${addressCount} wallet(s)...`);
 
-      // Initialize Universal Impact Scanner
-      const scanner = new UniversalImpactScanner();
-
-      // Progress callback
-      const onProgress = (progress: ScanProgress) => {
-        setScanProgress(progress);
+      const onProgress = (progress: PortfolioScanProgress) => {
+        setPortfolioProgress(progress);
+        if (progress.nftProgress) {
+          setScanProgress(progress.nftProgress);
+        }
       };
 
-      // Log callback
       const onLog = (message: string, type: 'info' | 'success' | 'warning' | 'error') => {
         const emoji = type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️';
         setScanLogs(prev => [...prev, `${emoji} ${message}`]);
       };
 
-      // Scan for NFTs with impact asset discovery
-      const enhancedData = await scanner.scanWalletForImpactAssets(
-        walletAddress,
-        onProgress,
-        onLog
-      );
+      const portfolioData = await scanPortfolio(onProgress, onLog);
 
-      // Validate response
-      if (!Array.isArray(enhancedData)) {
+      if (!Array.isArray(portfolioData)) {
         console.error('Invalid scan response - expected array');
         setScanLogs(prev => [...prev, `❌ Invalid scan response`]);
-        setEnhancedNFTs([]);
+        setPortfolioNFTs([]);
         setCards([]);
         return;
       }
 
-      console.log(`✅ Advanced scan complete! Found ${enhancedData.length} NFTs`);
+      console.log(`✅ Portfolio scan complete! Found ${portfolioData.length} NFTs`);
+      setPortfolioNFTs(portfolioData);
 
-      setEnhancedNFTs(enhancedData);
-
-      // Convert enhanced NFTs to playable cards (with error handling)
+      // Convert to playable cards
       let playableCards: Card[] = [];
       try {
-        playableCards = enhancedNFTsToCards(enhancedData);
+        playableCards = enhancedNFTsToCards(portfolioData);
       } catch (conversionError) {
         console.error('Error converting NFTs to cards:', conversionError);
         setScanLogs(prev => [...prev, `⚠️ Some cards failed to convert`]);
-        // Continue with empty cards rather than crashing
       }
 
       setCards(playableCards);
 
-      // Save to global store for deck selection (wallet-specific)
-      setNFTCards(walletAddress, playableCards);
-      console.log(`💾 Saved ${playableCards.length} NFT cards for wallet ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`);
+      // Save ALL wallets' cards to store (grouped by owner address)
+      // This is critical for getPortfolioCards() to work in deck selection
+      const nftsByOwner = new Map<string, PortfolioNFTData[]>();
+      for (const nft of portfolioData) {
+        const owner = nft.ownerAddress.toLowerCase();
+        if (!nftsByOwner.has(owner)) {
+          nftsByOwner.set(owner, []);
+        }
+        nftsByOwner.get(owner)!.push(nft);
+      }
 
-      const lpEnhancedCount = enhancedData.filter(nft => nft?.impactAssets?.totalValue > 0).length;
+      // Store cards for each wallet address
+      for (const [ownerAddress, ownerNFTs] of nftsByOwner) {
+        const ownerCards = enhancedNFTsToCards(ownerNFTs);
+        setNFTCards(ownerAddress, ownerCards);
+        console.log(`💾 Saved ${ownerCards.length} cards for wallet ${ownerAddress.slice(0, 6)}...`);
+      }
+      console.log(`📦 Total: ${portfolioData.length} cards saved across ${nftsByOwner.size} wallet(s)`)
+
+      const lpEnhancedCount = portfolioData.filter(nft => nft?.impactAssets?.totalValue > 0).length;
       console.log(`💎 ${lpEnhancedCount} NFTs have LP enhancements`);
 
-      // Set last scan time and start cooldown (30 seconds)
+      // Update loyalty tracking for primary wallet
+      if (account) {
+        const totalLPBalance = portfolioData
+          .filter(nft => nft.ownerAddress.toLowerCase() === account.toLowerCase())
+          .reduce((sum, nft) => sum + (nft.impactAssets?.lpBalance || 0), 0);
+        updateLoyaltySnapshot(account, totalLPBalance);
+        console.log(`⭐ Loyalty updated: ${totalLPBalance.toFixed(4)} LP for ${account.slice(0, 6)}...`);
+      }
+
       setLastScanTime(Date.now());
       setRescanCooldown(30);
     } catch (error) {
-      console.error('Error scanning wallet:', error);
+      console.error('Error scanning portfolio:', error);
       const errorMessage = error instanceof Error ? error.message : String(error);
       setScanLogs(prev => [...prev, `❌ Scan failed: ${errorMessage}`]);
-      // Ensure we don't leave stale data
-      setEnhancedNFTs([]);
+      setPortfolioNFTs([]);
       setCards([]);
     } finally {
       setIsScanning(false);
@@ -251,13 +287,22 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ onClose, onSelectCard })
         <div style={styles.header}>
           <h1 style={styles.title}>🎴 NFT Card Gallery 🎴</h1>
           <div style={styles.headerButtons}>
-            {isConnected && account && !isScanning && enhancedNFTs.length > 0 && (
+            {isConnected && account && !isScanning && (
+              <button
+                style={styles.portfolioButton}
+                onClick={() => setShowManagePortfolio(true)}
+                title="Manage portfolio wallets"
+              >
+                📋 Portfolio ({linkedAddresses.length})
+              </button>
+            )}
+            {isConnected && account && !isScanning && portfolioNFTs.length > 0 && (
               <button
                 style={{
                   ...styles.quickRefreshButton,
                   ...(rescanCooldown > 0 ? styles.rescanButtonDisabled : {})
                 }}
-                onClick={() => rescanCooldown === 0 && quickRefresh(account)}
+                onClick={() => rescanCooldown === 0 && quickRefreshAll()}
                 disabled={rescanCooldown > 0}
                 title={
                   rescanCooldown > 0
@@ -274,7 +319,7 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ onClose, onSelectCard })
                   ...styles.rescanButton,
                   ...(rescanCooldown > 0 ? styles.rescanButtonDisabled : {})
                 }}
-                onClick={() => rescanCooldown === 0 && scanWallet(account)}
+                onClick={() => rescanCooldown === 0 && scanAllPortfolio()}
                 disabled={rescanCooldown > 0}
                 title={
                   rescanCooldown > 0
@@ -330,11 +375,12 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ onClose, onSelectCard })
           </div>
         )}
 
-        {/* LP Enhancement Summary with Filter Toggle */}
-        {isConnected && !isScanning && enhancedNFTs.length > 0 && (
+        {/* Portfolio Summary with Filter Toggle */}
+        {isConnected && !isScanning && portfolioNFTs.length > 0 && (
           <div style={styles.bonusSection}>
             <span style={styles.bonusText}>
-              💎 {enhancedNFTs.filter(n => n.impactAssets.lpBalance > 0).length} NFT{enhancedNFTs.filter(n => n.impactAssets.lpBalance > 0).length !== 1 ? 's' : ''} with LP enhancements
+              💎 {portfolioNFTs.filter(n => n.impactAssets.lpBalance > 0).length} NFT{portfolioNFTs.filter(n => n.impactAssets.lpBalance > 0).length !== 1 ? 's' : ''} with LP enhancements
+              {linkedAddresses.length > 1 && ` • ${linkedAddresses.length} wallets`}
             </span>
             <button
               style={{
@@ -363,13 +409,17 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ onClose, onSelectCard })
         {isConnected && !isScanning && cards.length > 0 && (
           <div style={styles.cardGrid}>
             {cards.map((card, index) => {
-              // Get enhanced NFT data for this card
-              const enhancedNFT = enhancedNFTs[index];
+              // Get portfolio NFT data for this card
+              const portfolioNFT = portfolioNFTs[index] as PortfolioNFTData | undefined;
 
               // Filter: Skip cards without LP if filter is active
-              if (showOnlyWithLP && (!enhancedNFT || enhancedNFT.impactAssets.lpBalance <= 0)) {
+              if (showOnlyWithLP && (!portfolioNFT || portfolioNFT.impactAssets.lpBalance <= 0)) {
                 return null;
               }
+
+              // Check if from a different wallet than primary
+              const isFromLinkedWallet = portfolioNFT && account &&
+                portfolioNFT.ownerAddress !== account.toLowerCase();
 
               return (
                 <div
@@ -382,16 +432,40 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ onClose, onSelectCard })
                 >
                   <CardDisplay
                     card={card}
-                    imageUrl={enhancedNFT?.image}
+                    imageUrl={portfolioNFT?.image}
                   />
                   <div style={styles.nftBadge}>NFT</div>
 
-                  {/* LP Enhancement Badge - only show if actual LP holdings exist */}
-                  {enhancedNFT && enhancedNFT.impactAssets.lpBalance > 0 && (
-                    <div style={styles.lpBadge} title={`LP Holdings: ${enhancedNFT.impactAssets.lpBalance.toFixed(4)} LP\nStat Multiplier: ${enhancedNFT.statMultipliers.attack.toFixed(2)}x\nAdd more LP to increase stats!`}>
-                      {'⭐'.repeat(enhancedNFT.enhancementLevel)} {enhancedNFT.impactAssets.lpBalance.toFixed(4)} LP
+                  {/* Owner Badge - show for linked wallets */}
+                  {isFromLinkedWallet && portfolioNFT && (
+                    <div
+                      style={{
+                        ...styles.ownerBadge,
+                        ...(portfolioNFT.isVerifiedOwner ? styles.ownerBadgeVerified : styles.ownerBadgeReadOnly)
+                      }}
+                      title={`Owner: ${portfolioNFT.ownerLabel}\n${portfolioNFT.ownerAddress.slice(0, 6)}...${portfolioNFT.ownerAddress.slice(-4)}${!portfolioNFT.isVerifiedOwner ? '\n(Read-only)' : ''}`}
+                    >
+                      {portfolioNFT.isVerifiedOwner ? '✓' : '👁'} {portfolioNFT.ownerLabel.slice(0, 8)}
                     </div>
                   )}
+
+                  {/* LP Tier Badge - shows tier name with color coding */}
+                  {portfolioNFT && portfolioNFT.impactAssets.lpBalance > 0 && (() => {
+                    const tier = getTierForLevel(portfolioNFT.enhancementLevel);
+                    return (
+                      <div
+                        style={{
+                          ...styles.lpBadge,
+                          background: tier.bgGradient,
+                          borderColor: tier.borderColor,
+                          color: portfolioNFT.enhancementLevel >= 3 ? '#1a1a1a' : '#F4E4C1',
+                        }}
+                        title={`${tier.icon} ${tier.name} Tier\nLP Holdings: ${portfolioNFT.impactAssets.lpBalance.toFixed(4)} LP\nStat Multiplier: ${portfolioNFT.statMultipliers.attack.toFixed(2)}x\n${tier.description}`}
+                      >
+                        {tier.icon} {tier.name}
+                      </div>
+                    );
+                  })()}
                 </div>
               );
             })}
@@ -411,10 +485,18 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ onClose, onSelectCard })
         {isConnected && !isScanning && cards.length > 0 && (
           <div style={styles.footer}>
             <p style={styles.footerText}>
-              {cards.length} NFT Card{cards.length !== 1 ? 's' : ''} • {enhancedNFTs.filter(n => n.impactAssets.totalValue > 0).length} LP Enhanced
+              {cards.length} NFT Card{cards.length !== 1 ? 's' : ''} • {portfolioNFTs.filter(n => n.impactAssets.totalValue > 0).length} LP Enhanced
+              {linkedAddresses.length > 1 && ` • ${linkedAddresses.length} Wallets`}
             </p>
           </div>
         )}
+
+        {/* Manage Portfolio Modal */}
+        <ManagePortfolio
+          isOpen={showManagePortfolio}
+          onClose={() => setShowManagePortfolio(false)}
+          onScanAll={scanAllPortfolio}
+        />
       </div>
     </div>
   );
@@ -692,15 +774,52 @@ const styles: Record<string, React.CSSProperties> = {
     position: 'absolute',
     top: '8px',
     left: '8px',
-    background: 'linear-gradient(135deg, #D4AF37 0%, #FFD700 100%)',
-    color: '#1a1a1a',
-    padding: '4px 8px',
+    padding: '4px 10px',
+    borderRadius: '4px',
+    fontSize: '10px',
+    fontWeight: 'bold',
+    fontFamily: TASERN_TYPOGRAPHY.heading,
+    textTransform: 'uppercase',
+    border: '2px solid',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+    letterSpacing: '0.5px',
+  },
+  portfolioButton: {
+    background: `linear-gradient(135deg, ${TASERN_COLORS.purple} 0%, #7C3AED 100%)`,
+    border: `2px solid ${TASERN_COLORS.gold}`,
+    borderRadius: '8px',
+    padding: '8px 16px',
+    color: TASERN_COLORS.parchment,
+    fontSize: '14px',
+    fontFamily: TASERN_TYPOGRAPHY.heading,
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+  },
+  ownerBadge: {
+    position: 'absolute',
+    bottom: '8px',
+    left: '8px',
+    padding: '3px 6px',
     borderRadius: '4px',
     fontSize: '9px',
     fontWeight: 'bold',
     fontFamily: TASERN_TYPOGRAPHY.heading,
     textTransform: 'uppercase',
-    border: '1px solid #FFD700',
-    boxShadow: TASERN_SHADOWS.glowGold,
+    maxWidth: '80px',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  ownerBadgeVerified: {
+    background: 'linear-gradient(135deg, #065F46 0%, #047857 100%)',
+    color: TASERN_COLORS.parchment,
+    border: '1px solid #10B981',
+  },
+  ownerBadgeReadOnly: {
+    background: 'linear-gradient(135deg, #4B5563 0%, #6B7280 100%)',
+    color: TASERN_COLORS.parchment,
+    border: '1px solid #9CA3AF',
   },
 };

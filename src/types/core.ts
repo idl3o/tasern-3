@@ -717,6 +717,7 @@ export interface Player {
   deck: Card[];
   strategy: PlayerStrategy; // ⭐ Strategy pattern - NEVER check type directly
   lpBonus: number; // LP token multiplier (0.01 LP = +5%)
+  loyaltyBonus?: number; // Loyalty system bonus (consecutive days holding LP)
   aiPersonality?: AIPersonality;
 }
 
@@ -818,6 +819,7 @@ export interface DeployCardAction {
   cardId: string;
   position: Position;
   generatedCard?: Card; // ⭐ AI-generated cards travel with action
+  allocationBonus?: number; // ⭐ Per-game LP allocation bonus for this card
 }
 
 export interface AttackCardAction {

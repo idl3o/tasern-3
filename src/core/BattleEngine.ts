@@ -242,15 +242,17 @@ export class BattleEngine {
         return;
       }
 
-      // Apply LP bonus to card stats
-      const lpMultiplier = 1 + player.lpBonus;
+      // Apply combined LP multiplier (base LP + loyalty + allocation)
+      // Formula: Base stats * (1 + lpBonus + loyaltyBonus + allocationBonus)
+      // Example: 0.1 LP (50%) + Veteran loyalty (20%) + 0.02 allocation (20%) = 90% boost
+      const combinedMultiplier = 1 + player.lpBonus + (player.loyaltyBonus ?? 0) + (action.allocationBonus ?? 0);
       card = {
         ...card,
-        attack: Math.floor(card.attack * lpMultiplier),
-        defense: Math.floor(card.defense * lpMultiplier),
-        hp: Math.floor(card.hp * lpMultiplier),
-        maxHp: Math.floor(card.maxHp * lpMultiplier),
-        speed: Math.floor(card.speed * lpMultiplier),
+        attack: Math.floor(card.attack * combinedMultiplier),
+        defense: Math.floor(card.defense * combinedMultiplier),
+        hp: Math.floor(card.hp * combinedMultiplier),
+        maxHp: Math.floor(card.maxHp * combinedMultiplier),
+        speed: Math.floor(card.speed * combinedMultiplier),
       };
 
       // Create battle card

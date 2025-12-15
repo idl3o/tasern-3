@@ -42,7 +42,12 @@
       "Bash(nul)",
       "Bash(test:*)",
       "Bash(wc:*)",
-      "Bash(if not exist \"C:\\Users\\Sam\\Documents\\coding projs\\tasern 3\\src\\hooks\" mkdir \"C:\\Users\\Sam\\Documents\\coding projs\\tasern 3\\src\\hooks\")"
+      "Bash(if not exist \"C:\\Users\\Sam\\Documents\\coding projs\\tasern 3\\src\\hooks\" mkdir \"C:\\Users\\Sam\\Documents\\coding projs\\tasern 3\\src\\hooks\")",
+      "Bash(cat:*)",
+      "Bash(cmd.exe /c \"taskkill /F /PID 4312\")",
+      "Bash(cmd.exe /c \"taskkill /F /IM node.exe\")",
+      "Bash(cmd.exe /c \"tasklist /FI \"\"PID eq 4312\"\"\")",
+      "Bash(set PORT=3001)"
     ],
     "deny": [],
     "ask": []
