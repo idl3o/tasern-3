@@ -20,17 +20,34 @@ export const Tutorial: React.FC<TutorialProps> = ({ onClose }) => {
       content: (
         <>
           <p>A tactical card battle game set in the <strong>Tales of Tasern</strong> D&D universe.</p>
-          <p>Face off against AI opponents with distinct personalities, or challenge a friend!</p>
+          <p>Face off against AI opponents with distinct personalities, challenge a friend locally, or battle online via invite codes!</p>
         </>
       ),
     },
     {
-      title: 'Choose Your Deck',
+      title: 'Getting Into Battle',
       content: (
         <>
-          <p>Before battle, you'll see <strong>15 cards</strong> from which to choose.</p>
-          <p><strong>Select 5 cards</strong> for your starting hand. The remaining 10 go to your deck.</p>
-          <p>You'll draw 1 card per turn from your deck until it's empty.</p>
+          <p><strong>1. Choose Your Battlefield</strong> - Select a themed map (with weather and terrain) or a basic arena size.</p>
+          <p><strong>2. Pick Your Opponent</strong> - Each AI has a unique personality affecting their tactics:</p>
+          <ul style={styles.list}>
+            <li><strong>Sir Stumbleheart</strong> - Patient and creative (easiest)</li>
+            <li><strong>Lady Swiftblade</strong> - Aggressive and fast</li>
+            <li><strong>Thornwick</strong> - Calculating and adaptive</li>
+            <li><strong>Grok</strong> - Chaotic and unpredictable</li>
+            <li><strong>Archmagus Nethys</strong> - Mystical and patient</li>
+          </ul>
+        </>
+      ),
+    },
+    {
+      title: 'Build Your Hand',
+      content: (
+        <>
+          <p>Before battle, you'll see <strong>15 cards</strong> to choose from.</p>
+          <p><strong>Select 5 cards</strong> for your starting hand. The remaining 10 become your draw deck.</p>
+          <p>You'll draw 1 card per turn until your deck is empty.</p>
+          <p style={{ marginTop: '1rem', fontStyle: 'italic', opacity: 0.9 }}>Tip: Balance your hand with a mix of cheap cards (1-2 mana) for early game and powerful cards (4-5 mana) for late game!</p>
         </>
       ),
     },
@@ -38,9 +55,14 @@ export const Tutorial: React.FC<TutorialProps> = ({ onClose }) => {
       title: 'Deploy Your Forces',
       content: (
         <>
-          <p><strong>Click a card</strong> in your hand, then <strong>click an empty battlefield space</strong> to deploy it.</p>
-          <p>Each card costs <strong>mana</strong> to play. You start with 10 mana and gain more each turn.</p>
-          <p>Position matters! Front row gives attack bonuses, back row gives ranged advantages.</p>
+          <p><strong>Click a card</strong> in your hand, then <strong>click an empty battlefield cell</strong> to deploy it.</p>
+          <p>Each card costs <strong>mana</strong> to play. You start with 3 mana and gain +1 each turn (max 10).</p>
+          <p><strong>Position matters!</strong></p>
+          <ul style={styles.list}>
+            <li><strong>Front row</strong> - Attack bonuses, first to engage</li>
+            <li><strong>Middle column</strong> - Prime position to attack the enemy castle</li>
+            <li><strong>Back row</strong> - Ranged bonuses, protected from melee</li>
+          </ul>
         </>
       ),
     },
@@ -48,34 +70,45 @@ export const Tutorial: React.FC<TutorialProps> = ({ onClose }) => {
       title: 'Attack & Conquer',
       content: (
         <>
-          <p><strong>Select your card</strong> on the battlefield, then <strong>click an enemy card or castle</strong> to attack.</p>
-          <p>Each card can attack once per turn. Destroy the enemy castle (50 HP) to win!</p>
-          <p>Cards have <strong>Attack</strong>, <strong>HP</strong>, <strong>Defense</strong>, and <strong>Speed</strong> stats.</p>
+          <p><strong>Select your card</strong> on the battlefield, then <strong>click an enemy card or their castle</strong> to attack.</p>
+          <p>Each card can attack <strong>once per turn</strong>. Destroy the enemy castle (<strong>50 HP</strong>) to win!</p>
+          <p><strong>Card Stats:</strong></p>
+          <ul style={styles.list}>
+            <li><strong>Attack</strong> - Damage dealt</li>
+            <li><strong>HP</strong> - Health points (0 = destroyed)</li>
+            <li><strong>Defense</strong> - Reduces incoming damage</li>
+            <li><strong>Speed</strong> - Determines attack order</li>
+          </ul>
         </>
       ),
     },
     {
-      title: 'Tactical Formations',
+      title: 'Formations & Weather',
       content: (
         <>
-          <p>Arrange your cards to activate <strong>formations</strong>:</p>
+          <p>Arrange your cards to activate <strong>formation bonuses</strong>:</p>
           <ul style={styles.list}>
             <li><strong>Vanguard</strong>: 2+ cards in front = +20% attack</li>
             <li><strong>Phalanx</strong>: 3 cards in a row = +30% defense</li>
             <li><strong>Archer Line</strong>: 2+ cards in back = +15% attack</li>
+            <li><strong>Flanking</strong>: Cards on both sides = +15% speed</li>
           </ul>
-          <p>Weather effects change every few turns, modifying all card stats!</p>
+          <p><strong>Weather</strong> changes every few turns - rain reduces attack, fog boosts defense, and more!</p>
         </>
       ),
     },
     {
-      title: 'Web3 Features (Optional)',
+      title: 'Pro Tips',
       content: (
         <>
-          <p>Connect your wallet to unlock NFT cards from the Tasern Universe!</p>
-          <p><strong>NFT Gallery</strong>: View your NFTs as playable cards with provenance verification.</p>
-          <p><strong>LP Bonuses</strong>: Hold Tasern LP tokens to boost your card stats!</p>
-          <p>Web3 is optional - you can play without connecting a wallet.</p>
+          <p><strong>For new players:</strong></p>
+          <ul style={styles.list}>
+            <li>Going first? Deploy to the middle column to threaten the castle early.</li>
+            <li>Don't overextend - keep at least one card to defend your castle!</li>
+            <li>Attack enemy cards to clear a path before going for the castle.</li>
+            <li>Watch the formation indicator - bonuses can turn the tide!</li>
+          </ul>
+          <p style={{ marginTop: '1rem' }}><strong>Web3 (Optional):</strong> Connect your wallet to use NFT cards and earn LP stat boosts!</p>
         </>
       ),
     },
@@ -202,7 +235,7 @@ const styles: Record<string, React.CSSProperties> = {
     transition: 'all 0.2s',
   },
   content: {
-    minHeight: '300px',
+    minHeight: '340px',
     marginBottom: '2rem',
   },
   stepTitle: {
