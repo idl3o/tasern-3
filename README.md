@@ -349,7 +349,7 @@ See `init docs/` for complete architectural documentation:
 
 **Created with love for the Tales of Tasern universe**
 
-- **Tales of Tasern Universe**: James McGee (@JamesMageeCCC)
+- **Tales of Tasern Universe**: James Magee (@JamesMageeCCC)
 - **Game Design & Development**: Sam Lavington & Claude
 - **AI Personalities**: Inspired by James's D&D campaigns
 
