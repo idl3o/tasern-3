@@ -1,7 +1,7 @@
 # 🏰 Tasern Siegefront 🦋
 
 **Consciousness-driven tactical NFT card battle game**
-*Set in the Tales of Tasern D&D universe by James McGee*
+*Set in the Tales of Tasern D&D universe by James MaGee*
 
 ---
 
