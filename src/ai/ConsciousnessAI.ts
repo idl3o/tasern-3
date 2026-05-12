@@ -162,28 +162,6 @@ export class ConsciousnessAI {
     return state.aiMemories[player.id];
   }
 
-  private assessConfidence(memory: AIMemory, state: BattleState): number {
-    let confidence = 1.0;
-
-    // Reduce confidence if stuck
-    if (memory.stuckCounter > 0) {
-      confidence -= memory.stuckCounter * 0.2;
-    }
-
-    // Reduce confidence if losing badly
-    const player = Object.values(state.players).find((p) => p.type === 'ai')!;
-    const enemy = Object.values(state.players).find((p) => p.type !== 'ai')!;
-
-    if (player && enemy) {
-      const hpRatio = player.castleHp / enemy.castleHp;
-      if (hpRatio < 0.5) {
-        confidence -= 0.3;
-      }
-    }
-
-    return Math.max(0.1, Math.min(1.0, confidence));
-  }
-
   // ==========================================================================
   // STEP 3: STRATEGIC ANALYSIS - Mode determination
   // ==========================================================================

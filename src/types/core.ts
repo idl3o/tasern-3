@@ -733,6 +733,11 @@ export interface Player {
  * ALWAYS use player.strategy methods.
  */
 export interface PlayerStrategy {
+  /**
+   * When true, the battle store drives selectAction() in a loop until END_TURN.
+   * Set false for any strategy whose actions arrive from outside (UI input, network).
+   */
+  readonly autoDriven: boolean;
   getAvailableCards(player: Player, state: BattleState): Card[];
   selectAction(player: Player, state: BattleState): Promise<BattleAction>;
   onTurnStart(player: Player, state: BattleState): void;

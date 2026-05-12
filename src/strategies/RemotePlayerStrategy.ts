@@ -14,6 +14,7 @@ import type { Player, BattleState, BattleAction, Card, PlayerStrategy } from '..
 import { MultiplayerService } from '../services/MultiplayerService';
 
 export class RemotePlayerStrategy implements PlayerStrategy {
+  readonly autoDriven = false;
   private multiplayerService: MultiplayerService;
   private pendingActionResolve?: (action: BattleAction) => void;
   private pendingActionReject?: (error: Error) => void;

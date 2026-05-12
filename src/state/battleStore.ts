@@ -258,18 +258,18 @@ export const useBattleStore = create<BattleStore>()(
           state.error = null;
         });
 
-        // If next player is AI, trigger their turn
+        // If next player is auto-driven (e.g. AI), drive their turn locally
         const nextPlayer = newState.players[newState.activePlayerId];
-        if (nextPlayer.type === 'ai') {
-          console.log('🤖 AI turn starting...');
+        if (nextPlayer.strategy.autoDriven) {
+          console.log('🤖 Auto-driven turn starting...');
 
-          // AI action loop - keep taking actions until END_TURN
-          const processAIActions = async () => {
+          // Action loop - keep taking actions until END_TURN
+          const processAutoActions = async () => {
             let currentState = get().battleState;
             if (!currentState) return;
 
             const player = currentState.players[currentState.activePlayerId];
-            if (player.type !== 'ai') return;
+            if (!player.strategy.autoDriven) return;
 
             try {
               // Keep selecting and executing actions until AI decides to end turn
@@ -302,14 +302,14 @@ export const useBattleStore = create<BattleStore>()(
                 }
               }
             } catch (error) {
-              console.error('❌ AI failed to select action:', error);
-              // AI failed, end turn
+              console.error('❌ Auto-driven strategy failed to select action:', error);
+              // Strategy failed, end turn
               get().endTurn();
             }
           };
 
-          // Start AI action loop with initial delay
-          setTimeout(processAIActions, 500);
+          // Start action loop with initial delay
+          setTimeout(processAutoActions, 500);
         }
       } catch (error) {
         console.error('❌ Failed to end turn:', error);
@@ -319,7 +319,7 @@ export const useBattleStore = create<BattleStore>()(
       }
     },
 
-    // Process AI turn (for AI vs AI battles)
+    // Process auto-driven turn (e.g. AI vs AI battles)
     processAITurn: async () => {
       const currentState = get().battleState;
 
@@ -330,8 +330,8 @@ export const useBattleStore = create<BattleStore>()(
 
       const activePlayer = currentState.players[currentState.activePlayerId];
 
-      if (activePlayer.type !== 'ai') {
-        console.warn('⚠️ Active player is not AI');
+      if (!activePlayer.strategy.autoDriven) {
+        console.warn('⚠️ Active player is not auto-driven');
         return;
       }
 

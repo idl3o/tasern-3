@@ -9,6 +9,7 @@ import type { Player, BattleState, BattleAction, Card, PlayerStrategy } from '..
 import { ConsciousnessAI } from '../ai/ConsciousnessAI';
 
 export class AIStrategy implements PlayerStrategy {
+  readonly autoDriven = true;
   private consciousness: ConsciousnessAI;
 
   constructor() {

@@ -395,12 +395,12 @@ export const App: React.FC = () => {
     }, 0);
   };
 
-  // Auto-process AI turns for AI vs AI battles
+  // Auto-process turns for auto-driven players (e.g. AI vs AI battles)
   useEffect(() => {
     if (battleState && (battleState.phase === 'deployment' || battleState.phase === 'battle')) {
       const activePlayer = battleState.players[battleState.activePlayerId];
-      if (activePlayer && activePlayer.type === 'ai') {
-        console.log('⏰ Scheduling AI turn for:', activePlayer.name, 'phase:', battleState.phase);
+      if (activePlayer?.strategy.autoDriven) {
+        console.log('⏰ Scheduling auto-driven turn for:', activePlayer.name, 'phase:', battleState.phase);
         // Small delay to make it watchable
         const timer = setTimeout(() => {
           processAITurn();

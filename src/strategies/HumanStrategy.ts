@@ -8,6 +8,7 @@ import type { Player, BattleState, BattleAction, Card, PlayerStrategy } from '..
 import { CardGenerator } from '../ai/CardGenerator';
 
 export class HumanStrategy implements PlayerStrategy {
+  readonly autoDriven = false;
   private cardGenerator = new CardGenerator();
 
   getAvailableCards(player: Player, state: BattleState): Card[] {
