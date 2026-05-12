@@ -22,6 +22,7 @@ import {
 import { useAllocationStore } from '../state/allocationStore';
 import { BattleViewDesktop } from './BattleViewDesktop';
 import { BattleViewMobile } from './BattleViewMobile';
+import { BattleEngine } from '../core/BattleEngine';
 import type { Card, Position } from '../types/core';
 
 // Screen size breakpoint for mobile vs desktop
@@ -152,8 +153,25 @@ export const BattleView: React.FC = () => {
       return;
     }
 
-    // Case 4: Click empty cell with battlefield card selected - deselect
+    // Case 4: Click empty cell with battlefield card selected — move if valid, else deselect
     if (selectedBattlefieldCard && card === null) {
+      const movingCard = battleState?.battlefield[selectedBattlefieldCard.position.row]?.[selectedBattlefieldCard.position.col];
+      if (movingCard && !movingCard.hasMoved) {
+        const validMoves = BattleEngine.getValidMovementPositions(movingCard, battleState!);
+        const isValidTarget = validMoves.some((p) => p.row === position.row && p.col === position.col);
+        if (isValidTarget) {
+          executeAction({
+            type: 'MOVE_CARD',
+            playerId: activePlayer!.id,
+            cardId: selectedBattlefieldCard.cardId,
+            fromPosition: selectedBattlefieldCard.position,
+            toPosition: position,
+          });
+          // Keep card selected at new position so the player can still attack this turn
+          setSelectedBattlefieldCard({ position, cardId: selectedBattlefieldCard.cardId });
+          return;
+        }
+      }
       setSelectedBattlefieldCard(null);
     }
   };
@@ -184,6 +202,13 @@ export const BattleView: React.FC = () => {
   const getAvailableSpaces = (): Position[] => {
     if (!battleState || !activePlayer || !isLocalPlayerTurn() || isProcessing) {
       return [];
+    }
+
+    // Battlefield card selected → highlight valid move targets
+    if (selectedBattlefieldCard) {
+      const movingCard = battleState.battlefield[selectedBattlefieldCard.position.row]?.[selectedBattlefieldCard.position.col];
+      if (!movingCard || movingCard.hasMoved) return [];
+      return BattleEngine.getValidMovementPositions(movingCard, battleState);
     }
 
     if (!selectedCard) {
