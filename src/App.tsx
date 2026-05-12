@@ -750,7 +750,7 @@ export const App: React.FC = () => {
           <div style={styles.personalityGrid}>
             <h2 style={styles.sectionTitle}>Watch AI vs AI</h2>
 
-            <button style={styles.opponentButton} onClick={() => startBattle('swiftblade', false)}>
+            <button style={styles.opponentButton} onClick={() => startBattle('thornwick', false)}>
               <div style={styles.opponentName}>Lady Swiftblade vs Thornwick</div>
               <div style={styles.opponentTraits}>Aggressive vs Patient</div>
             </button>

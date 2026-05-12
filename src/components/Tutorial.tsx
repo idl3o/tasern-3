@@ -44,8 +44,8 @@ export const Tutorial: React.FC<TutorialProps> = ({ onClose }) => {
       title: 'Build Your Hand',
       content: (
         <>
-          <p>Before battle, you'll see <strong>15 cards</strong> to choose from.</p>
-          <p><strong>Select 5 cards</strong> for your starting hand. The remaining 10 become your draw deck.</p>
+          <p>Before battle, you'll see <strong>15 generated cards</strong> to choose from (plus any NFT cards you own).</p>
+          <p><strong>Select 5 cards</strong> for your starting hand. Everything you don't pick becomes your draw deck.</p>
           <p>You'll draw 1 card per turn until your deck is empty.</p>
           <p style={{ marginTop: '1rem', fontStyle: 'italic', opacity: 0.9 }}>Tip: Balance your hand with a mix of cheap cards (1-2 mana) for early game and powerful cards (4-5 mana) for late game!</p>
         </>
@@ -56,7 +56,7 @@ export const Tutorial: React.FC<TutorialProps> = ({ onClose }) => {
       content: (
         <>
           <p><strong>Click a card</strong> in your hand, then <strong>click an empty battlefield cell</strong> to deploy it.</p>
-          <p>Each card costs <strong>mana</strong> to play. You start with 3 mana and gain +1 each turn (max 10).</p>
+          <p>Each card costs <strong>mana</strong> to play. You start each battle with <strong>10 mana</strong>, and regenerate <strong>+3</strong> each turn (capped at 10).</p>
           <p><strong>Position matters!</strong></p>
           <ul style={styles.list}>
             <li><strong>Front row</strong> - Attack bonuses, first to engage</li>
@@ -88,10 +88,10 @@ export const Tutorial: React.FC<TutorialProps> = ({ onClose }) => {
         <>
           <p>Arrange your cards to activate <strong>formation bonuses</strong>:</p>
           <ul style={styles.list}>
-            <li><strong>Vanguard</strong>: 2+ cards in front = +20% attack</li>
-            <li><strong>Phalanx</strong>: 3 cards in a row = +30% defense</li>
-            <li><strong>Archer Line</strong>: 2+ cards in back = +15% attack</li>
-            <li><strong>Flanking</strong>: Cards on both sides = +15% speed</li>
+            <li><strong>Vanguard</strong>: 2+ cards in front row = +20% attack</li>
+            <li><strong>Phalanx</strong>: 3 cards in a horizontal line = +30% defense, −10% speed</li>
+            <li><strong>Archer Line</strong>: 2+ cards in back row = +15% attack, −10% defense</li>
+            <li><strong>Flanking</strong>: Cards on both flanks = +10% attack, +15% speed</li>
           </ul>
           <p><strong>Weather</strong> changes every few turns - rain reduces attack, fog boosts defense, and more!</p>
         </>

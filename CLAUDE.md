@@ -129,7 +129,7 @@ Disabled in multiplayer (remote players have empty decks by design). Only checke
 
 ### Victory
 
-- **Castle destruction** — reduce enemy castle HP to 0 (default 30)
+- **Castle destruction** — reduce enemy castle HP to 0 (default 50)
 - **Resource exhaustion** — single-player only; human with empty hand + empty deck + no cards on board
 - **Turn limit** — default 50; higher castle HP wins
 

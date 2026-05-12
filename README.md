@@ -156,11 +156,11 @@ Each 0.01 LP token = +5% to all card stats
 
 ### ⚔️ Battle Flow
 
-1. Players deploy cards to 3x3 battlefield
+1. Players deploy cards to a tactical battlefield (grids from 2x4 up to 5x5, plus asymmetric shapes)
 2. Cards attack enemies or castle
 3. Formations grant bonuses (Vanguard, Phalanx, etc.)
 4. Weather effects modify all cards
-5. First to destroy enemy castle wins (30 HP)
+5. First to destroy enemy castle wins (50 HP default)
 
 ### 🎲 Victory Conditions
 

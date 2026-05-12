@@ -169,8 +169,8 @@ export const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onBattleRead
       maxMana: 10,
       hand: [],
       deck: [],
-      castleHp: 30,
-      maxCastleHp: 30,
+      castleHp: 50,
+      maxCastleHp: 50,
       lpBonus: 1.0,
       strategy: {} as any, // Not used for generation
     };
