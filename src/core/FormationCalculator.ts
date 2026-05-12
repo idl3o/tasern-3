@@ -3,41 +3,49 @@
  *
  * Analyzes battlefield positioning to determine formation bonuses.
  * Tactical depth through positioning - formations matter!
+ *
+ * Grid-aware as of May 2026 — works on any GridConfig, not just 3x3.
+ * Single source of truth for formation logic; BattleEngine delegates here.
  */
 
-import type { BattleCard, Battlefield, FormationType, FormationBonus, Position } from '../types/core';
+import type {
+  BattleCard,
+  Battlefield,
+  FormationType,
+  FormationBonus,
+  Position,
+  GridConfig,
+} from '../types/core';
 
 export class FormationCalculator {
   /**
-   * Calculate formation bonus for a specific card
+   * Calculate formation bonus for a specific card.
+   * Checks formations in priority order — most specific first.
    */
   static calculateFormationBonus(
     card: BattleCard,
-    battlefield: Battlefield
+    battlefield: Battlefield,
+    gridConfig: GridConfig
   ): FormationBonus {
     const allies = this.getAllyCards(card.ownerId, battlefield);
 
-    // Check formations in order of specificity
     const formation =
       this.checkSiegeFormation(allies, card) ||
-      this.checkPhalanxFormation(allies) ||
+      this.checkPhalanxFormation(allies, gridConfig) ||
       this.checkVanguardFormation(allies) ||
-      this.checkArcherLineFormation(allies) ||
-      this.checkFlankingFormation(allies) ||
+      this.checkArcherLineFormation(allies, gridConfig) ||
+      this.checkFlankingFormation(allies, gridConfig) ||
       this.getDefaultFormation();
 
     return formation;
   }
 
-  /**
-   * Get all allied cards on battlefield
-   */
   private static getAllyCards(ownerId: string, battlefield: Battlefield): BattleCard[] {
     return battlefield.flat().filter((c) => c !== null && c.ownerId === ownerId) as BattleCard[];
   }
 
   /**
-   * VANGUARD - 2+ cards in front row (row 0)
+   * VANGUARD — 2+ allies in the front row (row 0).
    * Bonus: +20% attack
    */
   private static checkVanguardFormation(allies: BattleCard[]): FormationBonus | null {
@@ -56,13 +64,16 @@ export class FormationCalculator {
   }
 
   /**
-   * PHALANX - 3 cards in horizontal line
+   * PHALANX — 3+ allies in any single horizontal row.
    * Bonus: +30% defense, -10% speed
    */
-  private static checkPhalanxFormation(allies: BattleCard[]): FormationBonus | null {
-    for (let row = 0; row < 3; row++) {
+  private static checkPhalanxFormation(
+    allies: BattleCard[],
+    gridConfig: GridConfig
+  ): FormationBonus | null {
+    for (let row = 0; row < gridConfig.rows; row++) {
       const rowCards = allies.filter((c) => c.position.row === row);
-      if (rowCards.length === 3) {
+      if (rowCards.length >= 3) {
         return {
           type: 'PHALANX',
           attackMod: 1.0,
@@ -76,11 +87,15 @@ export class FormationCalculator {
   }
 
   /**
-   * ARCHER_LINE - 2+ cards in back row (row 2)
+   * ARCHER_LINE — 2+ allies in the back row (last row, grid-aware).
    * Bonus: +15% attack, -10% defense
    */
-  private static checkArcherLineFormation(allies: BattleCard[]): FormationBonus | null {
-    const backCards = allies.filter((c) => c.position.row === 2);
+  private static checkArcherLineFormation(
+    allies: BattleCard[],
+    gridConfig: GridConfig
+  ): FormationBonus | null {
+    const backRow = gridConfig.rows - 1;
+    const backCards = allies.filter((c) => c.position.row === backRow);
 
     if (backCards.length >= 2) {
       return {
@@ -95,12 +110,16 @@ export class FormationCalculator {
   }
 
   /**
-   * FLANKING - Cards on both left (col 0) and right (col 2) sides
+   * FLANKING — allies on both edge columns (col 0 and last col, grid-aware).
    * Bonus: +10% attack, +15% speed
    */
-  private static checkFlankingFormation(allies: BattleCard[]): FormationBonus | null {
+  private static checkFlankingFormation(
+    allies: BattleCard[],
+    gridConfig: GridConfig
+  ): FormationBonus | null {
+    const rightCol = gridConfig.cols - 1;
     const leftCards = allies.filter((c) => c.position.col === 0);
-    const rightCards = allies.filter((c) => c.position.col === 2);
+    const rightCards = allies.filter((c) => c.position.col === rightCol);
 
     if (leftCards.length > 0 && rightCards.length > 0) {
       return {
@@ -115,12 +134,11 @@ export class FormationCalculator {
   }
 
   /**
-   * SIEGE - 2+ cards in enemy territory (experimental - needs enemy zone definition)
-   * Bonus: +25% attack, -15% defense
+   * SIEGE — 2+ allies pressed up against the front row, with the attacker among them.
+   * Heuristic since "enemy territory" depends on player perspective; treats row 0 as
+   * the aggressive line for both players. Bonus: +25% attack, -15% defense
    */
   private static checkSiegeFormation(allies: BattleCard[], card: BattleCard): FormationBonus | null {
-    // For now, consider front row as "aggressive positioning"
-    // In full implementation, would check actual enemy territory
     const aggressiveCards = allies.filter((c) => c.position.row === 0);
 
     if (aggressiveCards.length >= 2 && card.position.row === 0) {
@@ -136,7 +154,7 @@ export class FormationCalculator {
   }
 
   /**
-   * SKIRMISH - Default formation when no others apply
+   * SKIRMISH — default formation when nothing else fires.
    * Bonus: +5% speed
    */
   private static getDefaultFormation(): FormationBonus {
@@ -148,9 +166,6 @@ export class FormationCalculator {
     };
   }
 
-  /**
-   * Get formation description for UI
-   */
   static getFormationDescription(type: FormationType): string {
     switch (type) {
       case 'VANGUARD':
@@ -170,9 +185,6 @@ export class FormationCalculator {
     }
   }
 
-  /**
-   * Get formation tactical advice
-   */
   static getFormationTactics(type: FormationType): string {
     switch (type) {
       case 'VANGUARD':
@@ -193,61 +205,64 @@ export class FormationCalculator {
   }
 
   /**
-   * Suggest optimal positioning for formation type
+   * Suggest example positioning for a formation type, scaled to the current grid.
    */
-  static suggestPositioning(desiredFormation: FormationType): Position[] {
+  static suggestPositioning(
+    desiredFormation: FormationType,
+    gridConfig: GridConfig
+  ): Position[] {
+    const lastCol = gridConfig.cols - 1;
+    const lastRow = gridConfig.rows - 1;
+    const midCol = Math.floor(gridConfig.cols / 2);
+    const midRow = Math.floor(gridConfig.rows / 2);
+
     switch (desiredFormation) {
       case 'VANGUARD':
+      case 'SIEGE':
         return [
           { row: 0, col: 0 },
-          { row: 0, col: 1 },
-          { row: 0, col: 2 },
+          { row: 0, col: midCol },
+          { row: 0, col: lastCol },
         ];
 
       case 'PHALANX':
         return [
-          { row: 1, col: 0 },
-          { row: 1, col: 1 },
-          { row: 1, col: 2 },
+          { row: midRow, col: 0 },
+          { row: midRow, col: midCol },
+          { row: midRow, col: lastCol },
         ];
 
       case 'ARCHER_LINE':
         return [
-          { row: 2, col: 0 },
-          { row: 2, col: 1 },
-          { row: 2, col: 2 },
+          { row: lastRow, col: 0 },
+          { row: lastRow, col: midCol },
+          { row: lastRow, col: lastCol },
         ];
 
       case 'FLANKING':
         return [
           { row: 0, col: 0 },
-          { row: 1, col: 0 },
-          { row: 0, col: 2 },
-          { row: 1, col: 2 },
-        ];
-
-      case 'SIEGE':
-        return [
-          { row: 0, col: 0 },
-          { row: 0, col: 1 },
-          { row: 0, col: 2 },
+          { row: midRow, col: 0 },
+          { row: 0, col: lastCol },
+          { row: midRow, col: lastCol },
         ];
 
       default:
         return [
-          { row: 1, col: 1 },
+          { row: midRow, col: midCol },
           { row: 0, col: 0 },
-          { row: 2, col: 2 },
+          { row: lastRow, col: lastCol },
         ];
     }
   }
 
   /**
-   * Analyze battlefield and suggest formations
+   * Analyze the battlefield and surface which formations are within reach.
    */
   static analyzeFormationOpportunities(
     ownerId: string,
-    battlefield: Battlefield
+    battlefield: Battlefield,
+    gridConfig: GridConfig
   ): {
     current: FormationType;
     suggestions: { formation: FormationType; cardsNeeded: number }[];
@@ -264,31 +279,32 @@ export class FormationCalculator {
       };
     }
 
-    // Determine current formation
     const currentCard = allies[0];
-    const current = this.calculateFormationBonus(currentCard, battlefield).type;
+    const current = this.calculateFormationBonus(currentCard, battlefield, gridConfig).type;
 
-    // Suggest formations within reach
     const suggestions: { formation: FormationType; cardsNeeded: number }[] = [];
 
-    const frontCards = allies.filter((c) => c.position.row === 0).length;
-    const backCards = allies.filter((c) => c.position.row === 2).length;
-    const leftCards = allies.filter((c) => c.position.col === 0).length;
-    const rightCards = allies.filter((c) => c.position.col === 2).length;
+    const lastRow = gridConfig.rows - 1;
+    const rightCol = gridConfig.cols - 1;
 
-    // Vanguard
+    const frontCards = allies.filter((c) => c.position.row === 0).length;
+    const backCards = allies.filter((c) => c.position.row === lastRow).length;
+    const leftCards = allies.filter((c) => c.position.col === 0).length;
+    const rightCards = allies.filter((c) => c.position.col === rightCol).length;
+
     if (frontCards < 2) {
       suggestions.push({ formation: 'VANGUARD', cardsNeeded: 2 - frontCards });
     }
 
-    // Archer Line
     if (backCards < 2) {
       suggestions.push({ formation: 'ARCHER_LINE', cardsNeeded: 2 - backCards });
     }
 
-    // Flanking
     if (leftCards === 0 || rightCards === 0) {
-      suggestions.push({ formation: 'FLANKING', cardsNeeded: leftCards === 0 ? 1 : rightCards === 0 ? 1 : 2 });
+      suggestions.push({
+        formation: 'FLANKING',
+        cardsNeeded: leftCards === 0 ? 1 : rightCards === 0 ? 1 : 2,
+      });
     }
 
     return { current, suggestions };

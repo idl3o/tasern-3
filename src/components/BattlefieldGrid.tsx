@@ -65,7 +65,7 @@ export const BattlefieldGrid: React.FC<BattlefieldGridProps> = ({
     Object.keys(cardsByOwner).forEach((ownerId) => {
       const cards = cardsByOwner[ownerId];
       if (cards.length > 0) {
-        const formation = FormationCalculator.calculateFormationBonus(cards[0], battlefield);
+        const formation = FormationCalculator.calculateFormationBonus(cards[0], battlefield, gridConfig);
         playerFormations[ownerId] = formation.type;
       }
     });

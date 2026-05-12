@@ -30,6 +30,7 @@ import type {
 } from '../types/core';
 import { GRID_PRESETS, MAP_LAYOUTS, MAP_THEMES, WEATHER_TYPES, TERRAIN_TYPES, type CompleteMapPreset, COMPLETE_MAP_PRESETS } from '../types/core';
 import { AbilityEngine } from './AbilityEngine';
+import { FormationCalculator } from './FormationCalculator';
 
 export class BattleEngine {
   /**
@@ -871,32 +872,7 @@ export class BattleEngine {
     battlefield: BattleCard[][],
     gridConfig: GridConfig
   ): FormationBonus {
-    const allies = battlefield.flat().filter((c) => c && c.ownerId === card.ownerId);
-
-    // VANGUARD: 2+ cards in front row (row 0)
-    const frontCards = allies.filter((c) => c.position.row === 0);
-    if (frontCards.length >= 2) {
-      return { type: 'VANGUARD', attackMod: 1.2, defenseMod: 1.0, speedMod: 1.0 };
-    }
-
-    // ARCHER_LINE: 2+ cards in back row (last row)
-    const backRow = gridConfig.rows - 1;
-    const backCards = allies.filter((c) => c.position.row === backRow);
-    if (backCards.length >= 2) {
-      return { type: 'ARCHER_LINE', attackMod: 1.15, defenseMod: 0.9, speedMod: 1.0 };
-    }
-
-    // PHALANX: Horizontal line with majority of columns filled (at least 60%)
-    const phalanxThreshold = Math.ceil(gridConfig.cols * 0.6);
-    for (let row = 0; row < gridConfig.rows; row++) {
-      const rowCards = allies.filter((c) => c.position.row === row);
-      if (rowCards.length >= phalanxThreshold) {
-        return { type: 'PHALANX', attackMod: 1.0, defenseMod: 1.3, speedMod: 0.9 };
-      }
-    }
-
-    // Default: Skirmish
-    return { type: 'SKIRMISH', attackMod: 1.0, defenseMod: 1.0, speedMod: 1.05 };
+    return FormationCalculator.calculateFormationBonus(card, battlefield, gridConfig);
   }
 
   /**
