@@ -816,10 +816,24 @@ export class BattleEngine {
       damage *= 1.5;
     }
 
-    // Apply defender's zone defense modifier and aura
+    // Apply defender's effective defense.
+    // Stacks: base defense + adjacent aura, scaled by zone, formation, weather, and terrain.
+    // All defenseMod sources from the type system are wired up here — anything missing is dead data.
     const defenderZone = this.getZoneModifiers(defender);
     const defenderAura = AbilityEngine.getAuraBonus(defender, state.battlefield);
-    let effectiveDefense = (defender.defense + defenderAura.defense) * defenderZone.defenseMod;
+    const defenderFormation = this.getFormationBonus(defender, state.battlefield, state.gridConfig);
+    const defenderTerrain = state.terrainEffects.find(
+      (t) => t.position.row === defender.position.row && t.position.col === defender.position.col
+    );
+    const weatherDefMod = state.weather?.defenseMod ?? 1;
+    const terrainDefMod = defenderTerrain?.defenseMod ?? 1;
+
+    let effectiveDefense =
+      (defender.defense + defenderAura.defense) *
+      defenderZone.defenseMod *
+      defenderFormation.defenseMod *
+      weatherDefMod *
+      terrainDefMod;
 
     // Subtract defense
     damage -= effectiveDefense;

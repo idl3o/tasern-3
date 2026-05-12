@@ -166,15 +166,31 @@ Each `0.01` LP ≈ +5% to all stats. Discovery uses EIP-1167 proxy detection on 
 
 ### Damage formula
 
+Card-vs-card attack — every `attackMod` and `defenseMod` from the type system is wired in:
+
 ```typescript
-let damage = attacker.attack;
-damage *= getFormationBonus(attacker, battlefield);
-damage *= getWeatherModifier(attacker, weather);
-damage *= getTerrainModifier(attacker.position, terrain);
-if (Math.random() < 0.1) damage *= 1.5;  // 10% crit
-damage -= defender.defense;
-damage = Math.max(1, Math.floor(damage));  // min 1
+// Attacker side
+let damage = attacker.attack + attackerAura.attack;
+damage *= attackerZone.attackMod;
+damage *= attackerFormation.attackMod;
+damage *= weather.attackMod;
+damage *= attackerTerrain.attackMod;
+if (crit) damage *= 1.5;  // 10% crit chance
+
+// Defender side
+const effectiveDefense =
+  (defender.defense + defenderAura.defense) *
+  defenderZone.defenseMod *
+  defenderFormation.defenseMod *
+  weather.defenseMod *
+  defenderTerrain.defenseMod;
+
+damage = Math.max(1, Math.floor(damage - effectiveDefense));
 ```
+
+Castle attack is simpler (no defender position): `attacker.attack × formation × weather`, plus crit.
+
+`speedMod` fields exist throughout the type system but are not yet read by any rule — see "Known gaps."
 
 ## Where things live
 
@@ -239,6 +255,7 @@ These are honest about what's incomplete, not pretending. Tackle when there's ap
 2. **Zero test files.** Jest is wired but nothing has been written. BattleEngine's pure functions are the highest-value first target (damage calc, formation detection, victory checks).
 3. **Residual `player.type` checks in UI components.** BattleControls / BattleView{Desktop,Mobile} differ for AI vs human turns. These are legitimate display differences, not behavioral dispatch, but a `strategy.requiresUserInput` flag could clean them up if the AI-loop refactor's pattern feels right.
 4. **No CI.** Lint/typecheck/build pass locally and on Vercel deploys but there's no GitHub Actions gate.
+5. **`speed` is a placeholder stat.** The field exists on every card, scales with LP, and is displayed in the UI, and `speedMod` exists on formations, weather, and terrain — but no game rule reads any of it yet. The intent is to wire it to a real mechanic (first-strike priority, extra movement range, or similar) in a future pass. Until then, all speed numbers and `speedMod` values are flavor.
 
 ## Documentation map
 
