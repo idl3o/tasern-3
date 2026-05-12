@@ -37,6 +37,7 @@ export interface BattleViewDesktopProps {
   selectedCard: Card | null;
   selectedBattlefieldCard: { position: Position; cardId: string } | null;
   inspectedCard: any | null;
+  playerColors: Record<string, 'blue' | 'red'>;
   handleEndTurn: () => void;
   handleSurrender: () => void;
   handleCardSelect: (card: Card) => void;
@@ -58,6 +59,7 @@ export const BattleViewDesktop: React.FC<BattleViewDesktopProps> = ({
   selectedCard,
   selectedBattlefieldCard,
   inspectedCard,
+  playerColors,
   handleEndTurn,
   handleSurrender,
   handleCardSelect,
@@ -149,6 +151,7 @@ export const BattleViewDesktop: React.FC<BattleViewDesktopProps> = ({
             mapTheme={battleState.mapTheme}
             blockedTiles={battleState.blockedTiles}
             playerNames={playerNames}
+            playerColors={playerColors}
             onCellClick={handleBattlefieldClick}
             onCardInspect={handleCardInspect}
             highlightedPositions={selectedBattlefieldCard ? [selectedBattlefieldCard.position] : []}

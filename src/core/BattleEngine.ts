@@ -912,32 +912,31 @@ export class BattleEngine {
   }
 
   /**
-   * Check if attacker can attack enemy castle
-   * Melee: Must be in middle column(s) - contested center zone
-   * Ranged/Hybrid: Can attack from any column
+   * Check if attacker can attack enemy castle.
+   * Ranged/Hybrid: any column.
+   * Melee: within 1 column of the target's home edge — so reaching the enemy castle means
+   * either standing at their edge column or one step inside (the contested middle, or further).
+   * This makes movement into enemy territory matter: pushing past the middle lets melee strike.
    */
-  private static canAttackCastle(
+  static canAttackCastle(
     attacker: BattleCard,
     targetPlayerId: string,
     state: BattleState
   ): boolean {
-    // Ranged and hybrid can attack castle from anywhere
     if (attacker.combatType === 'ranged' || attacker.combatType === 'hybrid') {
       return true;
     }
 
-    // Melee cards must be in the middle column(s)
-    // This is the contested center where melee units can reach both castles
+    const playerIds = Object.keys(state.players);
+    const targetIndex = playerIds.indexOf(targetPlayerId);
     const totalCols = state.gridConfig.cols;
-    const middleCol = Math.floor(totalCols / 2);
 
-    // For odd-width grids: exact middle column
-    // For even-width grids: either of the two middle columns
-    if (totalCols % 2 === 1) {
-      return attacker.position.col === middleCol;
-    } else {
-      return attacker.position.col === middleCol - 1 || attacker.position.col === middleCol;
+    if (targetIndex === 0) {
+      // Target's castle is on the left edge — melee must be at col 0 or 1
+      return attacker.position.col <= 1;
     }
+    // Target's castle is on the right edge — melee must be at the last or second-to-last col
+    return attacker.position.col >= totalCols - 2;
   }
 
   /**

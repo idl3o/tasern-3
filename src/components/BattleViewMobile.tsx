@@ -32,6 +32,7 @@ export const BattleViewMobile: React.FC<BattleViewMobileProps> = ({
   selectedCard,
   selectedBattlefieldCard,
   inspectedCard,
+  playerColors,
   handleEndTurn,
   handleSurrender,
   handleCardSelect,
@@ -121,6 +122,7 @@ export const BattleViewMobile: React.FC<BattleViewMobileProps> = ({
           mapTheme={battleState.mapTheme}
           blockedTiles={battleState.blockedTiles || []}
           playerNames={playerNames}
+          playerColors={playerColors}
           onCellClick={handleBattlefieldClick}
           highlightedPositions={
             selectedBattlefieldCard ? [selectedBattlefieldCard.position] : []

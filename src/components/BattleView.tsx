@@ -253,6 +253,22 @@ export const BattleView: React.FC = () => {
     return availablePositions;
   };
 
+  // Compute team color per player.
+  // - With a local player (Play vs AI, multiplayer): you = blue, opponent = red.
+  // - Spectating (AI vs AI, no localPlayerId): slot 0 = blue, slot 1 = red.
+  const playerColors: Record<string, 'blue' | 'red'> = {};
+  if (battleState) {
+    const playerIds = Object.keys(battleState.players);
+    const useLocalLens = localPlayerId !== null && playerIds.includes(localPlayerId);
+    playerIds.forEach((id, idx) => {
+      if (useLocalLens) {
+        playerColors[id] = id === localPlayerId ? 'blue' : 'red';
+      } else {
+        playerColors[id] = idx === 0 ? 'blue' : 'red';
+      }
+    });
+  }
+
   // ===== SHARED PROPS FOR BOTH LAYOUTS =====
   const sharedProps = {
     battleState,
@@ -264,6 +280,7 @@ export const BattleView: React.FC = () => {
     selectedCard,
     selectedBattlefieldCard,
     inspectedCard,
+    playerColors,
     handleEndTurn,
     handleSurrender,
     handleCardSelect,

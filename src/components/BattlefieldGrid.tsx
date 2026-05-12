@@ -26,6 +26,7 @@ interface BattlefieldGridProps {
   mapTheme: MapTheme;
   blockedTiles: Position[];
   playerNames: Record<string, string>;
+  playerColors?: Record<string, 'blue' | 'red'>;
   onCellClick?: (position: Position, card: BattleCard | null) => void;
   onCardInspect?: (card: BattleCard) => void;
   highlightedPositions?: Position[];
@@ -39,6 +40,7 @@ export const BattlefieldGrid: React.FC<BattlefieldGridProps> = ({
   mapTheme,
   blockedTiles,
   playerNames,
+  playerColors,
   onCellClick,
   onCardInspect,
   highlightedPositions = [],
@@ -220,6 +222,7 @@ export const BattlefieldGrid: React.FC<BattlefieldGridProps> = ({
                       card={card}
                       isOnBattlefield={true}
                       ownerName={playerNames[card.ownerId]}
+                      teamColor={playerColors?.[card.ownerId]}
                       onInspect={() => onCardInspect?.(card)}
                     />
                   ) : (

@@ -31,6 +31,7 @@ interface CardDisplayProps {
   onInspect?: () => void; // Right-click to inspect full card
   ownerName?: string;
   imageUrl?: string; // NFT artwork URL
+  teamColor?: 'blue' | 'red'; // Explicit team color for battlefield cards (works in AI vs AI)
 }
 
 export const CardDisplay: React.FC<CardDisplayProps> = ({
@@ -42,6 +43,7 @@ export const CardDisplay: React.FC<CardDisplayProps> = ({
   onInspect,
   ownerName,
   imageUrl,
+  teamColor,
 }) => {
   const [imageLoaded, setImageLoaded] = React.useState(false);
   const [imageError, setImageError] = React.useState(false);
@@ -67,10 +69,13 @@ export const CardDisplay: React.FC<CardDisplayProps> = ({
   const rarityColor = getRarityColor(card.rarity);
   const rarityGlow = getRarityGlow(card.rarity);
 
-  // Determine team color for battlefield cards
-  const isPlayerCard = ownerName?.includes('YOU') || ownerName?.toLowerCase().includes('you');
-  const teamBorderColor = isPlayerCard ? '#3B82F6' : '#DC2626'; // Blue for player, Red for opponent
-  const teamGlow = isPlayerCard
+  // Determine team color for battlefield cards.
+  // Prefer the explicit teamColor prop. Fall back to the legacy "name contains 'you'" heuristic
+  // for any older callsites that haven't been wired up yet (default to opponent red).
+  const fallbackIsPlayer = ownerName?.includes('YOU') || ownerName?.toLowerCase().includes('you');
+  const resolvedTeam: 'blue' | 'red' = teamColor ?? (fallbackIsPlayer ? 'blue' : 'red');
+  const teamBorderColor = resolvedTeam === 'blue' ? '#3B82F6' : '#DC2626';
+  const teamGlow = resolvedTeam === 'blue'
     ? '0 0 12px rgba(59, 130, 246, 0.6)'
     : '0 0 12px rgba(220, 38, 38, 0.6)';
 

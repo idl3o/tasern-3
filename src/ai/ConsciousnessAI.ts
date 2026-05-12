@@ -302,7 +302,7 @@ export class ConsciousnessAI {
 
         // Attack castle (only if card can actually reach the castle)
         const enemy = Object.values(state.players).find((p) => p.id !== player.id)!;
-        const canAttackCastle = this.canAttackCastle(card, enemy.id, state);
+        const canAttackCastle = BattleEngine.canAttackCastle(card, enemy.id, state);
         console.log(`      🏰 Can attack castle: ${canAttackCastle} (col=${card.position.col}, type=${card.combatType})`);
 
         if (canAttackCastle) {
@@ -778,37 +778,6 @@ export class ConsciousnessAI {
     }
 
     return true; // Default: allow
-  }
-
-  /**
-   * Check if attacker can attack enemy castle
-   * Melee: Must be in middle column (dynamically calculated) - contested center zone
-   * Ranged/Hybrid: Can attack from any column
-   * NOW GRID-AWARE: Works with any board width!
-   */
-  private canAttackCastle(
-    attacker: BattleCard,
-    targetPlayerId: string,
-    state: BattleState
-  ): boolean {
-    // Ranged and hybrid can attack castle from anywhere
-    if (attacker.combatType === 'ranged' || attacker.combatType === 'hybrid') {
-      return true;
-    }
-
-    // Melee cards must be in the middle column (dynamically calculated)
-    // This is the contested center where melee units can reach both castles
-    const middleCol = Math.floor(state.gridConfig.cols / 2);
-
-    // For odd-width grids (3, 5, 7), exact middle column
-    // For even-width grids (2, 4, 6), allow either of the two middle columns
-    if (state.gridConfig.cols % 2 === 1) {
-      // Odd width: exact middle only
-      return attacker.position.col === middleCol;
-    } else {
-      // Even width: either of the two middle columns
-      return attacker.position.col === middleCol || attacker.position.col === middleCol - 1;
-    }
   }
 
   onTurnStart(player: Player, state: BattleState): void {
