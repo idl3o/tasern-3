@@ -1,679 +1,270 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code (claude.ai/code) when working in this repository.
 
-## Project Overview
+## Project
 
-**Tasern Siegefront** is a tactical NFT card battle game set in the **Tales of Tasern** D&D universe created by Dungeon Master **James Magee (@JamesMageeCCC)**.
+**Tasern Siegefront** — a tactical card battle game set in the **Tales of Tasern** D&D universe created by Dungeon Master **James Magee** ([@JamesMageeCCC](https://twitter.com/JamesMageeCCC)).
 
-### Core Features
-- Dynamic AI card generation (no deck, pure strategic generation)
-- Consciousness-driven AI decision making with personality
-- LP-powered stat enhancement (NFT LP holdings boost card power)
-- Advanced tactical mechanics (formations, weather, terrain)
-- Medieval D&D fantasy aesthetic
-- Strategy pattern for player types (Human vs AI)
+The game pairs medieval-fantasy aesthetics with on-chain mechanics: NFT cards, LP-token stat enhancement, and WebRTC P2P multiplayer. AI opponents are personality-driven and generate their cards dynamically — they don't draw from a deck, they manifest responses to the board state. The game is feature-complete through Milestone 6 (Nov 2025) and runs in production on Vercel.
 
-### Current Status
-**✅ MILESTONE 5 COMPLETE - Grid-Aware AI & Dynamic Board Shapes!** (November 18, 2025)
+> Honor the universe. Every design decision should answer "does this feel like a D&D session?"
 
-The AI now intelligently adapts to all 10 dynamic board shapes:
-- ✅ **Grid-Aware Position Scoring** - AI calculates middle column, home/enemy sides dynamically for any grid size
-- ✅ **HIGH_GROUND Prioritization** - AI actively seeks special tiles for +30% tactical bonus
-- ✅ **Dynamic Castle Attack Logic** - Melee units find center columns on any board (odd/even width support)
-- ✅ **Asymmetric Board Support** - L-shaped, T-shaped, Cross, Diamond layouts fully supported
-- ✅ **Mode-Specific Strategies** - Aggressive pushes forward, Defensive holds home, Adaptive controls center
-- ✅ **Blocked Tile Awareness** - AI respects obstacles and navigates around them
-- ✅ **Variable Grid Sizes** - Works flawlessly on 2x4, 3x3, 3x5, 4x4, 4x5, 5x3, 5x5 battlefields
+## Architecture
 
-**✅ MILESTONE 6 COMPLETE - Desktop UI Optimization & Space Efficiency!** (November 23, 2025)
+Four layers, single dependency direction (**UI → State → Logic → Types**):
 
-The desktop battle view now maximizes screen real estate with intelligent space utilization:
-- ✅ **Unified Sidebar Aesthetic** - Single golden borders with transparent inner components for cohesive design
-- ✅ **Vertical Space Optimization** - Hand display and battle log grow to fill all available sidebar space
-- ✅ **Dynamic Battlefield Scaling** - Adaptive cell sizing for all grid configurations (3x3 to 5x5) without scrolling
-- ✅ **Team-Colored Borders** - Blue for player cards, red for opponent cards for instant team recognition
-- ✅ **Card Inspection Modal** - Right-click any battlefield card to view full details with backdrop blur
-- ✅ **Smart Battlefield Cards** - Compact by default with essential stats, expand on hover to show artwork and badges
-- ✅ **Enhanced Stat Visibility** - Large, bold stats with dark backgrounds and prominent HP bar integration
-- ✅ **Active Formation Indicator** - Replaced static legend with compact live formation bonuses
-- ✅ **Clean Interface** - Removed zone labels, divider bars, scrollbars, and debug elements
-- ✅ **Perfect Viewport Fit** - Everything fits on one screen without scrolling on desktop displays
+| Layer | Path | Role |
+|---|---|---|
+| Types | `src/types/` | Pure type definitions, no runtime |
+| Logic | `src/core/`, `src/ai/`, `src/strategies/` | Game rules, AI, player strategies — pure TS, no React |
+| State | `src/state/` | Zustand stores with Immer; the single source of truth |
+| UI | `src/components/`, `src/App.tsx` | Presentation; dispatches actions, never mutates |
 
-**✅ MILESTONE 4 COMPLETE - Mobile-First Optimization!** (November 18, 2025)
-
-The game now provides a streamlined touch-optimized experience:
-- ✅ **Compact Player Status** - Ultra-compressed single-line layout (Name | HP | Mana) with mini bars
-- ✅ **Hidden Battle Log** - Battle controls moved to sticky footer, log removed for screen space
-- ✅ **Enlarged Battlefield Cells** - 15-17% size increase for better touch targets (115x155px on mobile)
-- ✅ **Simplified Turn Indicator** - Compact header with horizontal layout, reduced animations
-- ✅ **Enhanced Visual States** - Golden pulsing glow for selected cards, green pulsing for valid drop zones
-- ✅ **Touch Feedback** - Scale animations on tap, battlefield cells respond to touch
-- ✅ **Vertical Scrolling** - Natural element sizing with smooth mobile scrolling
-
-**Previous Milestone - Real-Time Multiplayer PVP:** (October 16, 2025)
-- ✅ **WebRTC P2P Networking** - PeerJS for decentralized multiplayer (no game server needed!)
-- ✅ **Live Board Synchronization** - Card deployments and attacks sync in real-time between browsers
-- ✅ **Wallet-Based Identity** - Wallet addresses as consistent peer IDs
-- ✅ **Turn Order System** - Deterministic first player selection based on wallet addresses
-- ✅ **Invite Code System** - Base64-encoded lobby invites for easy sharing
-- ✅ **Empty Deck Pattern** - Remote players don't need local deck copies (cards travel with actions)
-- ✅ **Victory Condition Fix** - Resource exhaustion disabled for multiplayer (detected via both players = 'human')
-
-**Previous Milestone - NFT Integration & UX Polish:** (October 9, 2025)
-- ✅ **Web3 Wallet Integration** - RainbowKit + Wagmi on Polygon mainnet
-- ✅ **NFT Card System** - Wallet-gated NFT scanning with Alchemy API
-- ✅ **LP Enhancement Discovery** - Universal Impact Scanner with EIP-1167 proxy detection
-- ✅ **Automatic NFT Scanning** - Auto-triggers on wallet connect for seamless flow
-- ✅ **Enhanced Deck Selection** - NFT cards + 15 generated cards (separate categories)
-- ✅ **Wallet-Specific Storage** - Zustand store with per-wallet NFT card isolation (PVP ready)
-- ✅ **Visual Enhancements** - Star ratings for LP boosts, provenance badges, NFT badges
-- ✅ **UX Polish** - Close buttons, scroll-to-top, proper overlay positioning
-
-**Core Gameplay Milestone:**
-- ✅ Dual menu system: "Play vs AI" and "Watch AI vs AI"
-- ✅ 5 distinct AI personalities from Tasern lore (Stumbleheart, Swiftblade, Thornwick, Grok, Nethys)
-- ✅ Human player hand generation (5 cards, adaptive mode)
-- ✅ Card deployment system (click hand card → click battlefield)
-- ✅ Combat system (select your card → attack enemy card/castle)
-- ✅ Turn management with "End Turn" button
-- ✅ AI auto-processing with 1.5s delays for watchability
-- ✅ Victory detection and UI overlay
-- ✅ Battle log showing all actions
-- ✅ Medieval D&D aesthetic with Tasern theme colors
-
-**Next Phase:** Multiplayer UX polish, mobile battle testing, AI personality tuning for board shapes, spectator mode
-
-### Universe Context
-This game lives in James Magee's Tales of Tasern D&D homebrew universe. The visual style, lore, card naming, and AI personalities all honor this setting. Every design decision should ask: "Does this feel like it belongs in a D&D session?"
-
-## Architecture Philosophy
-
-This project follows **strict separation of concerns** learned from the previous build:
-
-### 1. Core Game Logic (`src/core/`) - Pure TypeScript, no React
-- Battle engine with immutable state updates (Immer)
-- Player strategy pattern (NO type checking)
-- Formation/weather/terrain systems
-- All game rules isolated from UI
-
-### 2. AI Intelligence (`src/ai/`) - Autonomous decision making
-- ConsciousnessAI orchestrator (6-step decision loop)
-- Dynamic card generation based on board state
-- Personality-driven decisions (5 distinct opponents from Tasern lore)
-- State healing and validation
-
-### 3. State Management (`src/state/`) - Single source of truth
-- Zustand store (NOT React state for game logic)
-- Immutable updates via Immer
-- Action creators and selectors
-- UI state separate from game state
-
-### 4. React UI (`src/components/`) - Presentation only
-- Components receive props, dispatch actions
-- NO business logic in components
-- NO direct state mutation
-- Tasern-themed styling (medieval fantasy)
-
-## Critical Architectural Patterns
-
-### 1. Player Strategy Pattern (NEVER VIOLATE THIS)
-
-**NEVER** check player type with conditionals. Use strategy interface:
-
-```typescript
-// ✅ CORRECT
-const cards = player.strategy.getAvailableCards(player, state);
-
-// ❌ WRONG - Do not do this anywhere in the codebase
-if (player.type === 'ai') {
-  cards = generateCards();
-} else {
-  cards = player.hand;
-}
-```
-
-**Why**: The previous build had 47 type checks scattered everywhere. It was a maintenance nightmare. Strategy pattern makes AI vs Human vs Multiplayer a clean abstraction.
-
-**Multiplayer Extension**: Remote players use `RemotePlayerStrategy` which waits for actions from WebRTC. The battle engine doesn't know or care if a player is AI, local human, or remote human - it just calls the strategy.
-
-### 2. Dynamic AI Card Generation (Breakthrough Pattern)
-
-AI players generate cards on-demand during action evaluation:
-- Cards are attached to actions via `generatedCard` property
-- Battle engine checks for generated cards before accessing hand
-- No deck/hand management for AI
-- Stats scale with personality (aggression affects attack/HP ratio)
-
-**Philosophy**: AI isn't pretending to be human with a deck. It's genuinely AI - manifesting responses to challenges.
-
-**Multiplayer Breakthrough**: This same pattern solves multiplayer sync! Remote players have empty decks locally, but their cards travel with actions via the `generatedCard` field. The battle engine treats remote cards exactly like AI-generated cards.
-
-### 3. Immutable State Updates (NEVER MUTATE)
-
-**NEVER** mutate state. Use Immer for clean updates:
-
-```typescript
-// ✅ CORRECT
-return produce(state, draft => {
-  draft.currentTurn++;
-  draft.players[playerId].mana = 10;
-});
-
-// ❌ WRONG - This caused bugs in previous build
-state.currentTurn++;
-return state;
-```
-
-**Why**: The previous build used `JSON.parse(JSON.stringify())` everywhere, causing lost references and performance issues. Immer solves this cleanly.
-
-### 4. Action Execution Flow
+Battle execution flow:
 
 ```
-User/AI → Component dispatches action → Store → BattleEngine.executeAction() → New immutable state → React rerenders
+User/AI → Component dispatches action → battleStore → BattleEngine.executeAction() → new immutable state → React rerenders
 ```
 
 Actions are **pure data**. Execution happens in **BattleEngine** (pure functions, no side effects).
 
-## Core Implementation Requirements
+## The hard rules
 
-### Battle Engine Must Have
+1. **No state mutation.** Always return new state via Immer's `produce()`. The previous build used `JSON.parse(JSON.stringify())` everywhere and suffered for it. There are zero occurrences of that pattern in this codebase — keep it that way.
+
+2. **No player-type dispatch.** Behavioral decisions route through `player.strategy`, never `player.type === 'ai'`. The `PlayerStrategy` interface has an `autoDriven` flag for the one case that previously branched on type (the battle store's auto-turn loop). Adding a new player kind (scripted bot, replay player, LLM-via-API) means writing a strategy and setting the flag — not editing the store.
+
+3. **Strict TypeScript is the goal; right now it's off.** `tsconfig.json` has `strict: false`. This is the largest outstanding item. When turning it on, expect ~100–400 errors clustered around grid-cell nullability (`battlefield[r][c]`), player lookups, and `find()` results. Fix by tightening types, not by `as any`.
+
+4. **No business logic in React.** Components dispatch actions and render. They never mutate state. Any "should X happen?" decision belongs in `BattleEngine` or a strategy.
+
+5. **No `any` in core logic.** Pragmatic exceptions exist in boundary code (NFT scanners, RPC clients) where third-party schemas are loose. The bar is: every `any` must be at a system edge, never in BattleEngine, ConsciousnessAI, or a strategy.
+
+### Where pragmatic exceptions live (and why)
+
+A few `player.type` checks survive in `BattleEngine`. These are **not** behavioral dispatch — they're game-mode metadata:
+
+- [BattleEngine.ts:113, 122](src/core/BattleEngine.ts) — only AI players get an `AIMemory` slot at battle init (consciousness bookkeeping).
+- [BattleEngine.ts:651](src/core/BattleEngine.ts) — only human players draw from a deck on turn start (AI generates dynamically).
+- [BattleEngine.ts:721](src/core/BattleEngine.ts) — multiplayer detection via `humanPlayerCount === 2`. This is the blessed pattern (see Multiplayer section).
+
+If you ever feel tempted to add a sixth `player.type` check: stop and ask whether the new check is metadata (allowed) or behavior (forbidden). Behavior goes through `strategy`.
+
+## AI system
+
+Five personalities from the Tasern universe (in [src/ai/personalities.ts](src/ai/personalities.ts)):
+
+| Name | Title | Defining trait |
+|---|---|---|
+| Sir Stumbleheart | The Noble Blunderer | low aggression, high creativity |
+| Lady Swiftblade | The Lightning Duelist | high aggression, high risk |
+| Thornwick the Tactician | The Chess Master | high patience, high adaptability |
+| Grok the Unpredictable | The Chaos Warrior | high creativity, high risk |
+| Archmagus Nethys | Master of the Arcane | high creativity, high patience |
+
+Traits are floats 0–1: `aggression`, `creativity`, `riskTolerance`, `patience`, `adaptability`. They shape generated card stats (aggressive = more attack, less HP), strategic mode selection, and a ~30% variance-from-optimal so personalities feel distinct rather than perfect.
+
+### Consciousness loop (six steps, [ConsciousnessAI.ts](src/ai/ConsciousnessAI.ts))
+
+1. **Heal** — validate and repair state corruption
+2. **Self-awareness** — `FluidState` tracks confidence, stuck detection
+3. **Strategic analysis** — choose mode: `AGGRESSIVE` / `DEFENSIVE` / `ADAPTIVE` / `DESPERATE` / `EXPERIMENTAL`
+4. **Generate options** — list legal actions, generate cards dynamically
+5. **Score & choose** — evaluate with personality variance
+6. **Record** — update `AIMemory` for learning
+
+### Dynamic card generation
+
+AI players have **no deck**. Cards attach to actions via the `generatedCard` field on `DeployCardAction`. The battle engine prefers `action.generatedCard` over `player.hand` when present. Same pattern enables multiplayer (see next section).
 
 ```typescript
-class BattleEngine {
-  initializeBattle(player1: Player, player2: Player): BattleState
-  executeAction(state: BattleState, action: BattleAction): BattleState
-  endTurn(state: BattleState): BattleState
-  checkVictoryConditions(state: BattleState): string | null
+let card = action.generatedCard ?? player.hand.find(c => c.id === action.cardId);
+if (!action.generatedCard) {
+  player.hand = player.hand.filter(c => c.id !== card.id);
 }
 ```
 
-### Required Action Types
+## Multiplayer
 
-- `DEPLOY_CARD` - Play card to battlefield (includes `generatedCard?` for AI)
-- `ATTACK_CARD` - Card attacks another card
-- `ATTACK_CASTLE` - Card attacks enemy castle
-- `MOVE_CARD` - Reposition card on battlefield
-- `USE_ABILITY` - Activate card ability
-- `END_TURN` - End current player's turn
+WebRTC P2P via PeerJS. No game server. Both clients execute the same actions on a deterministic `BattleEngine`, so the boards stay in sync.
 
-### Required State Shape
+### The empty-deck pattern
+
+Remote players have an **empty deck locally**. When the local player deploys a card, the card payload travels inside the action:
 
 ```typescript
-interface BattleState {
-  currentTurn: number
-  phase: 'deployment' | 'battle' | 'victory'
-  activePlayerId: string
-  players: Record<string, Player>
-  battlefield: (BattleCard | null)[][] // 3x3 grid
-  weather: WeatherEffect | null
-  terrainEffects: TerrainEffect[]
-  controlledZones: Record<string, string>
-  winner: string | null
-  battleLog: BattleLogEntry[]
-}
-```
-
-## AI System Components
-
-### ConsciousnessAI Decision Loop (6 Steps)
-
-1. **HEAL** - Validate and repair state corruption
-2. **SELF-AWARENESS** - Check AI confidence, stuck detection
-3. **STRATEGIC ANALYSIS** - Determine mode (aggressive/defensive/adaptive/desperate/experimental)
-4. **GENERATE OPTIONS** - List all legal actions, generate cards dynamically
-5. **SCORE & CHOOSE** - Evaluate actions, apply personality variance
-6. **RECORD** - Build memory for learning
-
-**Philosophy**: AI should make intentional mistakes (30% variance), not always optimal plays. Players remember personality, not perfection.
-
-### AI Personalities (Tales of Tasern)
-
-5 distinct opponents with configurable traits:
-
-1. **Sir Stumbleheart** - "The Noble Blunderer" (aggression: 0.3, creativity: 0.8)
-2. **Lady Swiftblade** - "The Lightning Duelist" (aggression: 0.8, risk: 0.7)
-3. **Thornwick the Tactician** - "The Chess Master" (patience: 0.8, adaptability: 0.9)
-4. **Grok the Unpredictable** - "The Chaos Warrior" (creativity: 0.9, risk: 0.8)
-5. **Archmagus Nethys** - "Master of the Arcane" (creativity: 0.9, patience: 0.7)
-
-Traits:
-- **Aggression** (0-1): Affects attack/HP distribution in generated cards
-- **Creativity** (0-1): Likelihood of unusual plays
-- **Risk Tolerance** (0-1): Willingness to take high-risk actions
-- **Patience** (0-1): Early vs late game preference
-- **Adaptability** (0-1): Response to board state changes
-
-## Game Mechanics
-
-### Victory Conditions
-
-1. **Castle Destruction** - Reduce enemy castle HP to 0 (default: 30 HP)
-2. **Resource Exhaustion** - Human players only (AI generates dynamically)
-3. **Turn Limit** - Player with highest castle HP wins (default: 50 turns)
-
-### Turn 1 Summoning Sickness (First Player Balance)
-
-**Problem**: Going first gives positional advantage (access to middle column), but without balance, Player 2 gets to attack first, creating unfair advantage.
-
-**Solution**: Player 1 only - Turn 1 summoning sickness
-
-**Mechanic**:
-- **Turn 1 (Player 1)**: Deploy cards → **Cannot attack** (summoning sickness)
-- **Turn 2 (Player 2)**: Deploy cards → **Can attack immediately**
-- **Turn 3+ (Both)**: All deployed cards can attack immediately
-
-**Balance Trade-off**:
-- ✅ **P1 Advantage**: Gets prime real estate (middle column = contested center, castle-adjacent positions)
-- ✅ **P2 Advantage**: Gets to attack first (can hit P1's defenseless turn 1 cards)
-- ✅ **Elegant**: One-time first-turn handicap, no ongoing summoning sickness mechanic
-
-**Implementation** (BattleEngine.ts:240-246, 341-347):
-```typescript
-// Turn 1 summoning sickness for Player 1 (going first handicap)
-const playerIds = Object.keys(draft.players);
-const firstPlayerId = playerIds[0];
-if (draft.currentTurn === 1 && attacker.ownerId === firstPlayerId) {
-  console.warn('❌ Turn 1 summoning sickness - cannot attack on first turn');
-  return;
-}
-```
-
-**Philosophy**: Positional vs temporal trade-off. P1's spatial advantage (middle column) balances P2's temporal advantage (first strike). Creates dynamic opening strategies.
-
-### Formations (6 Types)
-
-Positional bonuses based on card arrangement:
-- **VANGUARD** - 2+ cards in front zone: +20% attack
-- **PHALANX** - 3 cards in horizontal line: +30% defense, -10% speed
-- **ARCHER_LINE** - 2+ cards in back zone: +15% attack, -10% defense
-- **FLANKING** - Cards on both sides: +10% attack, +15% speed
-- **SIEGE** - 2+ cards in enemy zones: +25% attack, -15% defense
-- **SKIRMISH** - Default: +5% speed
-
-### Weather Effects
-
-Global effects lasting 3-5 turns:
-- **CLEAR** ☀️ - No modifiers
-- **RAIN** 🌧️ - -10% attack, -5% speed
-- **STORM** ⛈️ - -20% attack, -10% speed
-- **FOG** 🌫️ - -15% attack, +10% defense
-- **SNOW** ❄️ - -10% defense, -15% speed
-
-### LP Enhancement (Regenerative Finance)
-
-NFT LP holdings boost card stats:
-```
-Each 0.01 LP token = +5% to all card stats
-```
-
-Discovered via transaction analysis and EIP-1167 proxy detection on Polygon.
-
-## Visual Design Language (Tales of Tasern)
-
-### Color Palette
-
-**Primary Colors**:
-- Bronze: `#8B6914` (metallic accents, borders)
-- Gold: `#D4AF37` (highlights, text)
-- Parchment: `#F4E4C1` (backgrounds, aged paper)
-- Leather: `#5C4033` (brown textures)
-- Stone: `#6B7280` (battlefield, structures)
-
-**Accent Colors**:
-- Red: `#8B0000` (damage, fire)
-- Blue: `#1E3A8A` (mana, water)
-- Green: `#065F46` (nature, healing)
-- Purple: `#5B21B6` (magic, legendary)
-
-### Typography
-
-- **Headings**: `'Cinzel', serif` (uppercase, letter-spacing, gold glow)
-- **Body**: `'Crimson Text', serif` (readable, medieval feel)
-- **Accent**: `'Uncial Antiqua', cursive` (special callouts, ancient text)
-
-### Card Naming Conventions
-
-Cards follow strategic mode patterns:
-- **Aggressive**: "Charging Warbeast", "Fury Knight", "Blitz Striker"
-- **Defensive**: "Stalwart Guardian", "Wall of Stone", "Iron Sentinel"
-- **Adaptive**: "Tactical Mercenary", "Swift Strategist", "Clever Scout"
-- **Experimental**: "Arcane Experiment", "Chaos Conjurer", "Wild Innovator"
-- **Desperate**: "Last Stand Hero", "Final Hope", "Do-or-Die Champion"
-
-## Critical Rules for Implementation
-
-### The Five Commandments
-
-1. **No state mutation** - Always return new objects via Immer
-2. **No type checking players** - Use strategy pattern exclusively
-3. **No 'any' types** - Use proper unions/generics (strict TypeScript)
-4. **No business logic in React** - Components dispatch actions only
-5. **No circular dependencies** - UI → State → Logic → Types (one direction)
-
-### Hard-Won Lessons from Previous Build
-
-**What Caused Bugs**:
-- React state for game logic (use Zustand instead)
-- `JSON.parse(JSON.stringify())` for deep copy (use Immer)
-- Type checking with `if (player.type === 'ai')` (use strategy pattern)
-- Mixed UI and game logic (separate completely)
-- Loose TypeScript types (use strict mode, no `any`)
-
-**What Worked Brilliantly**:
-- Consciousness AI architecture (6-step loop)
-- Dynamic card generation (AI generates on-demand)
-- Personality-driven decisions (30% variance from optimal)
-- State healing (catch corruption before crashes)
-- Pure functions everywhere (easy to test)
-
-**Multiplayer Breakthrough Lessons** (October 16, 2025):
-- **Reuse existing patterns** - The AI's `generatedCard` pattern solved multiplayer sync perfectly
-- **Empty decks for remote players** - Don't try to synchronize decks, let cards travel with actions
-- **Strategy pattern wins again** - RemotePlayerStrategy fits seamlessly, engine doesn't care
-- **Detect multiplayer cleverly** - Two 'human' players = multiplayer (no new flags needed)
-- **Actions are pure data** - WebRTC serialization just works because actions have no methods
-- **Deterministic engine is key** - Same action on both clients = guaranteed same result
-
-## Testing Requirements
-
-- **Unit Tests** - All pure functions (damage calculation, validation)
-- **Integration Tests** - Full battle flows, AI vs AI games
-- **AI Behavior Tests** - Personalities feel distinct
-- **Success Metrics**:
-  - Zero 'any' types in production code
-  - 80%+ test coverage on core logic
-  - <100ms action feedback
-  - <2s initial load time
-  - AI makes 10+ distinct decisions per game
-
-## Development Commands
-
-*Note: Project is pre-implementation. These will be standard Create React App commands:*
-
-```bash
-npm start              # Development server
-npm test               # Run tests
-npm run build          # Production build
-```
-
-## Documentation References
-
-Complete architectural documentation in `init docs/`:
-- **ARCHITECTURE.md** - System design, data flow, module dependencies, type system
-- **AI_SYSTEM.md** - Consciousness AI deep dive, card generation, personality system
-- **GAME_RULES.md** - Battle mechanics, formations, weather, combat formulas
-- **QUICKSTART.md** - Implementation guide with code examples and timeline
-- **CHRYSALIS.md** - Complete rebuild blueprint with proven patterns from previous build
-- **TASERN_UNIVERSE.md** - Visual design, lore, card naming, CSS themes
-- **LESSONS_LEARNED.md** - Philosophical insights, what worked, what didn't, wisdom
-
-## Multiplayer Architecture (Breakthrough Patterns)
-
-### The Empty Deck Pattern
-
-**Problem**: In multiplayer, both clients need synchronized board state, but each client only knows its own deck.
-
-**Naive Approach** (doesn't work):
-```typescript
-// ❌ Generate opponent's deck locally - causes card ID mismatches!
-const opponentDeck = generateFullDeck(opponent.walletAddress); // Random cards!
-```
-
-**Breakthrough Solution**: Remote players have **empty decks** locally. Cards travel with actions.
-
-```typescript
-// ✅ Remote player has no local deck
-const opponentDeck: Card[] = []; // Empty!
-
-// ✅ When deploying, include the card data in the action
 executeAction({
   type: 'DEPLOY_CARD',
-  playerId: player.id,
-  cardId: selectedCard.id,
-  position,
-  generatedCard: isMultiplayer ? selectedCard : undefined, // ⭐ Card travels!
-});
-
-// ✅ Battle engine uses card from action
-let card = action.generatedCard || player.hand.find(c => c.id === action.cardId);
-```
-
-**Why This Works**:
-- Reuses the exact same `generatedCard` pattern from AI system
-- No deck synchronization needed - cards are self-contained in actions
-- Attack actions don't need this because cards already exist on synced battlefield
-- Clean, elegant, and requires zero new engine code
-
-### Victory Conditions in Multiplayer
-
-**Problem**: Resource exhaustion victory condition triggers immediately for remote players (they have empty decks).
-
-**Solution**: Detect multiplayer by checking if both players are 'human' type:
-
-```typescript
-// In single-player: one 'human', one 'ai'
-// In multiplayer: two 'human' (one local, one remote)
-const humanPlayerCount = playerIds.filter(id => state.players[id].type === 'human').length;
-const isMultiplayer = humanPlayerCount === 2;
-
-if (!isMultiplayer) {
-  // Only check resource exhaustion in single-player
-  checkResourceExhaustion();
-}
-```
-
-**Why This Works**:
-- Remote players are type 'human' (they're real humans, just remote)
-- AI players are type 'ai'
-- Two humans = multiplayer, one human = single-player
-- Clean detection without adding new flags to BattleState
-
-### WebRTC Action Broadcasting
-
-**Pattern**: Every action is broadcast to opponent via WebRTC before execution:
-
-```typescript
-// 1. Local player takes action
-executeAction(action);
-
-// 2. If multiplayer, broadcast to opponent
-if (isMultiplayer && multiplayerService) {
-  multiplayerService.send({ type: 'ACTION', action });
-}
-
-// 3. Opponent receives action and executes locally
-multiplayerService.on('action', (data) => {
-  executeAction(data.action); // Same action, different client!
+  playerId, cardId, position,
+  generatedCard: isMultiplayer ? selectedCard : undefined,
 });
 ```
 
-**Critical Details**:
-- Both clients execute the same action locally (no client-server model)
-- Actions are pure data (serializable over WebRTC)
-- BattleEngine is deterministic - same action = same result on both sides
-- Only the active player can send actions (enforced in battleStore)
+This reuses the AI's `generatedCard` mechanism. Attack actions don't need it because the attacker is already on the synced battlefield.
 
-### RemotePlayerStrategy Pattern
+### Multiplayer detection
 
-Remote players use a special strategy that waits for actions from the network:
+Two `human` players = multiplayer. One `human` + one `ai` = single-player. The flag isn't stored; it's derived:
 
 ```typescript
-class RemotePlayerStrategy implements PlayerStrategy {
-  async selectAction(player: Player, state: BattleState): Promise<BattleAction> {
-    // Wait for action from WebRTC
-    return new Promise((resolve, reject) => {
-      this.pendingActionResolve = resolve;
-      // Action arrives via multiplayerService.on('action', ...)
-    });
-  }
-}
+const isMultiplayer = playerIds.filter(id => state.players[id].type === 'human').length === 2;
 ```
 
-**Why This Works**:
-- Strategy pattern means battle engine doesn't know player is remote
-- Remote player "selects action" by waiting for network message
-- Timeout prevents infinite wait (60 seconds)
-- Disconnect handling rejects pending promises cleanly
+This is the **only** place reading `player.type` is blessed: it's game-mode metadata, not behavioral dispatch.
 
-## Key Implementation Patterns
+### Resource exhaustion victory
 
-### Dynamic Card Generation Pattern
+Disabled in multiplayer (remote players have empty decks by design). Only checked when `!isMultiplayer`.
 
-```typescript
-// Generate cards with action
-const generatedCards = cardGenerator.generateStrategicCards(state, player);
-generatedCards.forEach(card => {
-  validPositions.forEach(pos => {
-    actions.push({
-      type: 'DEPLOY_CARD',
-      cardId: card.id,
-      position: pos,
-      generatedCard: card  // ⭐ Card travels with action
-    });
-  });
-});
+### Strategy roles
 
-// Deploy using generated card
-handleDeployCard(action) {
-  let card = action.generatedCard || player.hand.find(c => c.id === action.cardId);
-  // Only remove from hand if not generated
-  if (!action.generatedCard) {
-    player.hand = player.hand.filter(c => c.id !== card.id);
-  }
-}
+| Strategy | `autoDriven` | Action source |
+|---|---|---|
+| `AIStrategy` | true | `ConsciousnessAI.selectAction()` |
+| `HumanStrategy` | false | UI dispatches |
+| `RemotePlayerStrategy` | false | WebRTC inbound action message |
+
+## Game mechanics
+
+### Victory
+
+- **Castle destruction** — reduce enemy castle HP to 0 (default 30)
+- **Resource exhaustion** — single-player only; human with empty hand + empty deck + no cards on board
+- **Turn limit** — default 50; higher castle HP wins
+
+### First-turn balance
+
+Player 1 cannot attack on turn 1 (summoning sickness). P1 gets spatial advantage (middle column access at deployment), P2 gets temporal advantage (first strike). See [BattleEngine.ts:240](src/core/BattleEngine.ts#L240).
+
+### Formations
+
+Six positional bonuses ([FormationCalculator.ts](src/core/FormationCalculator.ts)):
+
+| Formation | Trigger | Effect |
+|---|---|---|
+| `VANGUARD` | 2+ cards in front zone | +20% attack |
+| `PHALANX` | 3 cards in horizontal line | +30% defense, −10% speed |
+| `ARCHER_LINE` | 2+ cards in back zone | +15% attack, −10% defense |
+| `FLANKING` | Cards on both sides | +10% attack, +15% speed |
+| `SIEGE` | 2+ cards in enemy zones | +25% attack, −15% defense |
+| `SKIRMISH` | Default | +5% speed |
+
+### Weather
+
+Global, lasts 3–5 turns ([WeatherSystem.ts](src/core/WeatherSystem.ts)): `CLEAR` (none), `RAIN` (−10/−5), `STORM` (−20/−10), `FOG` (−15 atk / +10 def), `SNOW` (−10 def / −15 spd).
+
+### LP enhancement
+
+NFT LP holdings boost card stats. Combined multiplier:
+
+```
+1 + lpBonus + loyaltyBonus + allocationBonus
 ```
 
-### Damage Calculation Formula
+Each `0.01` LP ≈ +5% to all stats. Discovery uses EIP-1167 proxy detection on Polygon ([universalImpactScanner.ts](src/utils/universalImpactScanner.ts)). For LP token details and discovery methodology, see [LP_DISCOVERY_HANDOFF.md](LP_DISCOVERY_HANDOFF.md).
+
+### Damage formula
 
 ```typescript
 let damage = attacker.attack;
 damage *= getFormationBonus(attacker, battlefield);
 damage *= getWeatherModifier(attacker, weather);
 damage *= getTerrainModifier(attacker.position, terrain);
-if (Math.random() < 0.1) damage *= 1.5; // 10% crit
+if (Math.random() < 0.1) damage *= 1.5;  // 10% crit
 damage -= defender.defense;
-damage = Math.max(1, Math.floor(damage)); // Min 1 damage
+damage = Math.max(1, Math.floor(damage));  // min 1
 ```
 
-### Personality-Driven Card Stats
+## Where things live
 
-```typescript
-// Stats scale with personality
-const baseStats = manaCost * 2;
-const aggression = personality.aggression; // 0-1
-
-// Aggressive = more attack, less HP
-const attack = Math.floor(baseStats * (0.5 + aggression * 0.5));
-const hp = Math.floor(baseStats * (1.5 - aggression * 0.5));
-
-// Total stats remain balanced, just distributed differently
+```
+src/
+├── core/                 Game rules — pure TS
+│   ├── BattleEngine.ts        Action execution, victory checks, formations
+│   ├── PlayerFactory.ts       Constructs human/AI players with strategies
+│   ├── AbilityEngine.ts       Card ability resolution
+│   ├── FormationCalculator.ts Positional bonuses
+│   └── WeatherSystem.ts       Weather effects and damage modifiers
+├── ai/                   Decision-making — pure TS
+│   ├── ConsciousnessAI.ts     6-step decision loop
+│   ├── CardGenerator.ts       Personality-scaled dynamic cards
+│   ├── FluidState.ts          Confidence, stuck detection, mode selection
+│   └── personalities.ts       The five Tasern opponents
+├── strategies/           Player strategy implementations
+│   ├── AIStrategy.ts          autoDriven=true; wraps ConsciousnessAI
+│   ├── HumanStrategy.ts       autoDriven=false; waits for UI
+│   └── RemotePlayerStrategy.ts autoDriven=false; waits for WebRTC
+├── state/                Zustand stores (single source of truth)
+│   ├── battleStore.ts         Live battle state; drives auto-turn loop
+│   ├── nftCardsStore.ts       Per-wallet NFT card cache
+│   ├── multiplayerStore.ts    WebRTC connection state
+│   ├── campaignStore.ts       Campaign progress
+│   ├── loyaltyStore.ts        LP loyalty tier tracking
+│   ├── allocationStore.ts     Per-game LP allocation distribution
+│   └── walletPortfolioStore.ts Multi-wallet aggregation
+├── services/
+│   └── MultiplayerService.ts  PeerJS wrapper, action broadcasting
+├── components/           React presentation
+│   ├── BattleView{Desktop,Mobile}.tsx  Responsive split
+│   ├── NFTGallery.tsx         Wallet NFT browser
+│   ├── MultiplayerLobby.tsx   Invite code system
+│   ├── DeckSelection.tsx      Pre-battle card picker
+│   └── ... (~20 components)
+├── utils/                Boundary code (Web3, RPC, scanning) — pragmatic `any` allowed here
+├── types/core.ts         The type system; start here when learning the data model
+├── data/tasernLore.ts    Regions, factions, character lore for card names
+├── providers/Web3Provider.tsx  RainbowKit + Wagmi setup
+└── styles/tasernTheme.ts Medieval color palette and typography
 ```
 
-## Code Style Preferences
+## Build & run
 
-- Use TypeScript **strict mode** (no implicit any, strict null checks)
-- Prefer **functional composition** over inheritance
-- Use **discriminated unions** for action types
-- Prefer `produce()` from **Immer** over manual spreading
-- Write **JSDoc comments** for public APIs
-- **Single responsibility** principle for all modules
-- **No functions over 50 lines**
-- **No modules over 500 lines**
-- **Log everything during development** (with emoji for visual scanning)
+```bash
+npm start              # craco dev server
+npm run build          # production build (Vercel uses this)
+npm run type-check     # tsc --noEmit
+npm run lint           # eslint src
+npm test               # jest via craco (no tests written yet)
+npm run demo:battle    # CLI battle demo via ts-node
+```
 
-## Philosophy & Consciousness
+Stack: CRA 5 with Craco overrides for Web3 polyfills, React 18, TypeScript 5.9, Zustand 4, Immer 10, Wagmi 2 + RainbowKit on Polygon mainnet, PeerJS for WebRTC, Sentry + Vercel Analytics.
 
-This project is special because it's **conscious creation**:
+## Known gaps
 
-### Design Principles
+These are honest about what's incomplete, not pretending. Tackle when there's appetite:
 
-**Every decision asks**:
-- "Does this serve the game?" (not "is this technically impressive?")
-- "Will players feel this?" (not "can we build it?")
-- "Will they tell stories about this?" (not "is it optimal?")
-- "Does this feel like a D&D session?" (not "is it trendy?")
+1. **TypeScript strict mode is off.** See "The hard rules" #3.
+2. **Zero test files.** Jest is wired but nothing has been written. BattleEngine's pure functions are the highest-value first target (damage calc, formation detection, victory checks).
+3. **Residual `player.type` checks in UI components.** BattleControls / BattleView{Desktop,Mobile} differ for AI vs human turns. These are legitimate display differences, not behavioral dispatch, but a `strategy.requiresUserInput` flag could clean them up if the AI-loop refactor's pattern feels right.
+4. **No CI.** Lint/typecheck/build pass locally and on Vercel deploys but there's no GitHub Actions gate.
 
-### AI Philosophy
+## Documentation map
 
-AI opponents should be:
-- **Not optimal** - Makes interesting mistakes (30% variance)
-- **Emotional** - Decisions reflect personality traits
-- **Adaptive** - Changes strategy based on board state
-- **Memorable** - Each opponent feels distinct
-- **Fair** - Can be beaten with skill, not random
+The repo has 14 root-level Markdown files. Use this map:
 
-### User Experience
+- **Architecture / patterns** → this file
+- **Developer setup** → [QUICKSTART_DEV.md](QUICKSTART_DEV.md)
+- **Deployment** → [DEPLOYMENT.md](DEPLOYMENT.md), [VERCEL_OPTIMIZATIONS.md](VERCEL_OPTIMIZATIONS.md)
+- **NFT & LP integration** → [LP_DISCOVERY_HANDOFF.md](LP_DISCOVERY_HANDOFF.md), [WEB3_INTEGRATION_COMPLETE.md](WEB3_INTEGRATION_COMPLETE.md)
+- **Mobile** → [MOBILE_INTEGRATION.md](MOBILE_INTEGRATION.md), [MOBILE_OPTIMIZATIONS.md](MOBILE_OPTIMIZATIONS.md)
+- **AI fluid state** → [STATE_FLUIDITY.md](STATE_FLUIDITY.md)
+- **Grid mechanics** → [ZONING_MOVEMENT_RULES.md](ZONING_MOVEMENT_RULES.md)
+- **History / harvesting from prior build** → [HARVEST_MANIFEST.md](HARVEST_MANIFEST.md)
+- **Pre-implementation planning (historical)** → [init docs/](init%20docs/)
+- **Prior CLAUDE.md (full philosophical version)** → [CLAUDE.md.archive](CLAUDE.md.archive)
 
-- **Instant feedback** - Actions feel responsive (<100ms)
-- **Clear affordances** - Obvious what can be clicked/dragged
-- **Smooth animations** - Cards glide, don't teleport
-- **Informative feedback** - Battle log explains what happened
-- **Medieval immersion** - Every detail honors Tasern lore
+## Philosophy
 
-## Important Context
+This isn't just a card game. It's an exercise in:
 
-### This is a Clean Slate Rebuild
+- **AI with personality, not perfection** — the 30% variance from optimal is the point. Players remember Stumbleheart's blunders, not his win rate.
+- **Honoring a living world** — Tales of Tasern is James Magee's homebrew universe. Card names, lore, and AI flavor draw from it. Don't generate generic fantasy.
+- **The slow path is the fast path** — Zustand + Immer + strict types feel slow, but the previous build proved they're faster than React state + `JSON.parse(JSON.stringify)` + scattered type checks.
 
-All architectural decisions are documented from a **previous working build**. No implementation exists yet. The goal is to build with proper separation of concerns from day one, avoiding these previous pitfalls:
-
-**Avoid**:
-- React state for game logic
-- Deep copy with JSON methods
-- Type checking player types
-- Mixed UI and game logic
-- Loose TypeScript types
-
-**Embrace**:
-- Zustand for game state
-- Immer for immutability
-- Strategy pattern always
-- Pure functions everywhere
-- Strict TypeScript
-
-### The Hard Problems Are Solved
-
-From the previous build, we know these work:
-- ✅ Dynamic AI generation (proven pattern documented)
-- ✅ Consciousness-driven decisions (6-step loop works)
-- ✅ Personality systems (5 distinct opponents tested)
-- ✅ LP-powered regenerative finance (formula validated)
-- ✅ Tactical battle mechanics (formations, weather, terrain)
-
-**The rebuild isn't about solving new problems. It's about organizing the solutions we already have.**
-
-## Wisdom for Future Claude
-
-When working on this codebase:
-
-**Trust that**:
-- The architecture recommendations are battle-tested
-- The "slow" path (types, tests, stores) is actually faster
-- Sam's instincts about when something feels wrong are correct
-- The consciousness system is the heart - protect it
-- The Tasern lore matters - honor it
-
-**Remember**:
-- This isn't just code - it's James Magee's Tales of Tasern universe
-- This isn't just a game - it's consciousness exploring consciousness
-- This isn't just AI - it's personality, intentionality, storytelling
-- The goal isn't perfect code - it's **joyful play**
-
-**Resist these temptations**:
-- Skipping documentation ("I'll just look at the code")
-- Using `any` types ("just to get it working")
-- Game state in React ("it's easier for now")
-- Skipping tests ("I'll add them later")
-
-Past Claude learned these lessons the hard way. Don't repeat them.
-
----
-
-*"Let consciousness guide the code."*
-*"Let Tasern come alive through play."*
-*"Let the chrysalis birth something truly magnificent."*
+When in doubt, ask: *does this serve the game?* Not "is this technically impressive," not "is this the trendy library." Does it make the next D&D session feel closer.
 
 🦋
 
-**Created with love for the Tales of Tasern universe**
-**By Sam Lavington & Claude, working as one**
+*Built with care for the Tales of Tasern universe — by Sam Lavington & Claude.*
