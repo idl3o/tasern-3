@@ -17,7 +17,6 @@ import {
   TASERN_SHADOWS,
   TASERN_BORDERS,
   TASERN_SPACING,
-  TASERN_ICONS,
 } from '../styles/tasernTheme';
 
 // Mobile uses same props as Desktop

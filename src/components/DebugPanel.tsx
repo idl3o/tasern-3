@@ -7,7 +7,7 @@
 
 import React, { useState } from 'react';
 import { useBattleStore, selectBattleState, selectLocalPlayerId, selectIsMultiplayer } from '../state/battleStore';
-import { TASERN_COLORS, TASERN_TYPOGRAPHY, TASERN_SPACING, TASERN_BORDERS } from '../styles/tasernTheme';
+import { TASERN_COLORS, TASERN_TYPOGRAPHY, TASERN_SPACING } from '../styles/tasernTheme';
 
 export const DebugPanel: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);

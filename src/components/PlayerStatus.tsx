@@ -57,7 +57,7 @@ export const PlayerStatus: React.FC<PlayerStatusProps> = ({
       <div className="player-status-header" style={styles.header}>
         <div style={styles.nameSection}>
           <div style={styles.playerName}>{player.name}</div>
-          {player.type === 'ai' && player.aiPersonality && (
+          {player.aiPersonality && (
             <div style={styles.personalityTitle}>
               {player.aiPersonality.title}
             </div>
@@ -125,7 +125,7 @@ export const PlayerStatus: React.FC<PlayerStatusProps> = ({
       </div>
 
       {/* AI Personality Traits */}
-      {player.type === 'ai' && player.aiPersonality && (
+      {player.aiPersonality && (
         <div style={styles.personalitySection}>
           <div style={styles.personalityGrid}>
             <div style={styles.trait}>

@@ -5,7 +5,7 @@
  * Pure presentation - dispatches actions on click.
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 import type { Card } from '../types/core';
 import { CardDisplay } from './CardDisplay';
 import {

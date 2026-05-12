@@ -120,10 +120,12 @@ export function getStarsForLevel(enhancementLevel: number): string {
   return '⭐'.repeat(Math.min(enhancementLevel, 5));
 }
 
-export default {
+const lpTiersApi = {
   LP_TIERS,
   getTierForLevel,
   getTierForLpBalance,
   formatLpWithTier,
-  getStarsForLevel
+  getStarsForLevel,
 };
+
+export default lpTiersApi;

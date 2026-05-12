@@ -15,7 +15,6 @@ import type {
   Player,
   BattleCard,
   Position,
-  FormationType,
   FormationBonus,
   WeatherEffect,
   VictoryResult,
@@ -29,7 +28,7 @@ import type {
   MapTheme,
   TerrainEffect,
 } from '../types/core';
-import { GRID_PRESETS, MAP_LAYOUTS, MAP_THEMES, WEATHER_TYPES, TERRAIN_TYPES, type MapPreset, type CompleteMapPreset, COMPLETE_MAP_PRESETS } from '../types/core';
+import { GRID_PRESETS, MAP_LAYOUTS, MAP_THEMES, WEATHER_TYPES, TERRAIN_TYPES, type CompleteMapPreset, COMPLETE_MAP_PRESETS } from '../types/core';
 import { AbilityEngine } from './AbilityEngine';
 
 export class BattleEngine {

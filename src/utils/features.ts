@@ -128,7 +128,7 @@ export function isAnyFeatureEnabled(features: (keyof FeatureFlags)[]): boolean {
   return features.some(feature => isFeatureEnabled(feature));
 }
 
-export default {
+const featuresApi = {
   getFeatureFlags,
   isFeatureEnabled,
   getFeatureDisabledReason,
@@ -138,3 +138,5 @@ export default {
   areAllFeaturesEnabled,
   isAnyFeatureEnabled,
 };
+
+export default featuresApi;

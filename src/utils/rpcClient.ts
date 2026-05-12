@@ -210,7 +210,7 @@ export async function getContractCode(address: string): Promise<string | null> {
   return result.data;
 }
 
-export default {
+const rpcClientApi = {
   getCurrentEndpoint,
   failoverToNextEndpoint,
   resetTorimaryEndpoint,
@@ -223,3 +223,5 @@ export default {
   getAlchemyRpcUrl,
   POLYGON_RPC_ENDPOINTS,
 };
+
+export default rpcClientApi;

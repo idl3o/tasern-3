@@ -87,8 +87,9 @@ export function prefersReducedMotion(): boolean {
  */
 export async function lockOrientation(orientation: string): Promise<void> {
   try {
-    if ('lock' in screen.orientation && typeof (screen.orientation as any).lock === 'function') {
-      await (screen.orientation as any).lock(orientation);
+    const orientationApi = window.screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> };
+    if (typeof orientationApi.lock === 'function') {
+      await orientationApi.lock(orientation);
     }
   } catch (error) {
     console.warn('Screen orientation lock not supported:', error);
@@ -100,8 +101,8 @@ export async function lockOrientation(orientation: string): Promise<void> {
  */
 export function unlockOrientation(): void {
   try {
-    if ('unlock' in screen.orientation) {
-      screen.orientation.unlock();
+    if ('unlock' in window.screen.orientation) {
+      window.screen.orientation.unlock();
     }
   } catch (error) {
     console.warn('Screen orientation unlock failed:', error);

@@ -110,6 +110,7 @@ export class CardGenerator {
     const card: Card = {
       id: `generated-${this.cardIdCounter++}-${Date.now()}`,
       name,
+      description,
       attack: stats.attack,
       defense: stats.defense,
       hp: stats.hp,

@@ -14,11 +14,6 @@ interface TokenBalance {
   error?: string;
 }
 
-interface AlchemyTokenBalancesResponse {
-  address: string;
-  tokenBalances: TokenBalance[];
-}
-
 interface ImpactAssetValue {
   contract: string;
   balance: bigint;

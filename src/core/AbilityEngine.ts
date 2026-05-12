@@ -6,7 +6,7 @@
  */
 
 import type { BattleState, BattleCard, Position, BattleLogEntry } from '../types/core';
-import type { PassiveAbility, TriggeredAbility, TriggeredAbilityType } from '../types/abilities';
+import type { TriggeredAbilityType } from '../types/abilities';
 
 export class AbilityEngine {
   /**

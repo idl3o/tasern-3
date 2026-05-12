@@ -8,7 +8,7 @@
 import React from 'react'
 import { TASERN_COLORS, TASERN_TYPOGRAPHY, TASERN_SHADOWS, TASERN_ICONS } from '../styles/tasernTheme'
 import { useCampaignStore } from '../state/campaignStore'
-import { getCampaign, getCampaignLength } from '../data/campaignData'
+import { getCampaignLength } from '../data/campaignData'
 
 interface CampaignBattleResultProps {
   victory: boolean
@@ -33,8 +33,6 @@ export const CampaignBattleResult: React.FC<CampaignBattleResultProps> = ({
 }) => {
   const { activeCampaignId, progress, getProgressPercentage } = useCampaignStore()
 
-  // Get campaign info
-  const campaign = activeCampaignId ? getCampaign(activeCampaignId) : null
   const campaignLength = activeCampaignId ? getCampaignLength(activeCampaignId) : 0
   const completedCount = progress?.completedBattles.length ?? 0
   const isCampaignComplete = completedCount >= campaignLength

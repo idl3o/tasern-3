@@ -12,12 +12,12 @@ import { WalletConnect } from './WalletConnect';
 import { CardDisplay } from './CardDisplay';
 import { ManagePortfolio } from './ManagePortfolio';
 import { enhancedNFTsToCards } from '../utils/nftToCard';
-import { UniversalImpactScanner, type EnhancedNFTData, type ScanProgress } from '../utils/universalImpactScanner';
+import { type ScanProgress } from '../utils/universalImpactScanner';
 import { scanPortfolio, quickRefreshPortfolio, type PortfolioNFTData, type PortfolioScanProgress } from '../utils/portfolioScanner';
 import { useNFTCardsStore } from '../state/nftCardsStore';
 import { useWalletPortfolioStore } from '../state/walletPortfolioStore';
 import { useLoyaltyStore } from '../state/loyaltyStore';
-import { getTierForLevel, type LPTier } from '../utils/lpTiers';
+import { getTierForLevel } from '../utils/lpTiers';
 import type { Card } from '../types/core';
 import { TASERN_COLORS, TASERN_TYPOGRAPHY, TASERN_SHADOWS } from '../styles/tasernTheme';
 
@@ -32,7 +32,6 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ onClose, onSelectCard })
   const {
     setPrimaryAddress,
     linkedAddresses,
-    aggregateNFTs: shouldAggregate
   } = useWalletPortfolioStore();
 
   const { updateLoyaltySnapshot } = useLoyaltyStore();
@@ -41,6 +40,7 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ onClose, onSelectCard })
   const [cards, setCards] = useState<Card[]>([]);
   const [isScanning, setIsScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState<ScanProgress | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [portfolioProgress, setPortfolioProgress] = useState<PortfolioScanProgress | null>(null);
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
   const [scanLogs, setScanLogs] = useState<string[]>([]);
@@ -94,6 +94,8 @@ export const NFTGallery: React.FC<NFTGalleryProps> = ({ onClose, onSelectCard })
         setScanLogs([]);
       }
     }
+    // scanAllPortfolio and setPrimaryAddress are stable references; deps intentionally limited to connection state
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isConnected, account, previousAccount]);
 
   // Quick refresh LP balances for portfolio

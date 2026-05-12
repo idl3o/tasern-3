@@ -77,24 +77,6 @@ export const TASERN_NFT_CONTRACTS = [
 ];
 
 /**
- * Check if contract is ERC721 enumerable
- */
-async function isERC721Enumerable(contractAddress: string): Promise<boolean> {
-  try {
-    // Try to call balanceOf - if it exists, likely ERC721
-    await publicClient.readContract({
-      address: contractAddress as `0x${string}`,
-      abi: ERC721_ABI,
-      functionName: 'balanceOf',
-      args: ['0x0000000000000000000000000000000000000000' as `0x${string}`],
-    } as any);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/**
  * Fetch NFT metadata from tokenURI
  */
 async function fetchNFTMetadata(tokenURI: string): Promise<any> {

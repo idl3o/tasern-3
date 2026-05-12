@@ -15,7 +15,7 @@ import { createPublicClient, http } from 'viem';
 import { polygon } from 'viem/chains';
 import { TransactionScanner } from './transactionScanner';
 import { resilientFetch } from './resilientFetch';
-import { getCurrentEndpoint, failoverToNextEndpoint, POLYGON_RPC_ENDPOINTS } from './rpcClient';
+import { getCurrentEndpoint, failoverToNextEndpoint } from './rpcClient';
 
 // Impact asset configuration
 export const IMPACT_ASSETS = {

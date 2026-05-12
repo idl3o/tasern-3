@@ -218,7 +218,7 @@ export function isSentryEnabled(): boolean {
 // Export Sentry for direct access if needed
 export { Sentry };
 
-export default {
+const sentryApi = {
   initSentry,
   setUserContext,
   captureException,
@@ -228,3 +228,5 @@ export default {
   setTag,
   isSentryEnabled,
 };
+
+export default sentryApi;

@@ -70,9 +70,6 @@ export const ManagePortfolio: React.FC<ManagePortfolioProps> = ({
     }
   };
 
-  const formatAddress = (addr: string) =>
-    `${addr.slice(0, 6)}...${addr.slice(-4)}`;
-
   const totalAddresses = linkedAddresses.length;
 
   return (

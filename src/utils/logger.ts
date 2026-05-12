@@ -10,7 +10,6 @@
 import { captureException, captureMessage, addBreadcrumb } from './sentry';
 
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
-const IS_DEVELOPMENT = process.env.NODE_ENV === 'development';
 
 // Log levels
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';

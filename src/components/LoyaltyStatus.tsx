@@ -9,7 +9,6 @@ import React from 'react';
 import { useLoyaltyStore } from '../state/loyaltyStore';
 import {
   LOYALTY_TIERS,
-  getLoyaltyTierForDays,
   getDaysUntilNextTier,
   getTierProgress,
 } from '../types/lpRewards';

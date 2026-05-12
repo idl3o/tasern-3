@@ -63,14 +63,10 @@ export const useBattleStore = create<BattleStore>()(
       try {
         const newState = BattleEngine.initializeBattle(player1, player2, config);
 
-        // Initialize hands for human players
+        // Initialize each player via their strategy
         const updatedPlayers = { ...newState.players };
         Object.values(updatedPlayers).forEach((player) => {
-          if (player.type === 'human') {
-            console.log('👤 Initializing hand for human player:', player.name);
-            // Call strategy to populate hand
-            player.strategy.onTurnStart?.(player, newState);
-          }
+          player.strategy.onTurnStart?.(player, newState);
         });
 
         set((state) => {
@@ -106,13 +102,10 @@ export const useBattleStore = create<BattleStore>()(
       try {
         const newState = BattleEngine.initializeBattle(localPlayer, remotePlayer, config);
 
-        // Initialize hands for players
+        // Initialize each player via their strategy
         const updatedPlayers = { ...newState.players };
         Object.values(updatedPlayers).forEach((player) => {
-          if (player.type === 'human') {
-            console.log('👤 Initializing hand for player:', player.name);
-            player.strategy.onTurnStart?.(player, newState);
-          }
+          player.strategy.onTurnStart?.(player, newState);
         });
 
         // Use deterministic player ID based on wallet address

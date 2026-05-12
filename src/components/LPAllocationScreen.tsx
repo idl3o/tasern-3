@@ -16,7 +16,7 @@ import React, { useEffect } from 'react';
 import type { Card } from '../types/core';
 import { useAllocationStore } from '../state/allocationStore';
 import { useLoyaltyStore } from '../state/loyaltyStore';
-import { LP_REWARDS_CONFIG, calculateAllocationBonus, LOYALTY_TIERS } from '../types/lpRewards';
+import { LP_REWARDS_CONFIG, LOYALTY_TIERS } from '../types/lpRewards';
 
 interface LPAllocationScreenProps {
   playerId: string;

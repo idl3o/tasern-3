@@ -33,10 +33,11 @@ module.exports = {
         }),
       ];
 
-      // Ignore MetaMask SDK analytics to avoid openapi-fetch error
+      // Stub optional MetaMask SDK deps that webpack tries to resolve in browser builds
       webpackConfig.resolve.alias = {
         ...webpackConfig.resolve.alias,
         '@metamask/sdk-analytics': false,
+        '@react-native-async-storage/async-storage': false,
       };
 
       return webpackConfig;

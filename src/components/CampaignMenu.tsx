@@ -543,5 +543,3 @@ const styles: Record<string, React.CSSProperties> = {
   },
 }
 
-// Add responsive styles
-const mediaQuery = '@media (max-width: 768px)'

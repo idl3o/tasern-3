@@ -8,7 +8,7 @@
  */
 
 import Peer, { DataConnection } from 'peerjs';
-import type { BattleAction, BattleState, Card } from '../types/core';
+import type { BattleAction, BattleState } from '../types/core';
 
 // ============================================================================
 // MESSAGE TYPES

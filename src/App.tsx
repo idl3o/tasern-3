@@ -24,7 +24,7 @@ import { useAllocationStore } from './state/allocationStore';
 import { LPAllocationScreen } from './components/LPAllocationScreen';
 import { PlayerFactory } from './core/PlayerFactory';
 import { HumanStrategy } from './strategies/HumanStrategy';
-import type { Card, Player, AIPersonality, GridPreset, CompleteMapPreset } from './types/core';
+import type { Card, AIPersonality, GridPreset, CompleteMapPreset } from './types/core';
 import { GRID_PRESETS, COMPLETE_MAP_PRESETS } from './types/core';
 import {
   LADY_SWIFTBLADE,
@@ -311,10 +311,6 @@ export const App: React.FC = () => {
     const player1 = PlayerFactory.createHuman('You', { loyaltyBonus });
     player1.hand = allocationPhase.selectedCards.slice(0, 5);
     player1.deck = allocationPhase.selectedCards.slice(5);
-
-    // Store allocations in player for use during battle
-    // The allocation bonuses are passed via action.allocationBonus when deploying
-    (player1 as any).cardAllocations = allocations;
 
     const player2 = PlayerFactory.createAI(
       allocationPhase.opponent!.name,

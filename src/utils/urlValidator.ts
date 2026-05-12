@@ -115,7 +115,8 @@ export function sanitizeImageUrl(url: string): string {
     return '';
   }
 
-  // Block javascript: URLs
+  // Block javascript: URLs (security check)
+  // eslint-disable-next-line no-script-url
   if (url.toLowerCase().startsWith('javascript:')) {
     console.warn('⚠️ JavaScript URL blocked in image src');
     return '';
@@ -205,7 +206,7 @@ export function truncateAddress(address: string, startChars = 6, endChars = 4): 
   return `${address.slice(0, startChars)}...${address.slice(-endChars)}`;
 }
 
-export default {
+const urlValidator = {
   isValidUrl,
   sanitizeIpfsUrl,
   sanitizeImageUrl,
@@ -214,3 +215,5 @@ export default {
   isValidAddress,
   truncateAddress,
 };
+
+export default urlValidator;

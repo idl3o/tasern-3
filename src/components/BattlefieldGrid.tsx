@@ -236,9 +236,6 @@ export const BattlefieldGrid: React.FC<BattlefieldGridProps> = ({
           </div>
         ))}
       </div>
-
-      {/* Formation Legend - Hidden to save space */}
-      {/* TODO: Replace with compact active formation indicator */}
     </div>
   );
 };
