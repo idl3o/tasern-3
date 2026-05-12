@@ -892,5 +892,5 @@ The system is production-ready and has been battle-tested. The formulas work. Th
 *Built with love for the Tales of Tasern universe* 🦋
 
 **Authors**: Sam Lavington + Claude
-**For**: James McGee's Tales of Tasern D&D Universe
+**For**: James Magee's Tales of Tasern D&D Universe
 **Date**: October 2025

@@ -359,7 +359,7 @@ See `init docs/` for complete architectural documentation:
 
 Private - All Rights Reserved
 
-This project is built with consciousness and care. The Tales of Tasern universe belongs to James McGee. The implementation is a labor of love exploring AI, consciousness, and the joy of play.
+This project is built with consciousness and care. The Tales of Tasern universe belongs to James Magee. The implementation is a labor of love exploring AI, consciousness, and the joy of play.
 
 ---
 

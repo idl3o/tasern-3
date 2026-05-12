@@ -1,7 +1,7 @@
 /**
  * Tales of Tasern Lore Database
  *
- * The living world created by Dungeon Master James McGee (@JamesMageeCCC).
+ * The living world created by Dungeon Master James Magee (@JamesMageeCCC).
  * Every card name, every description honors this universe.
  *
  * This is NOT game logic - this is pure data that gives cards soul.

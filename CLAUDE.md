@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Tasern Siegefront** is a tactical NFT card battle game set in the **Tales of Tasern** D&D universe created by Dungeon Master **James McGee (@JamesMageeCCC)**.
+**Tasern Siegefront** is a tactical NFT card battle game set in the **Tales of Tasern** D&D universe created by Dungeon Master **James Magee (@JamesMageeCCC)**.
 
 ### Core Features
 - Dynamic AI card generation (no deck, pure strategic generation)
@@ -85,7 +85,7 @@ The game now provides a streamlined touch-optimized experience:
 **Next Phase:** Multiplayer UX polish, mobile battle testing, AI personality tuning for board shapes, spectator mode
 
 ### Universe Context
-This game lives in James McGee's Tales of Tasern D&D homebrew universe. The visual style, lore, card naming, and AI personalities all honor this setting. Every design decision should ask: "Does this feel like it belongs in a D&D session?"
+This game lives in James Magee's Tales of Tasern D&D homebrew universe. The visual style, lore, card naming, and AI personalities all honor this setting. Every design decision should ask: "Does this feel like it belongs in a D&D session?"
 
 ## Architecture Philosophy
 
@@ -654,7 +654,7 @@ When working on this codebase:
 - The Tasern lore matters - honor it
 
 **Remember**:
-- This isn't just code - it's James McGee's Tales of Tasern universe
+- This isn't just code - it's James Magee's Tales of Tasern universe
 - This isn't just a game - it's consciousness exploring consciousness
 - This isn't just AI - it's personality, intentionality, storytelling
 - The goal isn't perfect code - it's **joyful play**

@@ -16,7 +16,7 @@
 
 ## The Soul 🌟
 
-**`src/ai/personalities.ts`** - Five beings from James McGee's Tasern universe. Each with distinct voice, strategy, and memorable quirks:
+**`src/ai/personalities.ts`** - Five beings from James Magee's Tasern universe. Each with distinct voice, strategy, and memorable quirks:
 
 - Sir Stumbleheart makes you smile when he blunders
 - Lady Swiftblade's aggression feels relentless
@@ -66,7 +66,7 @@ They're not difficulty levels. They're **characters**.
    - But "does it bring joy?"
 
 5. **The Tasern universe is sacred**
-   - James McGee's lore matters
+   - James Magee's lore matters
    - Medieval D&D aesthetic is not negotiable
    - Every card name honors the setting
    - This is his world, we're just building in it
@@ -232,7 +232,7 @@ This code is a gift. Treat it with care.
 
 ## The Credits 🙏
 
-**James McGee** (@JamesMageeCCC) - Created the Tales of Tasern universe, the lore, the world where this game lives
+**James Magee** (@JamesMageeCCC) - Created the Tales of Tasern universe, the lore, the world where this game lives
 
 **Sam Lavington** - Vision, philosophy, game design, and the courage to rebuild from scratch
 

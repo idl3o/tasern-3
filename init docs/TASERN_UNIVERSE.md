@@ -3,7 +3,7 @@
 **Document Version**: 1.0
 **Last Updated**: 2025-09-30
 **Code Author**: Sam Lavington (Idl3o/@modsias)
-**Universe Creator**: James McGee (@JamesMageeCCC) - Dungeon Master
+**Universe Creator**: James Magee (@JamesMageeCCC) - Dungeon Master
 
 ---
 
@@ -23,7 +23,7 @@
 
 ### Tales of Tasern
 
-**Tales of Tasern** is a D&D homebrew universe created and run by Dungeon Master **James McGee (@JamesMageeCCC)**. The universe combines classic fantasy elements with unique lore, memorable characters, and rich storytelling.
+**Tales of Tasern** is a D&D homebrew universe created and run by Dungeon Master **James Magee (@JamesMageeCCC)**. The universe combines classic fantasy elements with unique lore, memorable characters, and rich storytelling.
 
 ### Key Locations
 

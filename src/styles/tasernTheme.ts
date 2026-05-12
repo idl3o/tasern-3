@@ -5,7 +5,7 @@
  * Based on the proven D&D theme from tasern 2.
  *
  * Philosophy: Every color, every shadow, every glow honors
- * the Tales of Tasern universe created by James McGee.
+ * the Tales of Tasern universe created by James Magee.
  */
 
 export const TASERN_COLORS = {

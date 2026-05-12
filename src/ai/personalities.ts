@@ -2,7 +2,7 @@
  * AI Personalities from the Tales of Tasern Universe
  *
  * Five distinct opponents, each with unique traits and playstyles.
- * Created by Dungeon Master James McGee (@JamesMageeCCC)
+ * Created by Dungeon Master James Magee (@JamesMageeCCC)
  */
 
 import type { AIPersonality } from '../types/core';

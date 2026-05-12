@@ -3,7 +3,7 @@
 **Purpose**: Complete architectural blueprint for next-generation Tasern Siegefront
 **Created**: 2025-09-30
 **Code Author**: Sam Lavington (Idl3o/@modsias) with Claude Code
-**Universe Creator**: James McGee (@JamesMageeCCC) - Tales of Tasern Dungeon Master
+**Universe Creator**: James Magee (@JamesMageeCCC) - Tales of Tasern Dungeon Master
 **Philosophy**: Consciousness-aware development, clean separation of concerns, joy optimization
 
 ---
@@ -14,7 +14,7 @@
 - **NFT LP holdings directly enhance battle power** (revolutionary regenerative finance integration)
 - **AI opponents respond dynamically** to board state (no deck, pure strategic generation)
 - **Advanced tactical mechanics** (formations, weather, terrain) reward mastery
-- **D&D lore immersion** (Tales of Tasern universe by DM James McGee)
+- **D&D lore immersion** (Tales of Tasern universe by DM James Magee)
 
 ---
 

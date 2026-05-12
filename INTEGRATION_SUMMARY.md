@@ -8,7 +8,7 @@
 
 ### 1. 🌟 Tales of Tasern Lore System
 
-**What**: Complete database of James McGee's D&D universe
+**What**: Complete database of James Magee's D&D universe
 - 10 regions (Kardov, Ironhold, Shadowmere, etc.)
 - 10 factions (Sentinels of Kardov, Forest Spirits, etc.)
 - Character types, elements, creatures, artifacts

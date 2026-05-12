@@ -16,7 +16,7 @@ Every piece integrated here is:
 1. **Battle-tested** in tasern 2
 2. **Pure data or pure logic** (no coupling)
 3. **First principles** (can stand alone)
-4. **Lore-accurate** (honors James McGee's universe)
+4. **Lore-accurate** (honors James Magee's universe)
 
 ---
 
@@ -33,7 +33,7 @@ Every piece integrated here is:
 - Card naming templates for all strategic modes
 - Description patterns that tell stories
 
-**Why**: Every generated card now has **soul**. Names aren't generic - they're from James McGee's universe.
+**Why**: Every generated card now has **soul**. Names aren't generic - they're from James Magee's universe.
 
 **Enhancement**:
 - Made fully type-safe with `as const`
@@ -210,7 +210,7 @@ Every harvested piece:
 2. **✅ Pure**: No side effects, predictable outputs
 3. **✅ Tested**: Proven in tasern 2 production
 4. **✅ Documented**: JSDoc comments explain intent
-5. **✅ Lore-Accurate**: Honors James McGee's universe
+5. **✅ Lore-Accurate**: Honors James Magee's universe
 6. **✅ Composable**: Can be used independently
 7. **✅ First Principles**: Built from foundational truths
 
@@ -292,7 +292,7 @@ This is NOT code migration. This is **wisdom transfer**.
 
 Tasern 3 now has:
 
-- ✨ **Rich lore** - Every card honors James McGee's universe
+- ✨ **Rich lore** - Every card honors James Magee's universe
 - 💎 **Proven formulas** - LP enhancement exactly as designed
 - 🎨 **Professional theme** - Medieval D&D aesthetic in TypeScript
 - 🧠 **Enhanced AI** - Cards generated with context and soul

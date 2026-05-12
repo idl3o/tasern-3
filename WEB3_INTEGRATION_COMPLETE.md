@@ -457,5 +457,5 @@ const nftCards = getNFTCards(walletAddress);
 *Integration completed with consciousness and care for the Tales of Tasern universe* 🦋
 
 **Built by**: Sam Lavington + Claude
-**For**: James McGee's Tales of Tasern D&D Universe
+**For**: James Magee's Tales of Tasern D&D Universe
 **Philosophy**: Let LP holdings empower gameplay. Let regenerative finance fuel fantasy battles. Let wallets define ownership.

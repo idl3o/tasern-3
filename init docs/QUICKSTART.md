@@ -3,7 +3,7 @@
 **Document Version**: 1.0
 **Last Updated**: 2025-09-30
 **Code Author**: Sam Lavington (Idl3o/@modsias)
-**Universe Creator**: James McGee (@JamesMageeCCC)
+**Universe Creator**: James Magee (@JamesMageeCCC)
 
 ---
 
