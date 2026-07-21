@@ -1,370 +1,85 @@
-# 🏰 Tasern Siegefront 🦋
+# Tasern Siegefront
 
-**Consciousness-driven tactical NFT card battle game**
-*Set in the Tales of Tasern D&D universe by James MaGee*
+*A consciousness-driven, tactical NFT card battle game set in James Magee's 'Tales of Tasern' D&D universe.*
 
----
+Tasern Siegefront is a browser game where you deploy cards onto a tactical battlefield and fight to bring down the enemy castle. It sits at the intersection of Web3, AI and hand-built game worlds: opponents are personality-driven AIs that *generate* their cards in response to the board rather than drawing from a fixed deck, and on-chain holdings can enhance your cards. It lives in the [Tales of Tasern](https://twitter.com/JamesMageeCCC) universe, the homebrew D&D setting of Dungeon Master James Magee.
 
-## Current Status
+A live build is deployed at **[tasern-3.vercel.app](https://tasern-3.vercel.app)**.
 
-**✅ MILESTONE 1 COMPLETE - Fully Playable Human vs AI!** (October 1, 2025)
+## The idea
 
-The game is now **fully playable** with complete Human vs AI functionality:
+Most card games hand the AI a deck and a lookup table. This one asks a different question: what if opponents had personality, intent, and the freedom to make interesting mistakes? Each AI runs a decision loop that reads the battlefield, picks a strategic mood, manifests cards to suit it, and scores its options with a deliberate slice of variance away from optimal — so you remember an opponent's blunders and flourishes, not its win rate. The aim throughout is that a battle should feel a little like a D&D session.
 
-### What Works Right Now
+## Gameplay
 
-- ✅ **Dual menu system**: "Play vs AI" and "Watch AI vs AI"
-- ✅ **5 distinct AI personalities** from Tasern lore (Stumbleheart, Swiftblade, Thornwick, Grok, Nethys)
-- ✅ **Human player hand generation** (5 cards, adaptive mode)
-- ✅ **Card deployment system** (click hand card → click battlefield)
-- ✅ **Combat system** (select your card → attack enemy card/castle)
-- ✅ **Turn management** with "End Turn" button
-- ✅ **AI auto-processing** with 1.5s delays for watchability
-- ✅ **Victory detection** and UI overlay
-- ✅ **Battle log** showing all actions
-- ✅ **Medieval D&D aesthetic** with Tasern theme colors
-- ✅ **Web3 wallet integration** (RainbowKit + Wagmi on Polygon)
-- ✅ **NFT Gallery** with provenance verification
-- ✅ **LP token bonus scanning** for stat boosts
-- ✅ **Interactive tutorial overlay** for new players
+- **Deploy and fight.** Place cards onto a tactical grid, then attack enemy cards or their castle. First to reduce the enemy castle to 0 HP wins (50 HP by default); there are also turn-limit and resource-exhaustion win conditions.
+- **Formations.** Positional arrangements grant bonuses — Vanguard, Phalanx, Archer Line, Flanking, Siege and Skirmish each reward a different shape on the board.
+- **Weather.** Global effects (Clear, Rain, Storm, Fog, Snow) shift attack and defence for a few turns at a time.
+- **Damage** combines base stats with zone, formation, weather and terrain modifiers, plus a chance to crit, then subtracts effective defence.
 
-**You can play the game right now.** It's fun. It works.
+## What's inside
 
----
+- **Consciousness AI** — a six-step per-turn loop (heal state, self-check, analyse mode, generate options, score & choose, record to memory) in `src/ai/ConsciousnessAI.ts`.
+- **Five distinct personalities** — Sir Stumbleheart (The Noble Blunderer), Lady Swiftblade (The Lightning Duelist), Thornwick the Tactician (The Chess Master), Grok the Unpredictable (The Chaos Warrior) and Archmagus Nethys (Master of the Arcane), each defined by float traits that shape their play (`src/ai/personalities.ts`).
+- **Dynamic card generation** — AI players have no deck; cards are created on demand and travel attached to the action that plays them.
+- **Web3 integration** — wallet connection via RainbowKit + Wagmi on Polygon, an NFT gallery, and LP-token holdings that boost card stats.
+- **Peer-to-peer multiplayer** — WebRTC via PeerJS, with no game server; both clients run the same deterministic engine and stay in sync.
+- **Play or watch** — Human vs AI, or watch AI vs AI (including a console-only demo battle).
 
-## Quick Start
+## Getting started
 
-### Play the Game
+Requires Node.js and npm.
 
 ```bash
 npm install
-npm start
+npm start          # craco dev server at http://localhost:3000
 ```
 
-Visit `http://localhost:3000` and choose:
-- **Play vs AI** - Challenge one of five personalities
-- **Watch AI vs AI** - Watch the AI battle itself
-
-### Watch a Console Battle (AI vs AI)
+Other scripts (from `package.json`):
 
 ```bash
-npm run demo:battle
+npm run build        # production build (used by Vercel)
+npm run type-check   # tsc --noEmit
+npm run lint         # eslint src
+npm test             # jest via craco
+npm run demo:battle  # AI-vs-AI battle in the console via ts-node
 ```
 
-Pure console glory with strategic commentary and battle logs.
+Web3 features expect environment configuration — see `.env.example`.
 
----
-
-## What Makes This Special
-
-This isn't just another card game. **Tasern Siegefront** explores what happens when AI is given personality, intentionality, and the freedom to make interesting mistakes.
-
-### 🧠 Consciousness AI
-
-Six-step decision loop where AI opponents:
-- **Heal** - Validate and repair state corruption
-- **Self-Aware** - Check confidence, detect being stuck
-- **Analyze** - Determine strategic mode (aggressive/defensive/adaptive/desperate/experimental)
-- **Generate** - Create cards dynamically in response to the battlefield
-- **Score & Choose** - Evaluate with 30% variance from optimal
-- **Record** - Build memory for learning
-
-AI opponents **think**, **adapt**, and **make mistakes**. They don't feel like bots.
-
-### ✨ Dynamic Card Generation
-
-AI players don't have decks. They **manifest cards** based on:
-- Current battlefield state
-- Their personality traits
-- Strategic mode
-- Available mana
-
-Every card is generated on-demand. Every battle is unique.
-
-### 🎭 Five Distinct Personalities
-
-From the Tales of Tasern universe:
-
-- **Sir Stumbleheart** - The Noble Blunderer (creative but chaotic)
-- **Lady Swiftblade** - The Lightning Duelist (aggressive rushdown)
-- **Thornwick** - The Chess Master (calculated, optimal)
-- **Grok** - The Chaos Warrior (completely unpredictable)
-- **Archmagus Nethys** - Master of the Arcane (experimental magic)
-
-Each feels genuinely different to play against.
-
-### 💎 Web3 Integration
-
-- **Wallet Connection** - RainbowKit with MetaMask, WalletConnect, Coinbase
-- **NFT Gallery** - View your Polygon NFTs with provenance verification
-- **LP Token Bonuses** - Hold LP tokens, get stat boosts in battle
-- **Regenerative Finance** - NFT ownership enhances gameplay
-
-```
-Each 0.01 LP token = +5% to all card stats
-```
-
----
-
-## Future Horizon
-
-### Phase 1: Mechanics Refinement (Current)
-- [ ] Enhanced board layout and positioning
-- [ ] Card movement system (reposition during battle)
-- [ ] Advanced combat rules and balancing
-- [ ] Weather system integration (visual + mechanical)
-- [ ] Terrain effects (battlefield modifiers)
-
-### Phase 2: Polish & Depth
-- [ ] Card artwork and animations
-- [ ] Advanced card abilities (beyond attack/defense)
-- [ ] Sound effects and ambient audio
-- [ ] Enhanced battle log with replay
-- [ ] AI difficulty settings
-
-### Phase 3: Content Expansion
-- [ ] Campaign mode with Tasern lore
-- [ ] Achievement system
-- [ ] Deck building for human players
-- [ ] More AI personalities (deeper lore)
-- [ ] Card collection and progression
-
-### Phase 4: Multiplayer & Competitive
-- [ ] Human vs Human online battles
-- [ ] Tournament mode
-- [ ] Leaderboards
-- [ ] Spectator mode
-- [ ] Ranked matchmaking
-
-### Phase 5: Advanced AI
-- [ ] AI learning from player behavior
-- [ ] Adaptive difficulty
-- [ ] AI commentary and trash talk
-- [ ] Emergent strategic patterns
-- [ ] AI vs AI tournaments
-
-### Phase 6: NFT Ecosystem
-- [ ] Mint custom cards as NFTs
-- [ ] NFT card trading
-- [ ] Staking mechanisms
-- [ ] Governance for game rules
-- [ ] Community-created content
-
----
-
-## Core Mechanics
-
-### ⚔️ Battle Flow
-
-1. Players deploy cards to a tactical battlefield (grids from 2x4 up to 5x5, plus asymmetric shapes)
-2. Cards attack enemies or castle
-3. Formations grant bonuses (Vanguard, Phalanx, etc.)
-4. Weather effects modify all cards
-5. First to destroy enemy castle wins (50 HP default)
-
-### 🎲 Victory Conditions
-
-- **Castle Destruction** - Reduce enemy castle to 0 HP
-- **Resource Exhaustion** - Human players run out of cards
-- **Turn Limit** - Highest castle HP wins after 50 turns
-
-### 🌦️ Weather Effects
-
-Global modifiers lasting 3-5 turns:
-- **Clear** ☀️ - No modifiers
-- **Rain** 🌧️ - -10% attack, -5% speed
-- **Storm** ⛈️ - -20% attack, -10% speed
-- **Fog** 🌫️ - -15% attack, +10% defense
-- **Snow** ❄️ - -10% defense, -15% speed
-
-### 🛡️ Formations
-
-Positional bonuses based on card arrangement:
-- **VANGUARD** - 2+ cards in front zone: +20% attack
-- **PHALANX** - 3 cards in horizontal line: +30% defense, -10% speed
-- **ARCHER_LINE** - 2+ cards in back zone: +15% attack, -10% defense
-- **FLANKING** - Cards on both sides: +10% attack, +15% speed
-- **SIEGE** - 2+ cards in enemy zones: +25% attack, -15% defense
-- **SKIRMISH** - Default: +5% speed
-
----
-
-## Architecture Philosophy
-
-Built with **strict separation of concerns** learned from a previous build:
-
-### ✅ The Five Commandments
-
-1. **No state mutation** - Always immutable updates via Immer
-2. **No type checking players** - Strategy pattern exclusively
-3. **No 'any' types** - Strict TypeScript, proper unions
-4. **No business logic in React** - Components dispatch actions only
-5. **No circular dependencies** - One-way data flow
-
-### 🏗️ Structure
+## Project structure
 
 ```
 src/
-├── types/          # Core type system (no 'any' allowed!)
-├── core/           # Pure game logic (BattleEngine, PlayerFactory)
-├── ai/             # ConsciousnessAI, CardGenerator, personalities
-├── strategies/     # Strategy pattern (Human, AI)
-├── state/          # Zustand store with Immer
-├── components/     # React UI (presentation only)
-├── lib/            # Web3 integration (RainbowKit, Wagmi)
-└── demo/           # Test battles
+├── types/        # Core type system
+├── core/         # Pure game logic (BattleEngine, FormationCalculator, WeatherSystem, …)
+├── ai/           # ConsciousnessAI, CardGenerator, FluidState, personalities
+├── strategies/   # Strategy pattern: Human, AI, RemotePlayer
+├── state/        # Zustand stores with Immer (single source of truth)
+├── services/     # MultiplayerService (PeerJS)
+├── components/   # React UI (presentation only)
+├── providers/    # Web3Provider (RainbowKit + Wagmi)
+├── utils/        # Boundary code: Web3, RPC, NFT/LP scanning
+└── demo/         # Console battle demo
 ```
 
-### 🎯 Strategy Pattern - The Golden Rule
+The codebase follows a strict one-way dependency flow (UI → State → Logic → Types): no state mutation outside Immer, no business logic in React, and player behaviour routed through strategies rather than type checks. See `CLAUDE.md` for the full architecture notes, and the `init docs/` folder for design documentation.
 
-**NEVER** check player type with conditionals:
+## Status
 
-```typescript
-// ✅ CORRECT
-const cards = player.strategy.getAvailableCards(player, state);
+Playable and deployed. The game supports Human vs AI, AI vs AI, and P2P multiplayer, with Web3 wallet and LP-enhancement features wired in. It is an active, personal project rather than a finished product, and the maintainer is candid about the rough edges in `CLAUDE.md` — notably: TypeScript `strict` mode is currently off, there are no automated tests yet, there is no CI, and `speed` is presently a display-only stat not yet read by any rule. Treat it as evolving.
 
-// ❌ WRONG - Do not do this anywhere!
-if (player.type === 'ai') {
-  cards = generateCards();
-}
-```
+## Related
 
-This keeps Human vs AI vs future Multiplayer a clean abstraction.
+Other corners of the same universe and adjacent experiments by the author:
+
+- [tasern-4](https://github.com/idl3o/tasern-4) — a text-based roleplaying game in the Tales of Tasern universe, using Ollama on desktop and an in-browser LLM in the browser.
+- [ToTtcg](https://github.com/idl3o/ToTtcg) — an open-source NFT trading card game from the ToT universe.
 
 ---
 
-## Design Language
+The Tales of Tasern universe belongs to James Magee ([@JamesMageeCCC](https://twitter.com/JamesMageeCCC)).
 
-**Tales of Tasern** medieval D&D fantasy aesthetic:
+The code is released under the [MIT Licence](LICENSE).
 
-### 🎨 Color Palette
-
-- **Bronze** `#8B6914` - Metallic accents
-- **Gold** `#D4AF37` - Highlights, text
-- **Parchment** `#F4E4C1` - Backgrounds
-- **Leather** `#5C4033` - Brown textures
-- **Stone** `#6B7280` - Battlefield
-
-### 🔤 Typography
-
-- **Headings**: `'Cinzel', serif` - Uppercase, gold glow
-- **Body**: `'Crimson Text', serif` - Readable medieval
-- **Accent**: `'Uncial Antiqua', cursive` - Ancient text
-
----
-
-## Philosophy
-
-This project is **conscious creation**:
-
-### Every Decision Asks:
-
-- "Does this serve the game?" (not "is this technically impressive?")
-- "Will players feel this?" (not "can we build it?")
-- "Will they tell stories about this?" (not "is it optimal?")
-- "Does this feel like a D&D session?" (not "is it trendy?")
-
-### AI Should Be:
-
-- **Not optimal** - Makes interesting mistakes (30% variance)
-- **Emotional** - Decisions reflect personality traits
-- **Adaptive** - Changes strategy based on board state
-- **Memorable** - Each opponent feels distinct
-- **Fair** - Can be beaten with skill, not random
-
----
-
-## Technical Highlights
-
-### Why This Architecture Works
-
-**Hard-Won Lessons from Previous Build**:
-
-**Avoid**:
-- React state for game logic → Use Zustand
-- `JSON.parse(JSON.stringify())` → Use Immer
-- Type checking player types → Use strategy pattern
-- Mixed UI and game logic → Separate completely
-- Loose TypeScript types → Strict mode, no `any`
-
-**What Worked Brilliantly**:
-- ✅ Consciousness AI architecture (6-step loop)
-- ✅ Dynamic card generation (AI generates on-demand)
-- ✅ Personality-driven decisions (30% variance from optimal)
-- ✅ State healing (catch corruption before crashes)
-- ✅ Pure functions everywhere (easy to test)
-
-### Key Implementation Patterns
-
-**Dynamic Card Generation**:
-```typescript
-// Generate cards with action
-const generatedCards = cardGenerator.generateStrategicCards(state, player);
-generatedCards.forEach(card => {
-  actions.push({
-    type: 'DEPLOY_CARD',
-    generatedCard: card  // ⭐ Card travels with action
-  });
-});
-```
-
-**Damage Calculation**:
-```typescript
-let damage = attacker.attack;
-damage *= getFormationBonus(attacker, battlefield);
-damage *= getWeatherModifier(attacker, weather);
-damage *= getTerrainModifier(attacker.position, terrain);
-if (Math.random() < 0.1) damage *= 1.5; // 10% crit
-damage -= defender.defense;
-damage = Math.max(1, Math.floor(damage));
-```
-
----
-
-## Documentation
-
-### Core Documentation
-
-See `init docs/` for complete architectural documentation:
-
-- **ARCHITECTURE.md** - System design, data flow, dependencies
-- **AI_SYSTEM.md** - Consciousness AI deep dive
-- **GAME_RULES.md** - Battle mechanics, formulas
-- **QUICKSTART.md** - Implementation guide
-- **CHRYSALIS.md** - Rebuild blueprint
-- **TASERN_UNIVERSE.md** - Visual design, lore
-- **LESSONS_LEARNED.md** - Wisdom from previous build
-
-### Integration Documentation
-
-- **HARVEST_MANIFEST.md** - What was harvested from Tasern 2 and why
-  - Lore system integration
-  - LP enhancement formulas
-  - Visual theme constants
-  - First principles approach explained
-
----
-
-## Credits
-
-**Created with love for the Tales of Tasern universe**
-
-- **Tales of Tasern Universe**: James Magee (@JamesMageeCCC)
-- **Game Design & Development**: Sam Lavington & Claude
-- **AI Personalities**: Inspired by James's D&D campaigns
-
----
-
-## License
-
-Private - All Rights Reserved
-
-This project is built with consciousness and care. The Tales of Tasern universe belongs to James Magee. The implementation is a labor of love exploring AI, consciousness, and the joy of play.
-
----
-
-*"Let consciousness guide the code."*
-*"Let Tasern come alive through play."*
-*"Let the chrysalis birth something truly magnificent."*
-
-🦋
+Built by [S. Lavi](https://github.com/idl3o) · [@modsias](https://x.com/modsias)
